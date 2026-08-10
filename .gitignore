@@ -1,0 +1,4 @@
+# containerlab 실행 산출물 (실행 사본에서만 생긴다)
+clab-clos/
+.clab.*.bak
+*.log
