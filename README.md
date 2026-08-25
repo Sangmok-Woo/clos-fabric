@@ -5,7 +5,7 @@ eBGP 언더레이 → ECMP → 장애/수렴 측정 → VXLAN/EVPN 오버레이�
 
 - **원본(편집용)**: `C:\Users\sangmok\Desktop\Claude\clos-fabric`
 - **실행용(WSL)**: `/root/labs/clos-fabric` — containerlab은 리눅스에서만 동작한다
-- 문서: [docs/00-프로젝트-흐름.md](docs/00-프로젝트-흐름.md), [docs/90-현업-예상질문.md](docs/90-현업-예상질문.md)
+- 문서: [docs/00-프로젝트-흐름.md](docs/00-프로젝트-흐름.md), [docs/10-확장규칙.md](docs/10-확장규칙.md), [docs/90-현업-예상질문.md](docs/90-현업-예상질문.md)
 
 ## 하루 5분 · 30일
 
