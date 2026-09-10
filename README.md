@@ -5,16 +5,15 @@ eBGP 언더레이 → ECMP → 장애/수렴 측정 → VXLAN/EVPN 오버레이�
 
 - **원본(편집용)**: `C:\Users\sangmok\Desktop\Claude\clos-fabric`
 - **실행용(WSL)**: `/root/labs/clos-fabric` — containerlab은 리눅스에서만 동작한다
-- 문서: [docs/00-프로젝트-흐름.md](docs/00-프로젝트-흐름.md), [docs/10-확장규칙.md](docs/10-확장규칙.md), [docs/90-현업-예상질문.md](docs/90-현업-예상질문.md)
+## 문서
 
-## 하루 5분 · 30일
-
-이 랩을 매일 하나씩 고장 내고 고치는 30일 코스가 있다. → **[docs/40-하루5분-30일.md](docs/40-하루5분-30일.md)**
-
-```bash
-cd /root/labs/clos-fabric && ./scripts/day.sh      # 오늘 문제 (고장은 이미 걸려 있다)
-./scripts/day.sh 답                                 # 정답 + 해설 + 자동 복구
-```
+| 문서 | 무엇을 적나 |
+|---|---|
+| [docs/00-프로젝트-흐름.md](docs/00-프로젝트-흐름.md) | 어디까지 왔고 다음은 무엇인가 |
+| [docs/RULES.md](docs/RULES.md) | 규칙과 결정 — "왜 이렇게 하나" |
+| [docs/RUNBOOK.md](docs/RUNBOOK.md) | 따라 하는 절차 — 랩 띄우기, 재배포, 리프 추가, 고장 훈련 |
+| [docs/LOG.md](docs/LOG.md) | 고장 훈련 기록 — 날짜·증상·원인·해결 한 줄씩 |
+| [CHANGELOG.md](CHANGELOG.md) | 무엇이 언제 바뀌었나 (패치노트) |
 
 ## 빠른 시작
 
@@ -38,6 +37,8 @@ MSYS_NO_PATHCONV=1 wsl -d Ubuntu -u root -- bash -lc "rm -rf /root/labs/clos-fab
 | `./scripts/failover.sh link\|freeze` | 장애 주입 후 끊긴 시간 측정 |
 | `./scripts/bfd-apply.sh on\|off` | BFD 적용/해제 |
 | `./scripts/evpn-apply.sh` | VXLAN + BGP EVPN 구성 및 검증 |
+| `./scripts/listen-range-test.sh` | 스파인 이웃을 동적(listen range)으로 바꿔보고 원복 |
+| `./scripts/unnumbered-test.sh` | spine1↔leaf1 한 링크만 BGP unnumbered로 바꿔 fe80 넥스트홉 확인 후 원복 |
 
 ## 측정된 값
 

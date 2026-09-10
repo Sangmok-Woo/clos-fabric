@@ -1242,7 +1242,7 @@ EOF
 d30_inject(){ :; }
 d30_check(){ cat <<'EOF'
   bash ./scripts/check.sh
-  cat docs/41-하루5분-기록.md
+  cat /mnt/c/Users/*/Desktop/Claude/clos-fabric/docs/LOG.md
 EOF
 }
 d30_answer(){
@@ -1272,7 +1272,7 @@ d30_answer(){
    - MTU / MSS 함정 재현 (5일차 확장)
    - 쿠버네티스가 리프와 BGP 로 붙는 구성 (Calico / Cilium)
 
-30일 기록은 docs/41-하루5분-기록.md 에 있다. 예측이 빗나갔던 날들만 다시 읽어보면
+30일 기록은 docs/LOG.md 에 있다. 예측이 빗나갔던 날들만 다시 읽어보면
 자기가 어디를 잘못 알고 있었는지가 그대로 보인다.
 EOF
 }

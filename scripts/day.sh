@@ -15,7 +15,10 @@ set -u
 LAB_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$LAB_DIR"
 STATE="$LAB_DIR/.day-state"
-LOG="$LAB_DIR/docs/41-하루5분-기록.md"
+# 실행 사본은 원본을 다시 복사하면 덮이므로, 기록은 윈도우 원본(깃 저장소) 쪽에 남긴다.
+# 원본을 못 찾으면 실행 사본에 쓴다. CLOS_LOG 로 직접 지정할 수도 있다.
+ORIG=$(ls -d /mnt/c/Users/*/Desktop/Claude/clos-fabric 2>/dev/null | head -1)
+LOG="${CLOS_LOG:-${ORIG:-$LAB_DIR}/docs/LOG.md}"
 
 # ── 헬퍼 (days.sh 안에서 쓴다) ───────────────────────────────────────────────
 X(){ local n=$1; shift; docker exec "clab-clos-$n" "$@" 2>/dev/null; }
@@ -139,15 +142,13 @@ log_day(){
   mkdir -p "$(dirname "$LOG")"
   if [ ! -f "$LOG" ]; then
     cat > "$LOG" <<'EOF'
-# 하루 5분 — 기록
+# LOG — 고장 훈련 기록
 
-예측이 맞았는지만 채워 넣으면 된다. 빗나간 날이 곧 다음에 볼 곳이다.
-
-| 일차 | 날짜 | 제목 | 예측 맞음? | 메모 |
-|---|---|---|---|---|
+| 날짜 | 증상 | 원인 | 해결 |
+|---|---|---|---|
 EOF
   fi
-  printf '| %s | %s | %s |  |  |\n' "$(pad "$_dn")" "$(date +%Y-%m-%d)" "$(call "$_dn" title)" >> "$LOG"
+  printf '| %s | (Day %s) %s |  |  |\n' "$(date +%Y-%m-%d)" "$(pad "$_dn")" "$(call "$_dn" title)" >> "$LOG"
 }
 
 do_list(){
