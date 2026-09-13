@@ -2,9 +2,6 @@
 
 <img src="assets/logo.svg" width="430" alt="clos-fabric">
 
-**일부러 고장 내고, 끊긴 시간을 실측하고, 튜닝으로 줄인
-spine-leaf 데이터센터 패브릭 — 컨테이너 12대**
-
 *A hands-on Clos fabric lab: eBGP underlay, ECMP, failure convergence measured in numbers,
 BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
 
@@ -19,23 +16,6 @@ BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
 [**설계와 이유**](docs/DESIGN.md) · [**실험과 실측**](docs/EXPERIMENTS.md) · [**빠른 시작**](#빠른-시작) · [**Roadmap**](#roadmap) · [**변경 기록**](CHANGELOG.md)
 
 <img src="assets/topology.svg" width="860" alt="spine-leaf 토폴로지 — h1→h4 트래픽이 ECMP로 두 스파인에 갈라지고, v1↔v3은 VXLAN으로 랙을 넘는다">
-
-<table>
-<tr>
-<td align="center" width="33%">
-<h3>💥 고장은 일부러 낸다</h3>
-<sub>케이블 단선과 "조용한 먹통"을 주입하고<br>끊긴 시간을 0.2초 단위로 실측 —<br>BFD 튜닝으로 <b>8.8초 → 1.2초</b></sub>
-</td>
-<td align="center" width="33%">
-<h3>⚖️ 분산은 숫자로 검증</h3>
-<sub>"경로 2개"와 "반씩 간다"는 다르다 —<br>흐름 40개를 링크별로 계수해<br>해시 정책의 <b>몰빵 vs 분산</b>을 증명</sub>
-</td>
-<td align="center" width="33%">
-<h3>🕸️ L2는 터널로 편다</h3>
-<sub>랙이 달라도 같은 서브넷 —<br>VXLAN/EVPN으로 MAC을 BGP에 태우고<br><b>eBGP 특유의 함정 3개</b>를 기록</sub>
-</td>
-</tr>
-</table>
 
 </div>
 
