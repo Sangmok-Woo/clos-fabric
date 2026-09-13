@@ -1,0 +1,25 @@
+<svg viewBox="0 0 620 130" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, 'Segoe UI', sans-serif">
+  <defs>
+    <linearGradient id="wm" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#14b8a6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 아이콘: 미니 Clos (스파인 2 + 리프 4, 풀메시) -->
+  <g stroke="#8b949e" stroke-width="2" stroke-opacity="0.6">
+    <line x1="45" y1="38" x2="25" y2="92"/><line x1="45" y1="38" x2="65" y2="92"/>
+    <line x1="45" y1="38" x2="105" y2="92"/><line x1="45" y1="38" x2="145" y2="92"/>
+    <line x1="125" y1="38" x2="25" y2="92"/><line x1="125" y1="38" x2="65" y2="92"/>
+    <line x1="125" y1="38" x2="105" y2="92"/><line x1="125" y1="38" x2="145" y2="92"/>
+  </g>
+  <circle cx="45" cy="38" r="11" fill="#6366f1"/>
+  <circle cx="125" cy="38" r="11" fill="#6366f1"/>
+  <circle cx="25" cy="92" r="9" fill="#14b8a6"/>
+  <circle cx="65" cy="92" r="9" fill="#14b8a6"/>
+  <circle cx="105" cy="92" r="9" fill="#14b8a6"/>
+  <circle cx="145" cy="92" r="9" fill="#14b8a6"/>
+
+  <!-- 워드마크 -->
+  <text x="185" y="82" font-size="58" font-weight="800" fill="url(#wm)" letter-spacing="-1">clos-fabric</text>
+</svg>

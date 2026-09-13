@@ -1,9 +1,9 @@
 <div align="center">
 
-# clos-fabric
+<img src="assets/logo.svg" width="430" alt="clos-fabric">
 
-**컨테이너 12대로 세운 spine-leaf 데이터센터 패브릭 —
-일부러 고장 내고, 끊긴 시간을 실측하고, 튜닝으로 줄인 기록**
+**일부러 고장 내고, 끊긴 시간을 실측하고, 튜닝으로 줄인
+spine-leaf 데이터센터 패브릭 — 컨테이너 12대**
 
 *A hands-on Clos fabric lab: eBGP underlay, ECMP, failure convergence measured in numbers,
 BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
@@ -14,7 +14,28 @@ BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
 ![overlay](https://img.shields.io/badge/overlay-VXLAN%2FEVPN-7c3aed)
 ![runs on](https://img.shields.io/badge/runs%20on-Docker%20%2F%20WSL2-475569)
 
+<br>
+
+[**설계와 이유**](docs/DESIGN.md) · [**실험과 실측**](docs/EXPERIMENTS.md) · [**빠른 시작**](#빠른-시작) · [**Roadmap**](#roadmap) · [**변경 기록**](CHANGELOG.md)
+
 <img src="assets/topology.svg" width="860" alt="spine-leaf 토폴로지 — h1→h4 트래픽이 ECMP로 두 스파인에 갈라지고, v1↔v3은 VXLAN으로 랙을 넘는다">
+
+<table>
+<tr>
+<td align="center" width="33%">
+<h3>💥 고장은 일부러 낸다</h3>
+<sub>케이블 단선과 "조용한 먹통"을 주입하고<br>끊긴 시간을 0.2초 단위로 실측 —<br>BFD 튜닝으로 <b>8.8초 → 1.2초</b></sub>
+</td>
+<td align="center" width="33%">
+<h3>⚖️ 분산은 숫자로 검증</h3>
+<sub>"경로 2개"와 "반씩 간다"는 다르다 —<br>흐름 40개를 링크별로 계수해<br>해시 정책의 <b>몰빵 vs 분산</b>을 증명</sub>
+</td>
+<td align="center" width="33%">
+<h3>🕸️ L2는 터널로 편다</h3>
+<sub>랙이 달라도 같은 서브넷 —<br>VXLAN/EVPN으로 MAC을 BGP에 태우고<br><b>eBGP 특유의 함정 3개</b>를 기록</sub>
+</td>
+</tr>
+</table>
 
 </div>
 
@@ -42,10 +63,7 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 | ECMP 분산 (흐름 40개) | 해시가 IP만 볼 때 → L4 포트까지 볼 때 | 41:1 (몰빵) → **12:30 (분산)** |
 | 랙을 넘는 L2 | VXLAN VNI 10010 + BGP EVPN | v1 ↔ v3 통신, 원격 MAC을 leaf3 VTEP으로 학습 |
 
-세 가지 교훈이 숫자로 남았다:
-**① 장애 감지는 "케이블이 뽑혔나"와 "상대가 조용히 죽었나"가 전혀 다르고, 그 간극을 BFD가 메운다.**
-**② ECMP는 해시 입력에 무엇을 넣느냐가 전부다.**
-**③ L2를 랙 너머로 늘리고 싶으면 케이블이 아니라 터널(VXLAN)로 푼다.**
+> 첫 측정과 재측정(8.8초/1.2초)의 차이, 측정 방법, 전체 출력은 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)에 있다.
 
 ### 하이라이트 — 같은 장애, BFD 전후
 
@@ -107,3 +125,9 @@ git clone https://github.com/Sangmok-Woo/clos-fabric && cd clos-fabric
 | [docs/DESIGN.md](docs/DESIGN.md) | **설계 기준과 이유** — 왜 spine-leaf·eBGP인가, 주소·AS·포트가 전부 계산식인 이유, 운영 원칙 |
 | [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | **실험과 실측** — 측정 방법, ECMP·수렴·BFD·EVPN의 숫자와 함정, 검증으로 내린 결정 2건 |
 | [CHANGELOG.md](CHANGELOG.md) | 무엇이 언제 바뀌었나 — 검증·결정·변경의 시간 순 기록 |
+
+---
+
+<div align="center">
+<sub>FRRouting + containerlab으로 노트북 위에 세운 랩 — 이 README의 모든 수치는 저장소의 스크립트로 재현할 수 있다.</sub>
+</div>
