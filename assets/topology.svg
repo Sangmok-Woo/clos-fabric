@@ -1,0 +1,123 @@
+<svg viewBox="0 0 920 585" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, 'Segoe UI', 'Apple SD Gothic Neo', sans-serif">
+  <!-- ═══ 링크 (스파인끼리는 절대 연결하지 않는다) ═══ -->
+  <g stroke="#8b949e" stroke-width="1.6" stroke-opacity="0.55">
+    <!-- spine1 → leaf1..4 -->
+    <line x1="310" y1="112" x2="115" y2="250"/>
+    <line x1="310" y1="112" x2="345" y2="250"/>
+    <line x1="310" y1="112" x2="575" y2="250"/>
+    <line x1="310" y1="112" x2="805" y2="250"/>
+    <!-- spine2 → leaf1..4 -->
+    <line x1="610" y1="112" x2="115" y2="250"/>
+    <line x1="610" y1="112" x2="345" y2="250"/>
+    <line x1="610" y1="112" x2="575" y2="250"/>
+    <line x1="610" y1="112" x2="805" y2="250"/>
+    <!-- 리프 → 서버 -->
+    <line x1="115" y1="298" x2="85"  y2="430"/>
+    <line x1="115" y1="298" x2="175" y2="430"/>
+    <line x1="345" y1="298" x2="345" y2="430"/>
+    <line x1="575" y1="298" x2="545" y2="430"/>
+    <line x1="575" y1="298" x2="635" y2="430"/>
+    <line x1="805" y1="298" x2="805" y2="430"/>
+  </g>
+
+  <!-- ═══ 흐르는 패킷 ═══ -->
+  <!-- ① h1→h4, spine1 경로 (ECMP 경로 1) -->
+  <g>
+    <circle r="9" fill="#58a6ff" opacity="0.25"/>
+    <circle r="4.5" fill="#58a6ff"/>
+    <animateMotion dur="5s" begin="0s" repeatCount="indefinite"
+      path="M85,450 L115,274 L310,86 L805,274 L805,450"/>
+  </g>
+  <g>
+    <circle r="9" fill="#58a6ff" opacity="0.25"/>
+    <circle r="4.5" fill="#58a6ff"/>
+    <animateMotion dur="5s" begin="2.5s" repeatCount="indefinite"
+      path="M85,450 L115,274 L310,86 L805,274 L805,450"/>
+  </g>
+  <!-- ② h1→h4, spine2 경로 (ECMP 경로 2) -->
+  <g>
+    <circle r="9" fill="#f0883e" opacity="0.25"/>
+    <circle r="4.5" fill="#f0883e"/>
+    <animateMotion dur="5s" begin="1.2s" repeatCount="indefinite"
+      path="M85,450 L115,274 L610,86 L805,274 L805,450"/>
+  </g>
+  <g>
+    <circle r="9" fill="#f0883e" opacity="0.25"/>
+    <circle r="4.5" fill="#f0883e"/>
+    <animateMotion dur="5s" begin="3.7s" repeatCount="indefinite"
+      path="M85,450 L115,274 L610,86 L805,274 L805,450"/>
+  </g>
+  <!-- ③ v1↔v3, VXLAN 터널 (랙을 넘는 같은 L2) -->
+  <g>
+    <circle r="9" fill="#bc8cff" opacity="0.25"/>
+    <circle r="4.5" fill="#bc8cff"/>
+    <animateMotion dur="6s" begin="0.6s" repeatCount="indefinite"
+      path="M175,450 L115,274 L310,86 L575,274 L635,450"/>
+  </g>
+  <g>
+    <circle r="9" fill="#bc8cff" opacity="0.25"/>
+    <circle r="4.5" fill="#bc8cff"/>
+    <animateMotion dur="6s" begin="3.6s" repeatCount="indefinite"
+      path="M635,450 L575,274 L610,86 L115,274 L175,450"/>
+  </g>
+
+  <!-- ═══ 스파인 ═══ -->
+  <g>
+    <rect x="240" y="60" width="140" height="52" rx="10" fill="#4f46e5"/>
+    <text x="310" y="82" text-anchor="middle" fill="#ffffff" font-size="15" font-weight="700">spine1</text>
+    <text x="310" y="100" text-anchor="middle" fill="#ffffff" fill-opacity="0.75" font-size="11">AS 65001 · 10.255.0.1</text>
+    <rect x="540" y="60" width="140" height="52" rx="10" fill="#4f46e5"/>
+    <text x="610" y="82" text-anchor="middle" fill="#ffffff" font-size="15" font-weight="700">spine2</text>
+    <text x="610" y="100" text-anchor="middle" fill="#ffffff" fill-opacity="0.75" font-size="11">AS 65002 · 10.255.0.2</text>
+  </g>
+  <text x="460" y="36" text-anchor="middle" fill="#8b949e" font-size="12">스파인끼리는 연결하지 않는다 — 어느 랙에서 어느 랙이든 리프 → 스파인 → 리프, 3홉</text>
+
+  <!-- ═══ 리프 ═══ -->
+  <g>
+    <rect x="55"  y="250" width="120" height="48" rx="10" fill="#0d9488"/>
+    <text x="115" y="271" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">leaf1</text>
+    <text x="115" y="288" text-anchor="middle" fill="#ffffff" fill-opacity="0.75" font-size="10.5">AS 65011</text>
+    <rect x="285" y="250" width="120" height="48" rx="10" fill="#0d9488"/>
+    <text x="345" y="271" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">leaf2</text>
+    <text x="345" y="288" text-anchor="middle" fill="#ffffff" fill-opacity="0.75" font-size="10.5">AS 65012</text>
+    <rect x="515" y="250" width="120" height="48" rx="10" fill="#0d9488"/>
+    <text x="575" y="271" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">leaf3</text>
+    <text x="575" y="288" text-anchor="middle" fill="#ffffff" fill-opacity="0.75" font-size="10.5">AS 65013</text>
+    <rect x="745" y="250" width="120" height="48" rx="10" fill="#0d9488"/>
+    <text x="805" y="271" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">leaf4</text>
+    <text x="805" y="288" text-anchor="middle" fill="#ffffff" fill-opacity="0.75" font-size="10.5">AS 65014</text>
+  </g>
+
+  <!-- ═══ 서버 ═══ -->
+  <g font-size="12.5" font-weight="600">
+    <rect x="47"  y="430" width="76" height="40" rx="8" fill="#475569"/>
+    <text x="85"  y="455" text-anchor="middle" fill="#ffffff">h1</text>
+    <rect x="137" y="430" width="76" height="40" rx="8" fill="#6d5aa8"/>
+    <text x="175" y="455" text-anchor="middle" fill="#ffffff">v1</text>
+    <rect x="307" y="430" width="76" height="40" rx="8" fill="#475569"/>
+    <text x="345" y="455" text-anchor="middle" fill="#ffffff">h2</text>
+    <rect x="507" y="430" width="76" height="40" rx="8" fill="#475569"/>
+    <text x="545" y="455" text-anchor="middle" fill="#ffffff">h3</text>
+    <rect x="597" y="430" width="76" height="40" rx="8" fill="#6d5aa8"/>
+    <text x="635" y="455" text-anchor="middle" fill="#ffffff">v3</text>
+    <rect x="767" y="430" width="76" height="40" rx="8" fill="#475569"/>
+    <text x="805" y="455" text-anchor="middle" fill="#ffffff">h4</text>
+  </g>
+  <text x="85"  y="486" text-anchor="middle" fill="#8b949e" font-size="10.5">172.16.11.10</text>
+  <text x="175" y="486" text-anchor="middle" fill="#8b949e" font-size="10.5">10.10.10.11</text>
+  <text x="345" y="486" text-anchor="middle" fill="#8b949e" font-size="10.5">172.16.12.10</text>
+  <text x="545" y="486" text-anchor="middle" fill="#8b949e" font-size="10.5">172.16.13.10</text>
+  <text x="635" y="486" text-anchor="middle" fill="#8b949e" font-size="10.5">10.10.10.33</text>
+  <text x="805" y="486" text-anchor="middle" fill="#8b949e" font-size="10.5">172.16.14.10</text>
+
+  <!-- ═══ 범례 ═══ -->
+  <g font-size="12.5" fill="#8b949e">
+    <circle cx="120" cy="537" r="5" fill="#58a6ff"/>
+    <text x="132" y="541.5">h1 → h4 · spine1 경로</text>
+    <circle cx="330" cy="537" r="5" fill="#f0883e"/>
+    <text x="342" y="541.5">h1 → h4 · spine2 경로 (ECMP로 흐름이 갈라진다)</text>
+    <circle cx="700" cy="537" r="5" fill="#bc8cff"/>
+    <text x="712" y="541.5">v1 ↔ v3 · VXLAN (랙을 넘는 같은 L2)</text>
+    <text x="460" y="570" text-anchor="middle" font-size="11.5">리프 ↔ 스파인 8링크 전부 eBGP /31 · 서버망 172.16.1x.0/24 · 오버레이 VNI 10010</text>
+  </g>
+</svg>
