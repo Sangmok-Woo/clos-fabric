@@ -44,20 +44,18 @@
 4. **오버레이** — VXLAN + BGP EVPN(Type-2/3)으로 랙이 다른 두 서버를 같은 L2로
 5. **확장 검증** — 동적 이웃(listen range)은 검증 후 **기각**, BGP unnumbered는 fe80 넥스트홉까지 확인 후 **채택** ([CHANGELOG](CHANGELOG.md))
 
-여기에 매일 하나씩 고장 내고 복구하는 **30일 장애 훈련**(`scripts/day.sh`)을 얹어 운영 감각을 유지한다. 기록은 [docs/LOG.md](docs/LOG.md)에 쌓인다.
+여기에 매일 하나씩 고장 내고 복구하는 **30일 장애 훈련**(`scripts/day.sh`)을 얹어 운영 감각을 유지한다.
+
+> 이 브랜치(main)는 정리된 기록이다. 진행 중인 작업·운영 절차·훈련 일지는 [`lab` 브랜치](https://github.com/Sangmok-Woo/clos-fabric/tree/lab)에 있다.
 
 ## 빠른 시작
 
-> containerlab은 리눅스 전용이라 WSL(Ubuntu)에서 돌린다. 상세 절차는 [docs/RUNBOOK.md](docs/RUNBOOK.md).
+준비물: 리눅스 + Docker + [containerlab](https://containerlab.dev) (이 랩은 WSL2 Ubuntu에서 개발·측정했다. 컨테이너 12대, 메모리 500MB 남짓)
 
 ```bash
-powershell -c "Start-Process -WindowStyle Hidden wsl -ArgumentList '-d','Ubuntu','-u','root','--','sleep','infinity'"
-```
-
-WSL이 조용히 종료되면 랩의 veth가 사라지므로 위 프로세스를 하나 띄워두고 시작한다. 그 다음:
-
-```bash
-MSYS_NO_PATHCONV=1 wsl -d Ubuntu -u root -- bash -lc "rm -rf /root/labs/clos-fabric && cp -a /mnt/c/Users/sangmok/Desktop/Claude/clos-fabric /root/labs/ && chmod +x /root/labs/clos-fabric/scripts/*.sh && cd /root/labs/clos-fabric && ./scripts/deploy.sh up"
+git clone https://github.com/Sangmok-Woo/clos-fabric && cd clos-fabric
+./scripts/deploy.sh up      # 12대 기동, BGP 세션 8개 자동 수립
+./scripts/check.sh          # 세션·ECMP·서버 간 통신 점검
 ```
 
 ## 스크립트
@@ -79,8 +77,6 @@ MSYS_NO_PATHCONV=1 wsl -d Ubuntu -u root -- bash -lc "rm -rf /root/labs/clos-fab
 
 | 문서 | 무엇을 적나 |
 |---|---|
-| [docs/00-프로젝트-흐름.md](docs/00-프로젝트-흐름.md) | 전체 이야기 — 왜 spine-leaf인가부터 단계별 실험까지. **처음이라면 여기부터** |
-| [docs/RULES.md](docs/RULES.md) | 규칙과 결정 — 이름·AS·주소 체계, "왜 이렇게 하나" |
-| [docs/RUNBOOK.md](docs/RUNBOOK.md) | 따라 하는 절차 — 랩 띄우기, 재배포, 리프 추가, 고장 훈련 |
-| [docs/LOG.md](docs/LOG.md) | 고장 훈련 기록 — 날짜·증상·원인·해결 한 줄씩 |
-| [CHANGELOG.md](CHANGELOG.md) | 무엇이 언제 바뀌었나 (패치노트) |
+| [docs/DESIGN.md](docs/DESIGN.md) | **설계 기준과 이유** — 왜 spine-leaf·eBGP인가, 주소·AS·포트가 전부 계산식인 이유, 운영 원칙 |
+| [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | **실험과 실측** — 측정 방법, ECMP·수렴·BFD·EVPN의 숫자와 함정, 검증으로 내린 결정 2건 |
+| [CHANGELOG.md](CHANGELOG.md) | 무엇이 언제 바뀌었나 — 검증·결정·변경의 시간 순 기록 |
