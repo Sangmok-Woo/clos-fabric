@@ -5,6 +5,9 @@
 **컨테이너 12대로 세운 spine-leaf 데이터센터 패브릭 —
 일부러 고장 내고, 끊긴 시간을 실측하고, 튜닝으로 줄인 기록**
 
+*A hands-on Clos fabric lab: eBGP underlay, ECMP, failure convergence measured in numbers,
+BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
+
 ![FRR](https://img.shields.io/badge/FRRouting-10.2.1-4f46e5)
 ![containerlab](https://img.shields.io/badge/containerlab-0.75.0-0d9488)
 ![underlay](https://img.shields.io/badge/underlay-eBGP%20%2B%20ECMP%20%2B%20BFD-2563eb)
@@ -21,6 +24,14 @@
 - **어떻게**: RFC 7938 방식의 eBGP 언더레이(장비마다 AS 하나) → ECMP 부하분산 → 장애 주입·수렴 시간 실측 → BFD 튜닝 → VXLAN/EVPN 오버레이 순으로 쌓았다.
 - **왜**: "구성해봤다"가 아니라 **숫자로 검증했다**. 아래 표의 값은 전부 이 랩에서 직접 측정한 것이다.
 
+<details>
+<summary><b>English summary</b></summary>
+<br>
+
+A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and containerlab: 2 spines, 4 leaves, 6 servers. The underlay follows RFC 7938 — eBGP with one private AS per device, ECMP enabled via <code>multipath-relax</code>. On top of it I injected failures and measured convergence: a link cut converges in <b>0.2s</b>, a silently frozen spine blackholes traffic for <b>7.6–8.8s</b> (hold-timer bound), and adding <b>BFD (300ms×3)</b> cuts that to <b>0.8–1.2s</b>. ECMP load-sharing was measured per-link with 40 UDP flows, showing why <code>fib_multipath_hash_policy=1</code> is mandatory. A VXLAN/EVPN overlay stretches one L2 segment across racks, including the eBGP-specific pitfalls (route-target mismatch, next-hop rewriting). Design rationale lives in <a href="docs/DESIGN.md">docs/DESIGN.md</a>, experiments and evidence in <a href="docs/EXPERIMENTS.md">docs/EXPERIMENTS.md</a>. Everything is reproducible with the scripts in this repo.
+
+</details>
+
 ## 실측 결과
 
 | 실험 | 조건 | 결과 |
@@ -35,6 +46,14 @@
 **① 장애 감지는 "케이블이 뽑혔나"와 "상대가 조용히 죽었나"가 전혀 다르고, 그 간극을 BFD가 메운다.**
 **② ECMP는 해시 입력에 무엇을 넣느냐가 전부다.**
 **③ L2를 랙 너머로 늘리고 싶으면 케이블이 아니라 터널(VXLAN)로 푼다.**
+
+### 하이라이트 — 같은 장애, BFD 전후
+
+<div align="center">
+<img src="assets/demo.svg" width="840" alt="failover.sh 실행 터미널 — BFD 없이 8.8초, BFD 적용 후 1.2초">
+</div>
+
+위 터미널은 실제 실행 출력을 그대로 재생한 것이다. 스파인을 조용히 얼리는 같은 장애를 BFD 적용 전후로 두 번 주입했다 — 전체 출력과 타임라인 해설은 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
 
 ## 검증의 흐름
 
@@ -72,6 +91,14 @@ git clone https://github.com/Sangmok-Woo/clos-fabric && cd clos-fabric
 | `./scripts/listen-range-test.sh` | 스파인 이웃을 동적(listen range)으로 바꿔보고 원복 |
 | `./scripts/unnumbered-test.sh` | spine1↔leaf1 한 링크만 BGP unnumbered로 바꿔 fe80 넥스트홉 확인 후 원복 |
 | `./scripts/in.sh <노드> <명령>` | 호스트의 도구(tcpdump 등)를 컨테이너 네트워크 안에서 실행 |
+
+## Roadmap
+
+- [ ] **설정 생성기** — `fabric.yml`의 숫자(스파인 수·리프 수)만 바꾸면 토폴로지와 FRR 설정 전체가 재생성되게. 주소·AS·포트가 전부 계산식이라([DESIGN §3~4](docs/DESIGN.md)) 코드로 옮기기만 하면 된다
+- [ ] **BGP unnumbered 전면 전환** — 검증은 끝났고([EXPERIMENTS §4](docs/EXPERIMENTS.md)), 재배포 때 링크 IP를 걷어낸다
+- [ ] **모니터링** — frr_exporter + Prometheus로 세션 수·경로 수를 긁고, 기대값은 토폴로지에서 계산해 대조
+- [ ] **MTU** — VXLAN은 50바이트를 더 쓴다. 언더레이를 점보 프레임(9216)으로 올리고 경계에서 MSS를 확인
+- [ ] **쿠버네티스 연동** — Calico/Cilium이 리프와 BGP 피어링해 파드 네트워크를 패브릭에 직접 태우기
 
 ## 문서
 

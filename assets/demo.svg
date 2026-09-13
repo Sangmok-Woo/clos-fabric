@@ -1,0 +1,46 @@
+<svg viewBox="0 0 880 440" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace, 'Cascadia Mono', Consolas, 'D2Coding', monospace" font-size="13.5">
+  <!-- 터미널 창 -->
+  <rect x="0" y="0" width="880" height="440" rx="12" fill="#0d1117" stroke="#30363d"/>
+  <rect x="0" y="0" width="880" height="36" rx="12" fill="#161b22"/>
+  <rect x="0" y="24" width="880" height="12" fill="#161b22"/>
+  <circle cx="22" cy="18" r="6" fill="#f85149"/><circle cx="42" cy="18" r="6" fill="#d29922"/><circle cx="62" cy="18" r="6" fill="#3fb950"/>
+  <text x="440" y="23" text-anchor="middle" fill="#8b949e" font-size="12">clos-fabric — 스파인 무응답 장애, BFD 적용 전후 실측</text>
+
+  <!-- 출력 (실제 실행 결과. 18초 주기로 재생) -->
+  <g fill="#8b949e">
+    <text x="24" y="70" opacity="0"><tspan fill="#3fb950">$</tspan> <tspan fill="#e6edf3">./scripts/failover.sh freeze</tspan>          <tspan fill="#484f58"># BFD 없음</tspan>
+      <animate attributeName="opacity" dur="18s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;0.022;0.031;1"/></text>
+    <text x="24" y="93" opacity="0">[*] 지금 h1→h4 핑이 어느 스파인을 타는지 확인  → spine2 경유
+      <animate attributeName="opacity" dur="18s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;0.061;0.069;1"/></text>
+    <text x="24" y="116" opacity="0">[*] 핑 시작 (0.2초 간격, 총 20초)
+      <animate attributeName="opacity" dur="18s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;0.100;0.108;1"/></text>
+    <text x="24" y="139" opacity="0">[*] t=4s  <tspan fill="#f85149">spine2 먹통</tspan> — 포워딩을 끄고(=패킷을 버림) 프로세스를 얼린다(=BGP가 조용히 멎는다)
+      <animate attributeName="opacity" dur="18s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;0.139;0.147;1"/></text>
+    <text x="24" y="162" opacity="0">--- 172.16.14.10 ping statistics ---
+      <animate attributeName="opacity" dur="18s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;0.222;0.231;1"/></text>
+    <text x="24" y="185" opacity="0">100 packets transmitted, 56 packets received, <tspan fill="#f85149" font-weight="700">44% packet loss</tspan>
+      <animate attributeName="opacity" dur="18s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;0.256;0.264;1"/></text>
+    <text x="24" y="208" opacity="0">[=] 잃은 패킷 44개 → <tspan fill="#f85149" font-weight="700">약 8.8초 끊김</tspan>
+      <animate attributeName="opacity" dur="18s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;0.289;0.297;1"/></text>
+
+    <text x="24" y="248" opacity="0"><tspan fill="#3fb950">$</tspan> <tspan fill="#e6edf3">./scripts/bfd-apply.sh on</tspan>              <tspan fill="#484f58"># 300ms 간격 생존 감시를 추가</tspan>
+      <animate attributeName="opacity" dur="18s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;0.389;0.397;1"/></text>
+    <text x="24" y="271" opacity="0">Session count: 2   (10.1.1.1↔10.1.1.0 <tspan fill="#3fb950">up</tspan> · 10.1.2.1↔10.1.2.0 <tspan fill="#3fb950">up</tspan>)
+      <animate attributeName="opacity" dur="18s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;0.433;0.442;1"/></text>
+    <text x="24" y="294" opacity="0"><tspan fill="#3fb950">$</tspan> <tspan fill="#e6edf3">./scripts/failover.sh freeze</tspan>          <tspan fill="#484f58"># 같은 장애를 다시</tspan>
+      <animate attributeName="opacity" dur="18s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;0.489;0.497;1"/></text>
+    <text x="24" y="317" opacity="0">[*] t=4s  <tspan fill="#f85149">spine2 먹통</tspan> — 같은 방식으로 얼린다
+      <animate attributeName="opacity" dur="18s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;0.533;0.542;1"/></text>
+    <text x="24" y="340" opacity="0">100 packets transmitted, 94 packets received, <tspan fill="#3fb950" font-weight="700">6% packet loss</tspan>
+      <animate attributeName="opacity" dur="18s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;0.622;0.631;1"/></text>
+    <text x="24" y="363" opacity="0">[=] 잃은 패킷 6개 → <tspan fill="#3fb950" font-weight="700">약 1.2초 끊김</tspan>
+      <animate attributeName="opacity" dur="18s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;0.656;0.664;1"/></text>
+    <text x="24" y="386" opacity="0"><tspan fill="#d29922" font-weight="700">◀ 같은 장애가 8.8초 → 1.2초. 감지를 BGP 타이머 대신 BFD에 맡긴 차이다</tspan>
+      <animate attributeName="opacity" dur="18s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;0.700;0.708;1"/></text>
+  </g>
+
+  <!-- 커서 -->
+  <rect x="24" y="402" width="9" height="16" fill="#8b949e">
+    <animate attributeName="opacity" dur="1.1s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;0.5;0.51;1"/>
+  </rect>
+</svg>

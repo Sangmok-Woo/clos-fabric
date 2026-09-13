@@ -18,17 +18,58 @@ ECMP 환경에서는 핑이 어느 스파인을 탈지 알 수 없으므로, 스
 | 0 (L3: IP만) | 41 | 1 | 사실상 한쪽만 사용 |
 | 1 (L4: 포트까지) | 12 | 30 | 분산됨 — 치우침은 해시의 확률적 특성, 흐름이 많아질수록 평평해진다 |
 
+실측 출력 (2026-09-13 재측정 — 라우팅 테이블에는 넥스트홉이 분명히 2개다):
+
+```
+leaf1# show ip route 172.16.14.0/24
+Routing entry for 172.16.14.0/24
+  Known via "bgp", distance 20, metric 0, best
+  * 10.1.1.0, via eth1, weight 1        ← spine1
+  * 10.1.2.0, via eth2, weight 1        ← spine2
+
+$ ./scripts/ecmp-hash.sh
+[해시 정책 0] 출발지·목적지 IP만 보고 경로를 고른다 — 흐름 40 개:
+   eth1(→spine1) +3    eth2(→spine2) +42
+[해시 정책 1] 포트(L4)까지 보고 고른다 — 흐름 40 개:
+   eth1(→spine1) +21    eth2(→spine2) +23
+```
+
+> 몰리는 방향과 비율은 실행마다 다르다(첫 측정 41:1 → 12:30, 재측정 3:42 → 21:23). 해시 시드가 달라서다.
+> **패턴은 항상 같다** — 정책 0은 몰빵, 정책 1은 분산. 재현되는 것은 개별 숫자가 아니라 이 패턴이다.
+
 **결론**: 리프에는 `net.ipv4.fib_multipath_hash_policy=1`이 필수다. ECMP는 해시 입력에 무엇을 넣느냐가 전부다.
 
 ## 2. 장애 수렴 — 감지 방식이 복구 시간을 결정한다
 
 같은 "스파인 장애"라도 **어떻게 죽었느냐**에 따라 복구 시간이 40배 차이 난다 (`./scripts/failover.sh`):
 
-| 장애 유형 | 주입 방법 | 끊긴 시간 |
+| 장애 유형 | 주입 방법 | 끊긴 시간 (첫 측정 / 재측정) |
 |---|---|---|
-| 케이블 단선 | `ip link set down` | **0.2초** |
-| 스파인이 조용히 먹통 | 포워딩 차단 + 프로세스 정지 | **7.6초** |
-| 같은 먹통 + BFD 300ms×3 | `./scripts/bfd-apply.sh on` 후 재실행 | **0.8초** |
+| 케이블 단선 | `ip link set down` | **0.2초 / 0.2초** |
+| 스파인이 조용히 먹통 | 포워딩 차단 + 프로세스 정지 | **7.6초 / 8.8초** |
+| 같은 먹통 + BFD 300ms×3 | `./scripts/bfd-apply.sh on` 후 재실행 | **0.8초 / 1.2초** |
+
+<div align="center"><img src="../assets/convergence.svg" width="860" alt="같은 장애에서 BFD 유무에 따른 끊김 구간 타임라인 — 8.8초 vs 1.2초"></div>
+
+실측 출력 (2026-09-13 재측정 — 세 실험 모두 스크립트가 현재 경로를 찾아 그쪽을 죽인다):
+
+```
+$ ./scripts/failover.sh link                        # ① 케이블 단선
+[*] t=4s  leaf1 eth2 (→spine2) 링크 다운 — 케이블을 뽑은 상황
+100 packets transmitted, 99 packets received, 1% packet loss
+[=] 잃은 패킷 1개 → 약 0.2초 끊김
+
+$ ./scripts/failover.sh freeze                      # ② 조용한 먹통 (BFD 없음)
+[*] t=4s  spine2 먹통 — 포워딩을 끄고(=패킷을 버림) 프로세스를 얼린다(=BGP가 조용히 멎는다)
+100 packets transmitted, 56 packets received, 44% packet loss
+[=] 잃은 패킷 44개 → 약 8.8초 끊김
+
+$ ./scripts/bfd-apply.sh on && ./scripts/failover.sh freeze     # ③ 같은 먹통 + BFD
+100 packets transmitted, 94 packets received, 6% packet loss
+[=] 잃은 패킷 6개 → 약 1.2초 끊김
+```
+
+> 먹통 계열의 값이 측정마다 조금 다른 것(7.6↔8.8초)은 장애가 keepalive 주기의 어디에 떨어지느냐에 따른 자연스러운 변동이다. 단선 0.2초와 BFD의 약 7~10배 개선 폭은 항상 재현된다.
 
 - 링크가 물리적으로 죽으면 인터페이스 다운과 함께 BGP 세션도 즉시 내려간다 → 0.2초.
 - 문제는 **링크는 살았는데 상대가 죽은 경우**다. BGP는 hold timer(9초)가 만료될 때까지 기다리고, 그동안 패킷은 죽은 쪽으로 계속 간다 — 블랙홀 7.6초.
@@ -40,10 +81,21 @@ ECMP 환경에서는 핑이 어느 스파인을 탈지 알 수 없으므로, 스
 랙마다 서브넷이 다른 것이 Clos의 기본형이지만, 실무에서는 "랙이 달라도 같은 서브넷"(VM 이동, 클러스터 브로드캐스트)이 요구된다.
 VXLAN이 이더넷 프레임을 UDP에 캡슐화해 나르고, **어느 MAC이 어느 리프 뒤에 있는지를 BGP EVPN이 광고한다** (`./scripts/evpn-apply.sh`).
 
+실측 출력 (2026-09-13 재측정):
+
 ```
-leaf1 # show evpn mac vni 10010
-aa:c1:ab:0c:67:9f  local   eth4
-aa:c1:ab:68:f5:4a  remote  10.255.1.3     ← 상대 MAC을 leaf3 루프백(VTEP) 뒤로 학습
+$ ./scripts/evpn-apply.sh
+-- leaf1 이 아는 VNI (Remote VTEP 1 이어야 정상) --
+VNI        Type VxLAN IF     # MACs   # Remote VTEPs
+10010      L2   vni10010     0        1
+
+-- v1 -> v3 (랙을 넘는 같은 서브넷 통신) --
+3 packets transmitted, 3 packets received, 0% packet loss
+
+-- leaf1 이 배운 MAC --
+MAC               Type   Intf/Remote ES/VTEP
+aa:c1:ab:17:72:1c remote 10.255.1.3          ← 상대 MAC을 leaf3 루프백(VTEP) 뒤로 학습
+aa:c1:ab:59:71:b7 local  eth4
 ```
 
 랙이 다른 v1 ↔ v3(10.10.10.0/24)이 손실 0%로 통신한다. 이 과정에서 확인한 **eBGP 패브릭 특유의 함정 세 가지**:

@@ -1,0 +1,52 @@
+<svg viewBox="0 0 920 400" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, 'Segoe UI', 'Apple SD Gothic Neo', sans-serif">
+  <!-- 같은 장애(스파인 무응답), 감지 방식만 다를 때의 타임라인 비교 -->
+  <text x="460" y="30" text-anchor="middle" fill="#8b949e" font-size="14" font-weight="700">같은 장애, 다른 감지 — 스파인이 조용히 죽었을 때 끊기는 시간</text>
+  <text x="460" y="50" text-anchor="middle" fill="#8b949e" font-size="11.5">t=0에 장애 주입: 링크는 살아 있는데 스파인이 패킷을 버리고 BGP가 침묵한다</text>
+
+  <!-- 시간축: t=0 → x=140, 1초 = 72px -->
+  <g stroke="#8b949e" stroke-opacity="0.4">
+    <line x1="140" y1="330" x2="860" y2="330"/>
+    <line x1="140" y1="325" x2="140" y2="335"/><line x1="212" y1="327" x2="212" y2="333"/>
+    <line x1="284" y1="327" x2="284" y2="333"/><line x1="356" y1="327" x2="356" y2="333"/>
+    <line x1="428" y1="327" x2="428" y2="333"/><line x1="500" y1="325" x2="500" y2="335"/>
+    <line x1="572" y1="327" x2="572" y2="333"/><line x1="644" y1="327" x2="644" y2="333"/>
+    <line x1="716" y1="327" x2="716" y2="333"/><line x1="788" y1="327" x2="788" y2="333"/>
+    <line x1="860" y1="325" x2="860" y2="335"/>
+  </g>
+  <g fill="#8b949e" font-size="11" text-anchor="middle">
+    <text x="140" y="350">0초</text><text x="500" y="350">5초</text><text x="860" y="350">10초</text>
+  </g>
+
+  <!-- ── 레인 1: BFD 없음 ── -->
+  <text x="125" y="120" text-anchor="end" fill="#8b949e" font-size="13.5" font-weight="700">BFD 없음</text>
+  <text x="125" y="137" text-anchor="end" fill="#8b949e" font-size="11">hold timer 9초에 의존</text>
+  <line x1="140" y1="128" x2="860" y2="128" stroke="#8b949e" stroke-opacity="0.25" stroke-width="2"/>
+  <!-- 블랙홀 구간: 0 ~ 8.8초 (재측정값) -->
+  <rect x="140" y="106" width="634" height="44" rx="6" fill="#f85149" fill-opacity="0.16" stroke="#f85149" stroke-opacity="0.5"/>
+  <text x="457" y="126" text-anchor="middle" fill="#f85149" font-size="12.5" font-weight="700">블랙홀 — keepalive 무응답을 hold timer가 만료될 때까지 기다린다</text>
+  <text x="457" y="143" text-anchor="middle" fill="#f85149" font-size="11.5">그동안 패킷은 죽은 스파인으로 계속 간다 · 실측 8.8초 (44/100 손실)</text>
+  <line x1="774" y1="100" x2="774" y2="156" stroke="#3fb950" stroke-width="2.5"/>
+  <text x="782" y="120" fill="#3fb950" font-size="11.5" font-weight="700">세션 폐기</text>
+  <text x="782" y="135" fill="#3fb950" font-size="11.5">→ 우회 전환</text>
+
+  <!-- ── 레인 2: BFD 300ms×3 ── -->
+  <text x="125" y="235" text-anchor="end" fill="#8b949e" font-size="13.5" font-weight="700">BFD 300ms×3</text>
+  <text x="125" y="252" text-anchor="end" fill="#8b949e" font-size="11">전용 데몬이 감시</text>
+  <line x1="140" y1="243" x2="860" y2="243" stroke="#8b949e" stroke-opacity="0.25" stroke-width="2"/>
+  <rect x="140" y="221" width="86" height="44" rx="6" fill="#f85149" fill-opacity="0.16" stroke="#f85149" stroke-opacity="0.5"/>
+  <text x="183" y="248" text-anchor="middle" fill="#f85149" font-size="12" font-weight="700">1.2초</text>
+  <line x1="226" y1="215" x2="226" y2="271" stroke="#3fb950" stroke-width="2.5"/>
+  <text x="236" y="231" fill="#3fb950" font-size="11.5" font-weight="700">300ms 신호를 3회 연속 놓침 → 즉시 BGP에 통보 → 우회 전환</text>
+  <text x="236" y="248" fill="#8b949e" font-size="11.5">같은 장애가 8.8초 → 1.2초 (약 7배). BGP 타이머를 조이는 것보다 CPU 부담이 작다</text>
+
+  <!-- 시간 커서 (t=0 → 10초 반복) -->
+  <g opacity="0.55">
+    <line x1="0" y1="72" x2="0" y2="330" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="4 4"/>
+    <circle cx="0" cy="72" r="4" fill="#58a6ff"/>
+    <animateTransform attributeName="transform" type="translate" from="140 0" to="860 0" dur="10s" repeatCount="indefinite"/>
+  </g>
+
+  <text x="460" y="384" text-anchor="middle" fill="#8b949e" font-size="11">
+    측정: 0.2초 간격 핑에서 잃은 패킷 수 × 0.2초 · 첫 측정 7.6초 / 0.8초, 재측정 8.8초 / 1.2초 — 장애가 keepalive 주기의 어디에 떨어지느냐에 따라 변동
+  </text>
+</svg>
