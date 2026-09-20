@@ -12,6 +12,25 @@
 
 ---
 
+## 2026-09-20
+
+### 추가
+- `monitoring/` — Prometheus + Grafana 관측 시나리오(독립 하위 프로젝트). 베이스 `../configs` 재사용, 토폴로지 이름 `clos` 유지
+  - `exporter/collector.py` — 자작 경량 수집기. docker 소켓으로 `vtysh … json`을 긁어 Prometheus 지표로. frr_exporter(바이너리) 대신 채택 — 배포 단순·투명
+  - 기대 세션 수를 이름 규칙에서 **계산**해 `clos_bgp_peers_expected`로 내보냄 → 알람 `established < expected` (DESIGN 원칙 유지, 리프 늘려도 규칙 불변)
+  - `prometheus/alerts.yml` — 알람 3종(세션부족·노드먹통·경로급감), `grafana/` provisioning 대시보드 7패널
+  - `up.sh` / `down.sh` / `detect-time.sh`
+- `assets/vxlan-packet.svg` — VXLAN 캡슐화 패킷 구조도(겉 50B + 원본, Wireshark 필터·캡처지점)
+
+### 검증
+- **감지 시간 실측** — spine2 조용한 먹통 → 모니터링이 아는 시점까지: BFD 없음 **14.1초**, BFD 300ms×3 **6.2초**
+  - 데이터플레인 복구(1.2초)와 다른 축임을 확인: 관측 지연은 `scrape_interval`(5초) 아래로 못 내려간다
+  - 장애 시 대시보드: Established 8/16, 기대 미달 4, 알람 5(RouterUnreachable + BGPSessionsBelowExpected×4)
+
+### 함정
+- Docker Hub DNS 타임아웃(WSL 게이트웨이 resolver) → `/etc/resolv.conf` 8.8.8.8/1.1.1.1로 우회
+- clab 컨테이너 `localhost`→IPv6라 수집기 점검은 `127.0.0.1`로 (Prometheus는 이름→IPv4로 정상)
+
 ## 2026-09-10
 
 ### 검증

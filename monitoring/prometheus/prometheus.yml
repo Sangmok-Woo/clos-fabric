@@ -1,0 +1,17 @@
+# scrape_interval 이 곧 "장애를 알아챌 수 있는 하한"이다.
+# 데이터플레인은 BFD로 1초 안에 우회하지만, 모니터링이 아는 시간은 여기에 묶인다.
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: clos
+    static_configs:
+      - targets: ["exporter:9600"]   # clab 이 /etc/hosts 에 노드 이름을 넣어준다
