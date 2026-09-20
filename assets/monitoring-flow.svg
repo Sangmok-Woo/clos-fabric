@@ -1,0 +1,113 @@
+<svg viewBox="0 0 960 620" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, 'Segoe UI', 'Apple SD Gothic Neo', sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/>
+    </marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/>
+    </marker>
+  </defs>
+
+  <text x="480" y="34" text-anchor="middle" fill="#8b949e" font-size="20" font-weight="800">모니터링 데이터 흐름 — 패킷이 아니라 "숫자"가 흐른다</text>
+  <text x="480" y="57" text-anchor="middle" fill="#8b949e" font-size="12.5">Grafana는 라우터를 모른다. Prometheus 창고만 본다. 이 3대는 트래픽 경로에 끼지 않는 순수 관찰자다.</text>
+
+  <!-- ── 라우터 클러스터 ── -->
+  <rect x="30" y="95" width="180" height="330" rx="12" fill="none" stroke="#8b949e" stroke-opacity="0.35" stroke-dasharray="5 4"/>
+  <text x="120" y="116" text-anchor="middle" fill="#8b949e" font-size="12.5" font-weight="700">패브릭 (관측 대상)</text>
+  <g font-size="12" font-weight="700" text-anchor="middle">
+    <rect x="60" y="128" width="55" height="34" rx="6" fill="#4f46e5"/><text x="87.5" y="150" fill="#fff">spine1</text>
+    <rect x="125" y="128" width="55" height="34" rx="6" fill="#4f46e5"/><text x="152.5" y="150" fill="#fff">spine2</text>
+    <rect x="45" y="176" width="52" height="32" rx="6" fill="#0d9488"/><text x="71" y="197" fill="#fff">leaf1</text>
+    <rect x="101" y="176" width="52" height="32" rx="6" fill="#0d9488"/><text x="127" y="197" fill="#fff">leaf2</text>
+    <rect x="45" y="214" width="52" height="32" rx="6" fill="#0d9488"/><text x="71" y="235" fill="#fff">leaf3</text>
+    <rect x="101" y="214" width="52" height="32" rx="6" fill="#0d9488"/><text x="127" y="235" fill="#fff">leaf4</text>
+  </g>
+  <text x="120" y="272" text-anchor="middle" fill="#8b949e" font-size="11">FRR 컨테이너</text>
+  <text x="120" y="288" text-anchor="middle" fill="#8b949e" font-size="11">(BGP·BFD 상태를</text>
+  <text x="120" y="303" text-anchor="middle" fill="#8b949e" font-size="11">스스로 알고 있다)</text>
+  <rect x="45" y="330" width="150" height="76" rx="8" fill="#161b22" stroke="#30363d"/>
+  <text x="120" y="352" text-anchor="middle" fill="#e6edf3" font-size="11.5" font-weight="700">vtysh 로 물어보면</text>
+  <text x="120" y="371" text-anchor="middle" fill="#8b949e" font-size="10.5">"세션 몇 개 붙었어?"</text>
+  <text x="120" y="388" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">→ "2" (숫자로 답)</text>
+
+  <!-- ── exporter ── -->
+  <rect x="290" y="150" width="180" height="220" rx="12" fill="#6d28d9" fill-opacity="0.12" stroke="#8b5cf6" stroke-width="1.6"/>
+  <text x="380" y="176" text-anchor="middle" fill="#a855f7" font-size="15" font-weight="800">exporter</text>
+  <text x="380" y="194" text-anchor="middle" fill="#8b949e" font-size="11">통역사 (자작)</text>
+  <rect x="308" y="206" width="144" height="60" rx="6" fill="#0d1117" stroke="#30363d"/>
+  <text x="380" y="226" text-anchor="middle" fill="#e6edf3" font-size="10.5">docker exec 로</text>
+  <text x="380" y="242" text-anchor="middle" fill="#e6edf3" font-size="10.5">vtysh '... json'</text>
+  <text x="380" y="258" text-anchor="middle" fill="#8b949e" font-size="10">→ 숫자로 변환</text>
+  <rect x="308" y="276" width="144" height="76" rx="6" fill="#0d1117" stroke="#30363d"/>
+  <text x="380" y="296" text-anchor="middle" fill="#f0883e" font-size="11.5" font-weight="700">:9600/metrics</text>
+  <text x="380" y="314" text-anchor="middle" fill="#8b949e" font-size="10">HTTP 로 숫자 텍스트를</text>
+  <text x="380" y="329" text-anchor="middle" fill="#8b949e" font-size="10">내놓기만 한다</text>
+  <text x="380" y="345" text-anchor="middle" fill="#8b949e" font-size="10">(저장 안 함)</text>
+
+  <!-- ── Prometheus ── -->
+  <rect x="550" y="150" width="180" height="220" rx="12" fill="#4338ca" fill-opacity="0.12" stroke="#6366f1" stroke-width="1.6"/>
+  <text x="640" y="176" text-anchor="middle" fill="#6366f1" font-size="15" font-weight="800">Prometheus</text>
+  <text x="640" y="194" text-anchor="middle" fill="#8b949e" font-size="11">기록 창고 · :9090</text>
+  <rect x="568" y="206" width="144" height="42" rx="6" fill="#0d1117" stroke="#30363d"/>
+  <text x="640" y="224" text-anchor="middle" fill="#e6edf3" font-size="10.5">5초마다 긁어온다</text>
+  <text x="640" y="239" text-anchor="middle" fill="#8b949e" font-size="10">(scrape, HTTP GET)</text>
+  <!-- TSDB 실린더 -->
+  <g>
+    <ellipse cx="640" cy="266" rx="52" ry="8" fill="#1f6feb" fill-opacity="0.3" stroke="#6366f1"/>
+    <path d="M588,266 v26 a52,8 0 0 0 104,0 v-26" fill="#1f6feb" fill-opacity="0.18" stroke="#6366f1"/>
+    <text x="640" y="292" text-anchor="middle" fill="#8b949e" font-size="10">시계열로 쌓음</text>
+  </g>
+  <rect x="568" y="312" width="144" height="42" rx="6" fill="#0d1117" stroke="#f85149" stroke-opacity="0.5"/>
+  <text x="640" y="330" text-anchor="middle" fill="#f85149" font-size="10.5" font-weight="700">알람 규칙 평가</text>
+  <text x="640" y="345" text-anchor="middle" fill="#8b949e" font-size="10">established &lt; expected</text>
+
+  <!-- ── Grafana ── -->
+  <rect x="810" y="150" width="130" height="220" rx="12" fill="#0d9488" fill-opacity="0.12" stroke="#14b8a6" stroke-width="1.6"/>
+  <text x="875" y="176" text-anchor="middle" fill="#14b8a6" font-size="15" font-weight="800">Grafana</text>
+  <text x="875" y="194" text-anchor="middle" fill="#8b949e" font-size="11">상황판 · :3000</text>
+  <rect x="826" y="206" width="98" height="60" rx="6" fill="#0d1117" stroke="#30363d"/>
+  <text x="875" y="228" text-anchor="middle" fill="#e6edf3" font-size="10.5">PromQL 로</text>
+  <text x="875" y="244" text-anchor="middle" fill="#e6edf3" font-size="10.5">쿼리해서</text>
+  <text x="875" y="260" text-anchor="middle" fill="#8b949e" font-size="10">그림만 그린다</text>
+  <rect x="826" y="276" width="98" height="76" rx="6" fill="#0d1117" stroke="#30363d"/>
+  <rect x="836" y="288" width="34" height="24" rx="3" fill="#14b8a6" fill-opacity="0.5"/>
+  <rect x="880" y="288" width="34" height="24" rx="3" fill="#f0883e" fill-opacity="0.5"/>
+  <path d="M836,336 L850,324 L864,330 L878,318 L892,326 L906,316" fill="none" stroke="#58a6ff" stroke-width="2"/>
+  <text x="875" y="349" text-anchor="middle" fill="#8b949e" font-size="9.5">대시보드 패널</text>
+
+  <!-- ── 화살표 (요청 방향 = 오른쪽에서 왼쪽으로 PULL) ── -->
+  <!-- exporter -> routers -->
+  <line x1="290" y1="250" x2="212" y2="250" stroke="#8b949e" stroke-width="1.8" marker-end="url(#ar)"/>
+  <text x="250" y="242" text-anchor="middle" fill="#8b949e" font-size="10">docker exec</text>
+  <!-- prometheus -> exporter (pull) -->
+  <line x1="550" y1="230" x2="472" y2="230" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#arB)"/>
+  <text x="511" y="222" text-anchor="middle" fill="#58a6ff" font-size="10">GET /metrics</text>
+  <!-- data return exporter -> prometheus -->
+  <line x1="472" y1="300" x2="550" y2="300" stroke="#3fb950" stroke-width="1.6" marker-end="url(#ar)" stroke-opacity="0.7"/>
+  <text x="511" y="315" text-anchor="middle" fill="#3fb950" font-size="10">숫자 텍스트</text>
+  <!-- grafana -> prometheus (pull) -->
+  <line x1="810" y1="230" x2="732" y2="230" stroke="#58a6ff" stroke-width="1.8" marker-end="url(#arB)"/>
+  <text x="771" y="222" text-anchor="middle" fill="#58a6ff" font-size="10">query</text>
+
+  <!-- ── 샘플: 한 번의 scrape 로 오가는 실제 내용 ── -->
+  <rect x="30" y="450" width="560" height="150" rx="10" fill="#0d1117" stroke="#30363d"/>
+  <text x="46" y="472" fill="#e6edf3" font-size="12.5" font-weight="700">scrape 한 번에 실제로 오가는 것 (패킷이 아니라 이런 텍스트)</text>
+  <g font-family="ui-monospace, Consolas, monospace" font-size="11.5">
+    <text x="46" y="497" fill="#8b949e">$ curl exporter:9600/metrics</text>
+    <text x="46" y="518" fill="#e6edf3">clos_bgp_peers_established{node="leaf1"} <tspan fill="#3fb950">2</tspan></text>
+    <text x="46" y="537" fill="#e6edf3">clos_bgp_peers_expected{node="leaf1"} <tspan fill="#3fb950">2</tspan></text>
+    <text x="46" y="556" fill="#e6edf3">clos_bgp_rib_routes{node="leaf1"} <tspan fill="#3fb950">19</tspan></text>
+    <text x="46" y="575" fill="#e6edf3">clos_up{node="spine2"} <tspan fill="#f85149">0</tspan>   <tspan fill="#8b949e"># 먹통이면 0</tspan></text>
+  </g>
+  <text x="46" y="593" fill="#8b949e" font-size="10.5">각 줄 = 하나의 지표. Prometheus는 여기에 시각을 붙여 (시각, 값) 한 점으로 저장한다.</text>
+
+  <!-- ── 대조: 패킷 캡처와 다르다 ── -->
+  <rect x="610" y="450" width="330" height="150" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="626" y="472" fill="#e6edf3" font-size="12.5" font-weight="700">"패킷"과 헷갈리지 말 것</text>
+  <text x="626" y="496" fill="#f0883e" font-size="11.5" font-weight="700">메트릭 수집 (지금 이것)</text>
+  <text x="626" y="513" fill="#8b949e" font-size="10.5">"지금 상태가 어때?"를 숫자로 물어봄.</text>
+  <text x="626" y="528" fill="#8b949e" font-size="10.5">트래픽을 안 건드림. 5초마다 요약값.</text>
+  <text x="626" y="552" fill="#9333ea" font-size="11.5" font-weight="700">패킷 캡처 (Wireshark)</text>
+  <text x="626" y="569" fill="#8b949e" font-size="10.5">와이어를 지나는 프레임 한 장 한 장을</text>
+  <text x="626" y="584" fill="#8b949e" font-size="10.5">통째로 뜯어봄. → assets/vxlan-packet.svg</text>
+</svg>
