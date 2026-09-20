@@ -60,6 +60,7 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 3. **장애와 수렴** — 링크 다운 / 스파인 freeze를 주입하고 끊긴 시간을 측정, BFD로 개선
 4. **오버레이** — VXLAN + BGP EVPN(Type-2/3)으로 랙이 다른 두 서버를 같은 L2로
 5. **확장 검증** — 동적 이웃(listen range)은 검증 후 **기각**, BGP unnumbered는 fe80 넥스트홉까지 확인 후 **채택** ([CHANGELOG](CHANGELOG.md))
+6. **관측** — Prometheus + Grafana로 세션·경로를 5초마다 긁고, 장애를 **모니터링이 알아채는 시간**을 실측 ([monitoring/](monitoring/README.md))
 
 여기에 매일 하나씩 고장 내고 복구하는 **30일 장애 훈련**(`scripts/day.sh`)을 얹어 운영 감각을 유지한다.
 
@@ -94,7 +95,7 @@ git clone https://github.com/Sangmok-Woo/clos-fabric && cd clos-fabric
 
 - [ ] **설정 생성기** — `fabric.yml`의 숫자(스파인 수·리프 수)만 바꾸면 토폴로지와 FRR 설정 전체가 재생성되게. 주소·AS·포트가 전부 계산식이라([DESIGN §3~4](docs/DESIGN.md)) 코드로 옮기기만 하면 된다
 - [ ] **BGP unnumbered 전면 전환** — 검증은 끝났고([EXPERIMENTS §4](docs/EXPERIMENTS.md)), 재배포 때 링크 IP를 걷어낸다
-- [ ] **모니터링** — frr_exporter + Prometheus로 세션 수·경로 수를 긁고, 기대값은 토폴로지에서 계산해 대조
+- [x] **모니터링** ✅ — Prometheus + Grafana. 자작 수집기가 세션·경로·BFD를 긁고, 기대값을 토폴로지에서 계산해 알람. 감지 시간 실측(BFD 없음 14.1초 → 있음 6.2초). → [monitoring/](monitoring/README.md)
 - [ ] **MTU** — VXLAN은 50바이트를 더 쓴다. 언더레이를 점보 프레임(9216)으로 올리고 경계에서 MSS를 확인
 - [ ] **쿠버네티스 연동** — Calico/Cilium이 리프와 BGP 피어링해 파드 네트워크를 패브릭에 직접 태우기
 
@@ -104,6 +105,7 @@ git clone https://github.com/Sangmok-Woo/clos-fabric && cd clos-fabric
 |---|---|
 | [docs/DESIGN.md](docs/DESIGN.md) | **설계 기준과 이유** — 왜 spine-leaf·eBGP인가, 주소·AS·포트가 전부 계산식인 이유, 운영 원칙 |
 | [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | **실험과 실측** — 측정 방법, ECMP·수렴·BFD·EVPN의 숫자와 함정, 검증으로 내린 결정 2건 |
+| [monitoring/README.md](monitoring/README.md) | **관측 시나리오** — Prometheus+Grafana 구성, 자작 수집기, 감지 시간 실측 |
 | [CHANGELOG.md](CHANGELOG.md) | 무엇이 언제 바뀌었나 — 검증·결정·변경의 시간 순 기록 |
 
 ---

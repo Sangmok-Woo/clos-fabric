@@ -1,0 +1,31 @@
+# 핵심 알람: "붙어야 할 세션이 안 붙었다"를 사람이 아니라 규칙이 잡는다.
+# 기대 세션 수는 수집기가 이름 규칙으로 계산해 clos_bgp_peers_expected 로 내보낸다.
+# → 리프를 늘려도 이 규칙은 그대로다 (DESIGN: 기대값을 상수로 박지 않는다).
+groups:
+  - name: clos-fabric
+    rules:
+      - alert: BGPSessionsBelowExpected
+        expr: clos_bgp_peers_established < clos_bgp_peers_expected
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.node }} 세션 부족: {{ $value }} < 기대치"
+          description: "{{ $labels.node }}({{ $labels.role }})에서 Established 세션이 기대치보다 적다."
+
+      - alert: RouterUnreachable
+        expr: clos_up == 0
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.node }} 응답 없음 (vtysh 실패)"
+
+      - alert: FabricRoutesDropped
+        # 리프는 다른 랙 3개 + 자기망 + 루프백들. 경로가 급감하면 광고가 끊긴 것.
+        expr: clos_bgp_rib_routes{role="leaf"} < 4
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.node }} RIB 경로 급감: {{ $value }}"

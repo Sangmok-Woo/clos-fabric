@@ -1,7 +1,7 @@
 # 변경 기록
 
 패치노트처럼 **무엇이 바뀌었는지**를 날짜별로 쌓는다. 최신이 위.
-"왜 그렇게 정했나"는 [docs/RULES.md](docs/RULES.md), "어떻게 하나"는 [docs/RUNBOOK.md](docs/RUNBOOK.md), "지금 어디까지 왔고 다음은 무엇인가"는 [docs/00-프로젝트-흐름.md](docs/00-프로젝트-흐름.md)에 적는다.
+"왜 그렇게 정했나"는 [docs/DESIGN.md](docs/DESIGN.md), "무엇을 재서 무엇을 알았나"는 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)에 적는다.
 
 ## 쓰는 법
 
@@ -11,6 +11,19 @@
 - AS·주소·포트 같은 **값이 바뀌면 `이전 → 이후`**를 적는다
 
 ---
+
+## 2026-09-20
+
+### 추가
+- `monitoring/` — Prometheus + Grafana 관측 시나리오. 자작 경량 수집기(`exporter/collector.py`)가 docker 소켓으로 `vtysh … json`을 긁어 지표로 (frr_exporter 바이너리 대신 — 배포 단순·투명)
+  - 기대 세션 수를 이름 규칙에서 **계산**해 `clos_bgp_peers_expected`로 내보내고 알람은 `established < expected` ([DESIGN](docs/DESIGN.md) 원칙 유지, 리프 늘려도 규칙 불변)
+  - 알람 3종(세션부족·노드먹통·경로급감), Grafana 대시보드 7패널, `up.sh`/`down.sh`/`detect-time.sh`
+- `assets/vxlan-packet.svg` — VXLAN 캡슐화 패킷 구조도, `assets/monitoring-flow.svg` — 관측 데이터 흐름도
+
+### 검증
+- **감지 시간 실측** — spine2 조용한 먹통 → 모니터링이 아는 시점까지: BFD 없음 **14.1초**, BFD 300ms×3 **6.2초** ([EXPERIMENTS §5](docs/EXPERIMENTS.md))
+  - 관측 지연은 `scrape_interval`(5초)이 하한 — 데이터플레인 복구(1.2초)와 다른 축
+  - 장애 시 대시보드: Established 8/16, 기대 미달 4, 알람 5
 
 ## 2026-09-10
 

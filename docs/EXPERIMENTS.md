@@ -126,3 +126,23 @@ spine1↔leaf1 **한 링크만** 바꾸고 나머지는 `/31`을 유지한 혼�
 걱정하던 "대역 안이면 아무나 붙는" 문제도 unnumbered에서는 자연 해소된다 — link-local은 라우팅되지 않으므로 그 포트에 꽂힌 장비만 붙는다.
 
 > 검증까지 하고 버린 기록을 남기는 이유: **기각도 결정이다.** 시간 순 결정 기록은 [CHANGELOG.md](../CHANGELOG.md).
+
+## 5. 관측 — 장애를 "아는 데" 걸리는 시간
+
+데이터플레인 복구(§2, BFD로 1.2초)와 **모니터링이 그 장애를 아는 시간**은 다른 축이다.
+Prometheus + Grafana를 얹고([../monitoring/](../monitoring/README.md)), spine2를 조용히 얼린 뒤
+leaf1의 Established 세션이 줄어든 것을 **Prometheus가 저장한 시점**까지 쟀다.
+
+| 구분 | 감지까지 | 왜 |
+|---|---|---|
+| BFD 없음 | **14.1초** | BGP hold timer(9초) 만료 후 세션 down → 다음 scrape(최대 5초) |
+| BFD 300ms×3 | **6.2초** | 세션은 ~1초에 down → 그래도 다음 scrape 전까지는 못 봄 |
+| (대조) 데이터플레인 복구 | **1.2초** | BFD가 우회시킨 실제 통신 복구 (§2) |
+
+**교훈**: BFD는 통신을 1.2초에 살리지만, *모니터링이 그 사실을 아는 데*는 `scrape_interval`(5초)이 하한이라 6초가 걸린다.
+관측 감지 시간 ≈ (BGP down까지) + (최대 1 scrape). 더 빨리 알고 싶으면 scrape 주기를 줄여야 하고, 그건 부하와의 거래다.
+
+이 시나리오의 관측 설계에서 **DESIGN 원칙("기대값을 상수로 박지 않는다")을 그대로 실천**했다:
+수집기가 라우터를 이름 규칙으로 스스로 찾아 기대 세션 수를 계산하고(`clos_bgp_peers_expected`),
+알람은 `established < expected` 한 줄이다 — 리프를 늘려도 규칙과 대시보드는 안 고친다.
+구성·자작 수집기·재현 방법은 [../monitoring/README.md](../monitoring/README.md).
