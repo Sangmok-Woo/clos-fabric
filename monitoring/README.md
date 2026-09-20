@@ -58,12 +58,26 @@ spine2를 조용히 얼리고(`docker pause`), leaf1의 Established 세션이 �
 **교훈**: BFD는 데이터플레인을 1.2초에 살리지만, *모니터링이 그 사실을 아는 데*는 scrape 주기에 묶여 6초가 걸린다.
 둘은 다른 시간 축이다. 감지를 앞당기려면 scrape_interval을 줄여야 하고, 그건 부하와의 거래다.
 
-대시보드 상태(실측 캡처):
+## 대시보드 — 정상 vs 장애 (실제 Grafana 렌더)
+
+아래는 손으로 그린 목업이 아니라 **실행 중인 Grafana를 image-renderer로 PNG 렌더한 것**이다.
+`renderer` 노드가 헤드리스 크로미움으로 대시보드를 그려주고, `/render/d/clos-fabric/...`로 뽑는다.
+
+**정상** — Established 16/16, 기대 미달 0, 알람 0, 모든 이웃 up(초록)
+
+![정상 상태 대시보드](../assets/grafana-healthy.png)
+
+**spine2 조용한 먹통** — Established 8/16, 기대 미달 4, **알람 5**. 아래 타임라인에서
+**spine2 경유 세션만 빨갛게** 끊기고 spine1 경로는 초록으로 유지된다("한 대 죽어도 절반은 산다").
+
+![장애 상태 대시보드](../assets/grafana-failure.png)
 
 | | Established | 기대 미달 노드 | 발생 알람 |
 |---|---|---|---|
 | 정상 | 16 / 16 | 0 | 0 |
 | spine2 먹통 | 8 / 16 | 4 | 5 (RouterUnreachable×1 + BGPSessionsBelowExpected×4) |
+
+> 렌더 재현: `curl -s "http://localhost:3000/render/d/clos-fabric/?width=1500&height=1150&theme=light&kiosk" -o dash.png`
 
 ## 알람 (`prometheus/alerts.yml`)
 

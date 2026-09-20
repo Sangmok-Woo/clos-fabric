@@ -110,11 +110,18 @@ topology:
         GF_AUTH_ANONYMOUS_ENABLED: "true"
         GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
         GF_USERS_DEFAULT_THEME: light
+        # 대시보드를 PNG로 렌더(리포트/문서용). renderer 노드가 있어야 동작한다.
+        GF_RENDERING_SERVER_URL: http://renderer:8081/render
+        GF_RENDERING_CALLBACK_URL: http://grafana:3000/
       binds:
         - grafana/provisioning:/etc/grafana/provisioning:ro
         - grafana/dashboards:/var/lib/grafana/dashboards:ro
       ports:
         - "3000:3000"
+
+    # 대시보드 → PNG 렌더 엔진(헤드리스 크로미움 내장). Grafana /render 가 이걸 호출한다.
+    renderer:
+      image: grafana/grafana-image-renderer:latest
 
   links:
     - endpoints: ["spine1:eth1", "leaf1:eth1"]
