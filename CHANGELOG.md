@@ -1,7 +1,7 @@
 # 변경 기록
 
 패치노트처럼 **무엇이 바뀌었는지**를 날짜별로 쌓는다. 최신이 위.
-"왜 그렇게 정했나"는 [docs/DESIGN.md](docs/DESIGN.md), "무엇을 재서 무엇을 알았나"는 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)에 적는다.
+설계 근거는 [docs/DESIGN.md](docs/DESIGN.md), 측정 결과는 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)에 적는다.
 
 ## 쓰는 법
 
@@ -43,7 +43,7 @@
 ### 변경
 - `docs/10-확장규칙.md` → **`docs/RULES.md`로 이름 변경**
   - §5-2(unnumbered 검증·판단 기준·잃는 것·함정) 추가, §7에 링크 주소 항목 추가, 미결정 2건 닫음
-  - §6 리프 추가 절차는 RUNBOOK R4로 옮기고, listen range 기각에 맞춰 "고칠 곳 개수" 표를 바로잡음
+  - §6 리프 추가 절차는 RUNBOOK R4로 옮기고, listen range 기각에 맞춰 고칠 곳 개수 표를 바로잡음
   - §3 리프 상한 `128대 → 99대` — 원래도 AS 대역(99대)이 먼저 걸렸다. 링크 주소 상한은 unnumbered로 없어진다
 - `scripts/day.sh`·`days.sh` — 훈련 기록 파일 `docs/41-하루5분-기록.md → docs/LOG.md`, 칸 `일차·날짜·제목·예측·메모 → 날짜·증상·원인·해결`. 윈도우 원본을 찾으면 그쪽에 써서 깃에 남는다
 - `docs/00-프로젝트-흐름.md` — 확장 작업 로드맵(1~6)과 의존 관계 추가, 파일 목록 갱신, 삭제된 문서 참조 제거

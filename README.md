@@ -23,7 +23,7 @@ BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
 
 - **무엇을**: 현대 데이터센터의 표준 구조(Clos/spine-leaf)를 노트북 위 FRR 컨테이너 12대(스파인 2 + 리프 4 + 서버 6)로 재현했다.
 - **어떻게**: RFC 7938 방식의 eBGP 언더레이(장비마다 AS 하나) → ECMP 부하분산 → 장애 주입·수렴 시간 실측 → BFD 튜닝 → VXLAN/EVPN 오버레이 순으로 쌓았다.
-- **왜**: "구성해봤다"가 아니라 **숫자로 검증했다**. 아래 표의 값은 전부 이 랩에서 직접 측정한 것이다.
+- **왜**: 구성에서 끝내지 않고 **숫자로 검증했다**. 아래 표의 값은 전부 이 랩에서 직접 측정한 것이다.
 
 <details>
 <summary><b>English summary</b></summary>
