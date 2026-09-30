@@ -12,6 +12,16 @@
 
 ---
 
+## 2026-09-30
+
+### 추가
+- `experiments/` — 장애 시나리오를 실험별 디렉터리로 쌓는 구조. 목록·규칙은 `experiments/README.md`, 새 실험 뼈대는 `experiments/_template/`
+- `experiments/01-http-mtu/` — HTTP 대용량 전송 + MTU 불일치 실험 (2026-09-26 실측분). 스크립트 7개와 결과 기록
+
+### 변경
+- `experiments/http-mtu` → `experiments/01-http-mtu`. `lib.sh`의 윈도우 사본 경로를 디렉터리 이름에서 계산하도록 바꿈
+- README에 장애 시나리오 절 추가, Roadmap의 MTU 항목을 실험 01로 닫음
+
 ## 2026-09-20
 
 ### 추가

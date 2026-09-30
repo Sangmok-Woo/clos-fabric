@@ -13,7 +13,7 @@ BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
 
 <br>
 
-[**설계와 이유**](docs/DESIGN.md) · [**실험과 실측**](docs/EXPERIMENTS.md) · [**빠른 시작**](#빠른-시작) · [**Roadmap**](#roadmap) · [**변경 기록**](CHANGELOG.md)
+[**설계와 이유**](docs/DESIGN.md) · [**실험과 실측**](docs/EXPERIMENTS.md) · [**장애 시나리오**](#장애-시나리오) · [**빠른 시작**](#빠른-시작) · [**Roadmap**](#roadmap) · [**변경 기록**](CHANGELOG.md)
 
 <img src="assets/topology.svg" width="860" alt="spine-leaf 토폴로지 — h1→h4 트래픽이 ECMP로 두 스파인에 갈라지고, v1↔v3은 VXLAN으로 랙을 넘는다">
 
@@ -66,6 +66,17 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 
 > 이 브랜치(main)는 정리된 기록이다. 진행 중인 작업·운영 절차·훈련 일지는 [`lab` 브랜치](https://github.com/Sangmok-Woo/clos-fabric/tree/lab)에 있다.
 
+## 장애 시나리오
+
+위까지가 패브릭의 골조다. 골조는 고정해 두고, 그 위에서 장애를 하나씩 재현해 번호를 붙여 쌓는다.
+실험 하나가 디렉터리 하나이고, 끝나면 베이스를 원래 값으로 되돌린다 — 규칙과 추가 방법은 [experiments/](experiments/README.md).
+
+| # | 실험 | 주입하는 장애 | 본 것 |
+|---|---|---|---|
+| 01 | [HTTP 전송 + MTU 불일치](experiments/01-http-mtu/README.md) | spine1:eth3 MTU 9216 → 1500 | 연결과 응답 헤더까지는 되고 본문은 **0바이트에서 정지** (spine1 경유 플로우만). 실측 경계는 1426/1427 — [결과](experiments/01-http-mtu/RESULTS.md) |
+| 02 | 관측 사각지대 | 01의 MTU 장애를 다시 주입 | 예정 |
+| 03 | 간헐적 플래핑 | 링크를 주기적으로 끊었다 붙임 | 예정 |
+
 ## 빠른 시작
 
 준비물: 리눅스 + Docker + [containerlab](https://containerlab.dev) (이 랩은 WSL2 Ubuntu에서 개발·측정했다. 컨테이너 12대, 메모리 500MB 남짓)
@@ -96,7 +107,7 @@ git clone https://github.com/Sangmok-Woo/clos-fabric && cd clos-fabric
 - [ ] **설정 생성기** — `fabric.yml`의 숫자(스파인 수·리프 수)만 바꾸면 토폴로지와 FRR 설정 전체가 재생성되게. 주소·AS·포트가 전부 계산식이라([DESIGN §3~4](docs/DESIGN.md)) 코드로 옮기기만 하면 된다
 - [ ] **BGP unnumbered 전면 전환** — 검증은 끝났고([EXPERIMENTS §4](docs/EXPERIMENTS.md)), 재배포 때 링크 IP를 걷어낸다
 - [x] **모니터링** ✅ — Prometheus + Grafana. 자작 수집기가 세션·경로·BFD를 긁고, 기대값을 토폴로지에서 계산해 알람. 감지 시간 실측(BFD 없음 14.1초 → 있음 6.2초). → [monitoring/](monitoring/README.md)
-- [ ] **MTU** — VXLAN은 50바이트를 더 쓴다. 언더레이를 점보 프레임(9216)으로 올리고 경계에서 MSS를 확인
+- [x] **MTU** ✅ — 언더레이 9216 / 오버레이 9000으로 맞춘 뒤 스파인 한 포트만 1500으로 낮춰 장애를 재현. → [실험 01](experiments/01-http-mtu/README.md)
 - [ ] **쿠버네티스 연동** — Calico/Cilium이 리프와 BGP 피어링해 파드 네트워크를 패브릭에 직접 태우기
 
 ## 문서
@@ -105,6 +116,7 @@ git clone https://github.com/Sangmok-Woo/clos-fabric && cd clos-fabric
 |---|---|
 | [docs/DESIGN.md](docs/DESIGN.md) | **설계 기준과 이유** — 왜 spine-leaf·eBGP인가, 주소·AS·포트가 전부 계산식인 이유, 운영 원칙 |
 | [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | **실험과 실측** — 측정 방법, ECMP·수렴·BFD·EVPN의 숫자와 함정, 검증으로 내린 결정 2건 |
+| [experiments/README.md](experiments/README.md) | **장애 시나리오** — 번호 붙인 실험 목록, 실험 디렉터리 규칙, 새 실험 추가 방법 |
 | [monitoring/README.md](monitoring/README.md) | **관측 시나리오** — Prometheus+Grafana 구성, 자작 수집기, 감지 시간 실측 |
 | [CHANGELOG.md](CHANGELOG.md) | 무엇이 언제 바뀌었나 — 검증·결정·변경의 시간 순 기록 |
 
