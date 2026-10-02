@@ -1,0 +1,27 @@
+## Phase 별 성공률 (h1 → h3)
+
+| Phase | 길이 | HTTP 1MB | 작은 ping |
+|---|---|---|---|
+| P0 정상 | 20초 | 100% (27/27) | 100% (27/27) |
+| P1 숨은 MTU 결함 | 30초 | 61% (11/18) | 100% (41/41) |
+| P2 + spine1 먹통 | 45초 | 0% (0/17) | 91% (51/56) |
+| P3 spine1 복구 | 30초 | 47% (8/17) | 100% (43/43) |
+| P4 MTU 복구 | 20초 | 100% (27/27) | 100% (27/27) |
+
+## 모니터링 알람 (처음 firing 이 된 시각, 기준은 그 알람을 만든 사건)
+
+| 알람 | 대상 | firing | 해제 | 사건 → firing |
+|---|---|---|---|---|
+| FabricMTUMismatch | spine2-leaf3 | P1+9초 | +108초 | 9.0초 |
+| InterfaceDropping | spine2-leaf3 | P1+9초 | END | 9.0초 |
+| LinkLargeFrameLoss | spine2-leaf3 | P1+19초 | +108초 | 19.0초 |
+| RouterUnreachable | spine1 | P2+9초 | +53초 | 8.9초 |
+| BGPSessionsBelowExpected | leaf1 | P2+19초 | +58초 | 18.9초 |
+| BGPSessionsBelowExpected | leaf2 | P2+19초 | +58초 | 18.9초 |
+| BGPSessionsBelowExpected | leaf3 | P2+19초 | +58초 | 18.9초 |
+| BGPSessionsBelowExpected | leaf4 | P2+19초 | +58초 | 18.9초 |
+| BGPSessionsBelowExpected | spine1 | P2+54초 | +58초 | 53.9초 |
+
+- 리프 쪽 세션 감소를 모니터링이 본 시각: P2+12초 (8 → 4)
+- 리프 쪽 세션 8 회복: P3+6초
+- spine1 링크 프로브 최솟값 (P2 동안): 0, 1  (1 = ping 성공)

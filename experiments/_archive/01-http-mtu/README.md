@@ -1,4 +1,6 @@
-# 실험 01 — HTTP 대용량 전송 관찰 + MTU 장애 비교
+# (보관) 옛 실험 01 — HTTP 대용량 전송 관찰 + MTU 장애 비교
+
+> 2026-10-02 보관함으로 옮겼다. 지금의 실험 01은 [숨은 MTU 결함 + 스파인 장애](../../01-hidden-mtu-meets-spine-failure/README.md)다. 스크립트의 윈도우 사본 경로는 옛 위치를 가정한다.
 
 > [실험 목록](../README.md) · 결과는 [RESULTS.md](RESULTS.md) · 사례 정리는 [CASE.md](CASE.md)
 

@@ -17,6 +17,11 @@
   - 서버별 TCP 재전송 (/proc/net/snmp)
   - 이웃별 세션 끊김 누적 (connectionsDropped) — 5초 사이에 끊겼다 붙어도 남는다
 노드 수가 늘면 docker exec 가 순서대로는 느려지므로 노드별로 병렬 수집한다.
+
+3차(실험 01): 위 지표는 전부 장비가 스스로 말하는 값(화이트박스)이라, 트래픽이 끊기면
+재전송·드랍도 0이 되어 오히려 초록이 된다. 그래서 수집기가 직접 패킷을 보내 본다(블랙박스).
+  - 리프마다 업링크 상대(스파인)에게 작은 ping 과 인터페이스 MTU 꽉 채운 ping 을 보낸다
+  - 작은 건 되는데 큰 게 안 되면 그 링크의 MTU 문제, 둘 다 안 되면 링크·장비 문제
 """
 import json
 import re
@@ -32,7 +37,7 @@ HOST_RE = re.compile(r"^clab-clos-([hv]\d+)$")
 # 인터페이스 → 링크 이름. 포트 번호가 계산식이라(DESIGN §4) 토폴로지 파일 없이 정해진다:
 # spineS:ethL ↔ leafL:ethS, 리프 eth3/eth4 는 서버 쪽.
 IF_SH = ('for i in /sys/class/net/eth*; do echo "mtu ${i##*/} $(cat $i/mtu)"; done; '
-         'cat /proc/net/dev')
+         'cat /proc/net/dev; ip -4 -o addr show | sed "s/^/addr /"')
 
 
 def sh(args, timeout=8):
@@ -74,7 +79,11 @@ def interfaces(node):
     out = sh(["docker", "exec", node, "sh", "-c", IF_SH]).decode()
     ifs = {}
     for line in out.splitlines():
-        if line.startswith("mtu "):
+        if line.startswith("addr "):
+            f = line.split()   # addr 242: eth2 inet 10.1.2.5/31 ...
+            if f[2].startswith("eth") and f[3] == "inet":
+                ifs.setdefault(f[2], {})["addr"] = f[4]
+        elif line.startswith("mtu "):
             _, name, mtu = line.split()
             ifs.setdefault(name, {})["mtu"] = int(mtu)
         elif ":" in line and line.strip().startswith("eth"):
@@ -85,6 +94,37 @@ def interfaces(node):
                 rx_bytes=int(f[0]), rx_errors=int(f[2]), rx_dropped=int(f[3]),
                 tx_bytes=int(f[8]), tx_errors=int(f[10]), tx_dropped=int(f[11]))
     return {k: v for k, v in ifs.items() if k != "eth0" and "rx_bytes" in v}
+
+
+def peer_of(cidr):
+    """/31 의 상대 주소. 10.1.2.5/31 → 10.1.2.4"""
+    ip, plen = cidr.split("/")
+    if plen != "31":
+        return None
+    a = ip.split(".")
+    a[3] = str(int(a[3]) ^ 1)
+    return ".".join(a)
+
+
+def link_probe(node, ifs):
+    """업링크마다 작은 ping(56B)과 MTU 꽉 채운 ping. {ifname: {"small": 0/1, "full": 0/1}}
+    busybox ping 은 DF 를 못 켜지만 상관없다: 받는 쪽 veth 가 MTU 를 넘는 프레임을 버린다."""
+    jobs = []
+    for name, v in sorted(ifs.items()):
+        peer = peer_of(v.get("addr", "x/0"))
+        if not peer or "mtu" not in v:
+            continue
+        full = v["mtu"] - 28          # IP 20 + ICMP 8
+        for size, tag in ((56, "small"), (full, "full")):
+            jobs.append(f'(ping -c1 -W1 -s {size} {peer} >/dev/null 2>&1; echo "{name} {tag} $?") &')
+    if not jobs:
+        return {}
+    out = sh(["docker", "exec", node, "sh", "-c", " ".join(jobs) + " wait"], timeout=4).decode()
+    res = {}
+    for line in out.splitlines():
+        name, tag, rc = line.split()
+        res.setdefault(name, {})[tag] = 1 if rc == "0" else 0
+    return res
 
 
 def tcp_stats(host):
@@ -106,6 +146,7 @@ def router(name, role):
         r["ifs"] = interfaces(name)
     except Exception:
         pass
+    r["probe"] = _try(link_probe, name, r["ifs"]) if role == "leaf" and r["ifs"] else None
     return r
 
 
@@ -129,6 +170,7 @@ def collect():
     peer_up, peer_drops = [], []
     if_metrics = {k: [] for k in ("rx_bytes", "tx_bytes", "rx_dropped", "tx_dropped",
                                   "rx_errors", "tx_errors", "mtu")}
+    probes = []
 
     order = sorted(nodes, key=lambda x: (x[1], x[2]))
     hosts = discover_hosts()
@@ -162,6 +204,8 @@ def collect():
             for k in if_metrics:
                 if k in v:
                     if_metrics[k].append((ilbl, v[k]))
+            for tag, ok in ((r.get("probe") or {}).get(ifname) or {}).items():
+                probes.append((f'{ilbl},size="{tag}"', ok))
 
     add("clos_up", "gauge", "vtysh 응답 여부(1=응답)", up)
     add("clos_bgp_peers_established", "gauge", "Established 상태 BGP 세션 수", established)
@@ -182,6 +226,9 @@ def collect():
     for k, help_ in (("RetransSegs", "재전송한 TCP 세그먼트"), ("OutSegs", "보낸 TCP 세그먼트")):
         add(f"clos_host_tcp_{k.lower()}_total", "counter", f"서버별 {help_} 누적",
             [(f'host="{h}"', t[k]) for h, t in tcp.items() if t])
+
+    add("clos_link_probe_success", "gauge",
+        "리프→스파인 링크 ping 성공(1). size=small 은 56B, full 은 인터페이스 MTU 꽉 채운 크기", probes)
 
     add("clos_routers_discovered", "gauge", "발견한 라우터 수",
         [('role="spine"', n_spine), ('role="leaf"', n_leaf)])

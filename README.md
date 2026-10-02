@@ -79,12 +79,13 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 
 | # | 실험 | 주입하는 장애 | 본 것 |
 |---|---|---|---|
-| 01 | [HTTP 전송 + MTU 불일치](experiments/01-http-mtu/README.md) | spine1:eth3 MTU 9216 → 1500 | 연결과 응답 헤더까지는 되고 본문은 **0바이트에서 정지** (spine1 경유 플로우만). 실측 경계는 1426/1427 — [결과](experiments/01-http-mtu/RESULTS.md) |
-| 02 | [관측 사각지대](experiments/02-observability-gap/README.md) | 01의 MTU 장애를 모니터링 아래에서 다시 주입 | 세션만 보던 1차 모니터링은 **16/16, 알람 0**. 드랍·MTU·TCP 재전송을 더한 2차는 같은 장애에 **알람 2개** — [결과](experiments/02-observability-gap/RESULTS.md) |
-| 03 | 간헐적 플래핑 | 링크를 주기적으로 끊었다 붙임 | 예정 |
+| 01 | [숨은 MTU 결함 + 스파인 장애](experiments/01-hidden-mtu-meets-spine-failure/README.md) | spine2 포트 MTU 1500인 채로 spine1이 조용히 죽음 | 평소엔 HTTP 61%만 성공하던 회색 장애가 spine1이 죽자 **0%**. 작은 ping은 내내 정상. 리프는 hold timer 8.8초 뒤에야 spine1을 뺐고, 알람은 결함 +9초, 먹통 +9초 |
+| 02 | [관측 사각지대](experiments/02-observability-gap/README.md) | MTU 장애를 모니터링 아래에서 주입 | 세션만 보던 1차 모니터링은 **16/16, 알람 0**. 드랍·MTU·TCP 재전송을 더한 2차는 같은 장애에 **알람 2개** |
 | 04 | [물리 계층 불량](experiments/04-physical-corruption/README.md) | leaf3→h3 구간에 비트 깨짐 4% / 몰려오는 손실 | 받는 쪽에서 체크섬 오류 프레임(주소 비트가 뒤집혀 `172.0.13.10`), 보내는 쪽에서 Dup ACK와 재전송. 몰린 손실은 ping 9개 연속 소실 |
 | 05 | [L2 루프·브로드캐스트 스톰](experiments/05-broadcast-storm/README.md) | VXLAN 브리지에 veth 양 끝을 꽂음 | ARP 하나가 3초에 **136만 개**. MAC 표 오염으로 유니캐스트 100% 손실, EVPN이 남의 MAC을 광고해 MAC Mobility 순번 폭주 |
 | 06 | [DNS 장애](experiments/06-dns-failure/README.md) | 잘못된 레코드 / 프로세스 중지 / 53번 DROP | 셋 다 IP 접속은 정상. 실패까지 3.3초 / **0.2초** / **10.8초** — 고장 방식마다 패킷 모양이 다르다 |
+
+예정: 03 플래핑, 07~11(비대칭 라우팅, 설정 실수, 마이크로버스트, 세션 고갈, IP 충돌), 12~17(위 실측 결과의 기본 검증을 패킷 캡처로 다시 측정) — 전체 목록은 [experiments/](experiments/README.md).
 
 ## 빠른 시작
 
@@ -116,7 +117,7 @@ git clone https://github.com/Sangmok-Woo/clos-fabric && cd clos-fabric
 - [ ] **설정 생성기** — `fabric.yml`의 숫자(스파인 수·리프 수)만 바꾸면 토폴로지와 FRR 설정 전체가 재생성되게. 주소·AS·포트가 전부 계산식이라([DESIGN §3~4](docs/DESIGN.md)) 코드로 옮기기만 하면 된다
 - [ ] **BGP unnumbered 전면 전환** — 검증은 끝났고([EXPERIMENTS §4](docs/EXPERIMENTS.md)), 재배포 때 링크 IP를 걷어낸다
 - [x] **모니터링** ✅ — Prometheus + Grafana. 자작 수집기가 세션·경로·BFD를 긁고, 기대값을 토폴로지에서 계산해 알람. 감지 시간 실측(BFD 없음 14.1초 → 있음 6.2초). 2차로 인터페이스 드랍·MTU·TCP 재전송 추가([실험 02](experiments/02-observability-gap/README.md)). → [monitoring/](monitoring/README.md)
-- [x] **MTU** ✅ — 언더레이 9216 / 오버레이 9000으로 맞춘 뒤 스파인 한 포트만 1500으로 낮춰 장애를 재현. → [실험 01](experiments/01-http-mtu/README.md)
+- [x] **MTU** ✅ — 스파인 한 포트의 MTU 결함이 다른 스파인 장애 때 드러나는 과정을 재현·측정. → [실험 01](experiments/01-hidden-mtu-meets-spine-failure/README.md)
 - [ ] **쿠버네티스 연동** — Calico/Cilium이 리프와 BGP 피어링해 파드 네트워크를 패브릭에 직접 태우기
 
 ## 문서

@@ -92,6 +92,15 @@ Established 16/16, 알람 0이었다. 세션은 장애와 무관하게 살아 �
 |---|---|
 | ![1차](../experiments/02-observability-gap/img/v1-during-fault.png) | ![2차](../experiments/02-observability-gap/img/v2-during-fault.png) |
 
+## 3차 — 블랙박스 링크 프로브 (2026-10-02)
+
+1·2차 지표는 전부 장비가 스스로 말하는 값이다. 트래픽이 끊기면 드랍·재전송도 0이 되어 오히려 초록이 된다.
+그래서 수집기가 직접 패킷을 보낸다. 리프마다 업링크 상대 스파인에게 작은 ping(56B)과 인터페이스 MTU를 꽉 채운 ping을 보내고,
+작은 건 되는데 큰 게 안 되면 `LinkLargeFrameLoss`, 작은 것도 안 되면 `LinkProbeDown`이 울린다.
+
+[실험 01](../experiments/01-hidden-mtu-meets-spine-failure/README.md)에서 MTU 결함 링크를 결함이 있는 동안 정확히 가리켰다.
+반대로 포워딩만 멈춘 스파인(커널은 살아 ping에 대답)은 잡지 못했다. 장비 자신이 아니라 장비 너머로 보내는 프로브가 다음 과제다.
+
 ## 알람 (`prometheus/alerts.yml`)
 
 | 알람 | 조건 | 뜻 |
@@ -101,6 +110,8 @@ Established 16/16, 알람 0이었다. 세션은 장애와 무관하게 살아 �
 | `FabricRoutesDropped` | leaf RIB < 4 (10초) | 경로 광고가 끊겼다 |
 | `InterfaceDropping` | 30초 사이 드랍이 는 링크 | 세션과 무관하게 데이터가 버려진다 (2차) |
 | `FabricMTUMismatch` | 패브릭 포트 MTU ≠ 전체 중앙값 | 설정 불일치 (2차) |
+| `LinkLargeFrameLoss` | 링크 프로브: 작은 ping 성공, MTU 크기 ping 실패 (10초) | 그 링크의 MTU가 기대보다 작다 (3차) |
+| `LinkProbeDown` | 링크 프로브: 작은 ping 실패 (10초) | 링크나 상대 장비가 응답하지 않는다 (3차) |
 
 ## 이 환경에서 걸렸던 것 (재현 시 또 만난다)
 

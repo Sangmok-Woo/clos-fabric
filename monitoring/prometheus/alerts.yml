@@ -51,3 +51,25 @@ groups:
           severity: critical
         annotations:
           summary: "{{ $labels.node }}:{{ $labels.ifname }} MTU {{ $value }} — 패브릭의 다른 링크와 다르다"
+
+      # ── 3차: 블랙박스 링크 프로브 (실험 01) ──
+      # 장비 카운터는 트래픽이 끊기면 같이 조용해진다. 수집기가 직접 보낸 ping 은 트래픽과 상관없이 결과가 나온다.
+      - alert: LinkLargeFrameLoss
+        # 작은 건 되는데 MTU 꽉 채운 건 안 된다 = 그 링크 어딘가의 MTU 가 기대보다 작다
+        expr: >
+          clos_link_probe_success{size="full"} == 0
+          and on(node, ifname) clos_link_probe_success{size="small"} == 1
+        for: 10s
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.link }} 큰 프레임만 실패 — MTU 의심 ({{ $labels.node }}:{{ $labels.ifname }})"
+
+      - alert: LinkProbeDown
+        # 작은 ping 도 안 된다 = 링크나 상대 장비가 응답하지 않는다 (BGP hold timer 를 기다리지 않는다)
+        expr: clos_link_probe_success{size="small"} == 0
+        for: 10s
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.link }} ping 무응답 ({{ $labels.node }}:{{ $labels.ifname }})"
