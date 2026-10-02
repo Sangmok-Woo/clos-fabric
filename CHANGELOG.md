@@ -12,6 +12,17 @@
 
 ---
 
+## 2026-10-02 (2)
+
+### 추가
+- `experiments/_tools/` — 챕터 공통 도구: `lab.sh`(netns 실행·캡처 함수), `prep-hosts.sh`(서버 도구 설치), `ws-shot.ps1`(Wireshark 화면 저장), `detail.sh`(tshark 상세), Wireshark 프로필
+- 실험 04 물리 계층 불량, 05 L2 루프·브로드캐스트 스톰, 06 DNS 장애 — 장마다 run.sh, 원본 pcap, Wireshark 화면, 패킷 흐름 해설
+
+### 검증
+- 04: 비트 깨짐 4%에서 h3 TCP 체크섬 오류 5·IP 헤더 오류 4, 몰린 손실에서 ping 9개 연속 소실. 이 커널(WSL 6.6)에서 netem `loss 5%`는 동작하지 않고 `loss gemodel`은 동작
+- 05: ARP 하나 → 3초에 136만 패킷, MAC 표 오염, EVPN MAC Mobility 순번 증가와 중복 감지. 루프 포트의 IPv6 멀티캐스트만으로도 스톰이 시작됨
+- 06: DNS 고장 방식별 실패 시간 3.3초(잘못된 레코드) / 0.2초(프로세스 중지) / 10.8초(DROP)
+
 ## 2026-10-02
 
 ### 추가

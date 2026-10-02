@@ -1,0 +1,27 @@
+
+=== 기준값 (장애 없음) ===
+  원본 md5 011e1b6200df
+  2097152B 0.006717s  md5 011e1b6200df
+  늘어난 값: h3 TCP 체크섬 오류 0 · h3 IP 헤더 오류 0 · h1 재전송 0
+
+=== Phase corrupt — leaf3:eth3 netem corrupt 4% ===
+  ping h1→h3 50회 (0.1초 간격): 2% packet loss
+  2MB 전송: 2097152B 0.021617s  md5 011e1b6200df
+  늘어난 값: h3 TCP 체크섬 오류 5 · h3 IP 헤더 오류 4 · h1 재전송 10
+  netem 이 버린 패킷: dropped 0
+  corrupt-h1-eth1.pcap            469 패킷
+  corrupt-h3-eth1.pcap            469 패킷
+
+=== Phase loss — leaf3:eth3 netem loss gemodel 2% 30% ===
+  ping h1→h3 50회 (0.1초 간격): 18% packet loss
+  2MB 전송: 2097152B 0.010674s  md5 011e1b6200df
+  늘어난 값: h3 TCP 체크섬 오류 0 · h3 IP 헤더 오류 0 · h1 재전송 6
+  netem 이 버린 패킷: dropped 15
+  corrupt-h1-eth1.pcap            469 패킷
+  corrupt-h3-eth1.pcap            469 패킷
+  loss-h1-eth1.pcap               483 패킷
+  loss-h3-eth1.pcap               468 패킷
+
+=== 복구 확인 ===
+qdisc noqueue 0: root refcnt 2 
+rx-checksumming: on

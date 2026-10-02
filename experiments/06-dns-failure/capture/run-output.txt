@@ -1,0 +1,26 @@
+
+=== Phase ok — 정상 ===
+  이름(web.lab)    : HTTP 200 exit=0  0.2초
+  IP(172.16.13.10) : HTTP 200
+
+=== Phase stale — 잘못된 레코드 web.lab → 172.16.13.99 ===
+  이름(web.lab)    : HTTP 000 exit=7  3.3초
+  IP(172.16.13.10) : HTTP 200
+
+=== Phase down — DNS 프로세스 중지 ===
+  이름(web.lab)    : HTTP 000 exit=6  0.2초
+  IP(172.16.13.10) : HTTP 200
+
+=== Phase silent — 53번을 조용히 버림 (iptables DROP) ===
+  이름(web.lab)    : HTTP 000 exit=6  10.8초
+  IP(172.16.13.10) : HTTP 200
+
+=== 원복 ===
+  이름(web.lab)    : HTTP 200 exit=0  0.2초
+  IP(172.16.13.10) : HTTP 200
+  DNS 서버 로그 (마지막 5줄):
+    Oct  2 09:50:18 dnsmasq[9834]: config web.lab is 172.16.13.10
+    Oct  2 09:50:18 dnsmasq[9834]: query[AAAA] web.lab from 172.16.11.10
+    Oct  2 09:50:18 dnsmasq[9834]: config error is REFUSED (EDE: not ready)
+    Oct  2 09:50:18 dnsmasq[9834]: query[AAAA] web.lab from 172.16.11.10
+    Oct  2 09:50:18 dnsmasq[9834]: config error is REFUSED (EDE: not ready)

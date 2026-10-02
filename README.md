@@ -70,12 +70,16 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 
 위까지가 패브릭의 골조다. 골조는 고정해 두고, 그 위에서 장애를 하나씩 재현해 번호를 붙여 쌓는다.
 실험 하나가 디렉터리 하나이고, 끝나면 베이스를 원래 값으로 되돌린다 — 규칙과 추가 방법은 [experiments/](experiments/README.md).
+04번부터는 장애 지점 앞뒤를 동시에 캡처해 **Wireshark 화면으로 패킷 흐름을 읽는** 장이다. 원본 pcap도 함께 있다.
 
 | # | 실험 | 주입하는 장애 | 본 것 |
 |---|---|---|---|
 | 01 | [HTTP 전송 + MTU 불일치](experiments/01-http-mtu/README.md) | spine1:eth3 MTU 9216 → 1500 | 연결과 응답 헤더까지는 되고 본문은 **0바이트에서 정지** (spine1 경유 플로우만). 실측 경계는 1426/1427 — [결과](experiments/01-http-mtu/RESULTS.md) |
 | 02 | [관측 사각지대](experiments/02-observability-gap/README.md) | 01의 MTU 장애를 모니터링 아래에서 다시 주입 | 세션만 보던 1차 모니터링은 **16/16, 알람 0**. 드랍·MTU·TCP 재전송을 더한 2차는 같은 장애에 **알람 2개** — [결과](experiments/02-observability-gap/RESULTS.md) |
 | 03 | 간헐적 플래핑 | 링크를 주기적으로 끊었다 붙임 | 예정 |
+| 04 | [물리 계층 불량](experiments/04-physical-corruption/README.md) | leaf3→h3 구간에 비트 깨짐 4% / 몰려오는 손실 | 받는 쪽에서 체크섬 오류 프레임(주소 비트가 뒤집혀 `172.0.13.10`), 보내는 쪽에서 Dup ACK와 재전송. 몰린 손실은 ping 9개 연속 소실 |
+| 05 | [L2 루프·브로드캐스트 스톰](experiments/05-broadcast-storm/README.md) | VXLAN 브리지에 veth 양 끝을 꽂음 | ARP 하나가 3초에 **136만 개**. MAC 표 오염으로 유니캐스트 100% 손실, EVPN이 남의 MAC을 광고해 MAC Mobility 순번 폭주 |
+| 06 | [DNS 장애](experiments/06-dns-failure/README.md) | 잘못된 레코드 / 프로세스 중지 / 53번 DROP | 셋 다 IP 접속은 정상. 실패까지 3.3초 / **0.2초** / **10.8초** — 고장 방식마다 패킷 모양이 다르다 |
 
 ## 빠른 시작
 

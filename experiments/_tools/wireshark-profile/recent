@@ -1,0 +1,3 @@
+gui.geometry_main_maximized: FALSE
+# Qt splitter state: packet list 380px / details 390px
+gui.geometry_main_master_split: 000000ff00000001000000020000017c0000018600ffffffff010000000200
