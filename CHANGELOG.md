@@ -12,6 +12,17 @@
 
 ---
 
+## 2026-10-02
+
+### 추가
+- 수집기 2차 — 인터페이스 바이트·드랍·에러·MTU(`clos_if_*`), 서버 TCP 재전송(`clos_host_tcp_*`), 이웃별 세션 끊김 누적(`clos_bgp_peer_drops_total`). 노드별 병렬 수집
+- 알람 `InterfaceDropping`, `FabricMTUMismatch`. 대시보드에 데이터플레인 줄(패널 8개)
+- `experiments/02-observability-gap/` — 같은 MTU 장애를 1차·2차 모니터링 아래에서 주입하는 `probe.sh`
+
+### 검증
+- 1차 모니터링 아래 MTU 장애: 전송 정지, Established 16/16, **알람 0**
+- 2차 아래 같은 장애: **알람 2** (MTU 불일치 spine1:eth3, spine1-leaf3 링크 드랍). scrape 평균 0.8초로 1차와 같음
+
 ## 2026-09-30
 
 ### 추가

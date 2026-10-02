@@ -79,6 +79,19 @@ spine2를 조용히 얼리고(`docker pause`), leaf1의 Established 세션이 �
 
 > 렌더 재현: `curl -s "http://localhost:3000/render/d/clos-fabric/?width=1500&height=1150&theme=light&kiosk" -o dash.png`
 
+## 2차 — 데이터플레인 지표 (2026-10-02)
+
+1차는 세션과 경로만 봤다. 실험 01의 MTU 장애를 이 대시보드 아래에서 넣어보니 전송은 0바이트에서 멈췄는데
+Established 16/16, 알람 0이었다. 세션은 장애와 무관하게 살아 있었기 때문이다.
+
+그래서 같은 수집기에 인터페이스 바이트·드랍·에러·MTU와 서버별 TCP 재전송, 이웃별 세션 끊김 누적을 더했다.
+대시보드 아래쪽에 데이터플레인 줄이 생겼고, 같은 장애에서 알람 2개(`FabricMTUMismatch`, `InterfaceDropping`)가 울렸다.
+수집은 노드별 병렬이라 scrape 시간은 그대로다(평균 0.8초). 과정과 숫자는 [실험 02](../experiments/02-observability-gap/README.md).
+
+| 1차 아래 MTU 장애 | 2차 아래 같은 장애 |
+|---|---|
+| ![1차](../experiments/02-observability-gap/img/v1-during-fault.png) | ![2차](../experiments/02-observability-gap/img/v2-during-fault.png) |
+
 ## 알람 (`prometheus/alerts.yml`)
 
 | 알람 | 조건 | 뜻 |
@@ -86,6 +99,8 @@ spine2를 조용히 얼리고(`docker pause`), leaf1의 Established 세션이 �
 | `BGPSessionsBelowExpected` | established < expected | 붙어야 할 세션이 빠졌다 (핵심) |
 | `RouterUnreachable` | `clos_up == 0` | vtysh 응답 없음 (노드 먹통) |
 | `FabricRoutesDropped` | leaf RIB < 4 (10초) | 경로 광고가 끊겼다 |
+| `InterfaceDropping` | 30초 사이 드랍이 는 링크 | 세션과 무관하게 데이터가 버려진다 (2차) |
+| `FabricMTUMismatch` | 패브릭 포트 MTU ≠ 전체 중앙값 | 설정 불일치 (2차) |
 
 ## 이 환경에서 걸렸던 것 (재현 시 또 만난다)
 
