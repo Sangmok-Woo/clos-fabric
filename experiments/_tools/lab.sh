@@ -1,11 +1,11 @@
-# 챕터(실험 04~) 공통 도구. 각 챕터 스크립트가 source 한다.
+# 챕터 공통 도구. 각 챕터 스크립트가 source 한다.
 #   . "$(dirname "$0")/../_tools/lab.sh"
 # 랩 노드는 clab-clos-*. 호스트(WSL)의 iptables·nft·tcpdump 를 nsenter 로 노드 netns 안에서 쓴다
 # (FRR·alpine 컨테이너에는 이 도구들이 없다).
 TOOLS=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 HERE=$(cd "$(dirname "${BASH_SOURCE[1]:-$0}")" && pwd)   # source 한 챕터 디렉터리
 CAPDIR=$HERE/capture
-WINROOT=/mnt/c/Users/sangmok/Desktop/Claude/clos-fabric/experiments
+WINROOT=${WINROOT:-/mnt/c/Users/sangmok/Desktop/Claude/clos-fabric/experiments}   # 다른 PC 에서는 환경변수로 덮어쓴다
 SNAP=${SNAP:-256}          # 캡처 길이. 헤더 흐름만 보면 되므로 짧게 (pcap 을 저장소에 올린다)
 
 c()   { echo "clab-clos-$1"; }

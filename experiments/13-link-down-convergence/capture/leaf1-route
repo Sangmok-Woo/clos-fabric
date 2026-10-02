@@ -1,0 +1,27 @@
+1790939235.064840092 Deleted fe80::/64 dev eth1 proto kernel metric 256 pref medium
+1790939235.068155992 Deleted local fe80::a8c1:abff:feb3:5d21 dev eth1 table local proto kernel metric 0 pref medium
+1790939235.071815092 Deleted multicast ff00::/8 dev eth1 table local proto kernel metric 256 pref medium
+1790939235.126562698 10.255.0.1 nhid 33 via 10.1.2.0 dev eth2 proto bgp metric 20
+1790939243.210106892 10.1.1.0/31 dev eth1 proto kernel scope link src 10.1.1.1
+1790939243.213401493 multicast ff00::/8 dev eth1 table local proto kernel metric 256 pref medium
+1790939243.216593193 fe80::/64 dev eth1 proto kernel metric 256 pref medium
+1790939243.219793193 172.16.14.0/24 nhid 34 proto bgp metric 20
+1790939243.222878694 nexthop via 10.1.1.0 dev eth1 weight 1
+1790939243.226199194 nexthop via 10.1.2.0 dev eth2 weight 1
+1790939243.229542094 172.16.13.0/24 nhid 34 proto bgp metric 20
+1790939243.232627895 nexthop via 10.1.1.0 dev eth1 weight 1
+1790939243.235659295 nexthop via 10.1.2.0 dev eth2 weight 1
+1790939243.239032795 172.16.12.0/24 nhid 34 proto bgp metric 20
+1790939243.242455495 nexthop via 10.1.1.0 dev eth1 weight 1
+1790939243.245750396 nexthop via 10.1.2.0 dev eth2 weight 1
+1790939243.249102296 10.255.1.4 nhid 34 proto bgp metric 20
+1790939243.252325496 nexthop via 10.1.1.0 dev eth1 weight 1
+1790939243.255319497 nexthop via 10.1.2.0 dev eth2 weight 1
+1790939243.258417797 10.255.1.3 nhid 34 proto bgp metric 20
+1790939243.261444297 nexthop via 10.1.1.0 dev eth1 weight 1
+1790939243.264815398 nexthop via 10.1.2.0 dev eth2 weight 1
+1790939243.267846598 10.255.1.2 nhid 34 proto bgp metric 20
+1790939243.271147198 nexthop via 10.1.1.0 dev eth1 weight 1
+1790939243.274142899 nexthop via 10.1.2.0 dev eth2 weight 1
+1790939244.469500614 local fe80::a8c1:abff:feb3:5d21 dev eth1 table local proto kernel metric 0 pref medium
+1790939244.531759920 10.255.0.1 nhid 25 via 10.1.1.0 dev eth1 proto bgp metric 20

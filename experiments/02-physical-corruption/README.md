@@ -1,4 +1,4 @@
-# 실험 04 — 물리 계층 불량: 깨지는 비트와 몰려오는 손실
+# 실험 02 — 물리 계층 불량: 깨지는 비트와 몰려오는 손실
 
 > [실험 목록](../README.md) · 백로그 ⑨ · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
 
@@ -28,7 +28,7 @@ h3가 h1에서 파일 2MB를 받는다. 데이터는 h1 → leaf3 → h3로 흐�
 ```bash
 cd /root/labs/clos-fabric/experiments
 _tools/prep-hosts.sh             # 랩을 새로 띄웠을 때 한 번 (curl, httpd 등)
-04-physical-corruption/run.sh    # 두 Phase 를 차례로 돌리고 원복한다
+02-physical-corruption/run.sh    # 두 Phase 를 차례로 돌리고 원복한다
 ```
 
 ## 숫자

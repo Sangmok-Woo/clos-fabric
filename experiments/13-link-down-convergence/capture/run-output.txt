@@ -1,0 +1,76 @@
+
+[1m=== 준비 — 경로 확인 ===[0m
+  요청 h1→h4: leaf1 eth1 → spine1
+  응답 h4→h1: leaf4 eth1 → spine1
+  끊을 링크: leaf1:eth1 ↔ spine1   (남는 링크 leaf1:eth2)
+
+[1m=== T0 leaf1:eth1 down — 케이블 단선 ===[0m
+
+[1m=== T0+8.0 leaf1:eth1 up — 복구 ===[0m
+Terminated                 nsenter -t "$(pid "$n")" -n "$@"
+Terminated                 nsenter -t "$(pid "$n")" -n "$@"
+  h1-eth1.pcap                   1357 패킷
+  leaf1-bgp.pcap                  111 패킷
+  leaf1-eth2.pcap                 348 패킷
+  leaf4-bgp.pcap                   87 패킷
+
+[1m=== 결과 ===[0m
+680 packets transmitted, 677 packets received, 0% packet loss
+round-trip min/avg/max = 0.033/0.070/0.364 ms
+  응답 없는 요청: 3 개 (0.05초 간격)
+  응답 공백 0.20초 (T0-0.04 ~ T0+0.16)
+  남은 링크 leaf1:eth2 로 첫 요청이 나간 시각: T0+0.011
+
+[1m=== 커널 라우팅 변경 (172.16.14.0/24 @leaf1, 172.16.11.0/24 @leaf4) ===[0m
+  leaf1 T0+0.006  Deleted fe80::/64 dev eth1 proto kernel metric 256 pref medium
+  leaf1 T0+0.009  Deleted local fe80::a8c1:abff:feb3:5d21 dev eth1 table local proto kernel metric 0 pref medium
+  leaf1 T0+0.013  Deleted multicast ff00::/8 dev eth1 table local proto kernel metric 256 pref medium
+  leaf1 T0+0.068  10.255.0.1 nhid 33 via 10.1.2.0 dev eth2 proto bgp metric 20
+  leaf1 T0+8.151  10.1.1.0/31 dev eth1 proto kernel scope link src 10.1.1.1
+  leaf1 T0+8.155  multicast ff00::/8 dev eth1 table local proto kernel metric 256 pref medium
+  leaf1 T0+8.158  fe80::/64 dev eth1 proto kernel metric 256 pref medium
+  leaf1 T0+8.161  172.16.14.0/24 nhid 34 proto bgp metric 20
+  leaf4 T0+0.118  172.16.11.0/24 nhid 31 via 10.1.2.6 dev eth2 proto bgp metric 20
+  leaf4 T0+0.121  10.255.1.1 nhid 31 via 10.1.2.6 dev eth2 proto bgp metric 20
+  leaf4 T0+9.424  10.255.1.1 nhid 32 proto bgp metric 20
+  leaf4 T0+9.427  nexthop via 10.1.1.6 dev eth1 weight 1
+  leaf4 T0+9.431  nexthop via 10.1.2.6 dev eth2 weight 1
+  leaf4 T0+9.434  172.16.11.0/24 nhid 32 proto bgp metric 20
+  leaf4 T0+9.437  nexthop via 10.1.1.6 dev eth1 weight 1
+  leaf4 T0+9.440  nexthop via 10.1.2.6 dev eth2 weight 1
+
+[1m=== leaf1 BGP (keepalive 제외) ===[0m
+  T0 +0.054  10.1.2.1.179 > 10.1.2.0.34410 Update Message (2)
+  T0 +8.160  10.1.1.0.46878 > 10.1.1.1.179 Open Message (1)
+  T0 +8.160  10.1.1.0.179 > 10.1.1.1.40702 Open Message (1)
+  T0 +8.160  10.1.1.1.40702 > 10.1.1.0.179 Open Message (1)
+  T0 +8.160  10.1.1.1.179 > 10.1.1.0.46878 Open Message (1)
+  T0 +8.160  10.1.1.0.46878 > 10.1.1.1.179 Notification Message (3)
+  T0 +8.160  10.1.1.1.179 > 10.1.1.0.46878 Notification Message (3)
+  T0 +8.160  10.1.1.0.46878 > 10.1.1.1.179 Notification Message (3)
+  T0 +8.160  10.1.1.1.179 > 10.1.1.0.46878 Notification Message (3)
+  T0 +8.160  10.1.1.1.179 > 10.1.1.0.46878 Notification Message (3)
+  T0 +9.311  10.1.1.1.40702 > 10.1.1.0.179 Update Message (2)
+  T0 +9.311  10.1.1.1.40702 > 10.1.1.0.179 Update Message (2)
+  T0 +9.311  10.1.1.1.40702 > 10.1.1.0.179 Update Message (2)
+  T0 +9.311  10.1.1.1.40702 > 10.1.1.0.179 Update Message (2)
+  T0 +9.311  10.1.1.1.40702 > 10.1.1.0.179 Update Message (2)
+  T0 +9.311  10.1.1.1.40702 > 10.1.1.0.179 Update Message (2)
+  T0 +9.311  10.1.1.1.40702 > 10.1.1.0.179 Update Message (2)
+  T0 +9.411  10.1.1.0.179 > 10.1.1.1.40702 Update Message (2)
+  T0 +9.411  10.1.1.0.179 > 10.1.1.1.40702 Update Message (2)
+  T0 +9.411  10.1.1.0.179 > 10.1.1.1.40702 Update Message (2)
+  T0 +9.411  10.1.1.0.179 > 10.1.1.1.40702 Update Message (2)
+  T0 +9.411  10.1.1.0.179 > 10.1.1.1.40702 Update Message (2)
+  T0 +9.411  10.1.1.0.179 > 10.1.1.1.40702 Update Message (2)
+  T0 +9.411  10.1.1.0.179 > 10.1.1.1.40702 Update Message (2)
+  T0 +9.461  10.1.2.1.179 > 10.1.2.0.34410 Update Message (2)
+  T0 +9.461  10.1.1.1.40702 > 10.1.1.0.179 Update Message (2)
+
+[1m=== leaf4 BGP (keepalive 제외) ===[0m
+  T0 +0.054  10.1.1.6.179 > 10.1.1.7.56690 Update Message (2)
+  T0 +9.362  10.1.1.6.179 > 10.1.1.7.56690 Update Message (2)
+
+[1m=== 복구 후 세션 ===[0m
+spine1(10.1.1.0) 4      65001       202       204      230    0    0 00:00:25            8       10 spine1
+spine2(10.1.2.0) 4      65002       190       196      230    0    0 00:09:02            8       10 spine2

@@ -1,0 +1,8 @@
+1790939235.176236703 172.16.11.0/24 nhid 31 via 10.1.2.6 dev eth2 proto bgp metric 20
+1790939235.179627403 10.255.1.1 nhid 31 via 10.1.2.6 dev eth2 proto bgp metric 20
+1790939244.482947716 10.255.1.1 nhid 32 proto bgp metric 20
+1790939244.486021816 nexthop via 10.1.1.6 dev eth1 weight 1
+1790939244.489203316 nexthop via 10.1.2.6 dev eth2 weight 1
+1790939244.492621017 172.16.11.0/24 nhid 32 proto bgp metric 20
+1790939244.495701617 nexthop via 10.1.1.6 dev eth1 weight 1
+1790939244.498745017 nexthop via 10.1.2.6 dev eth2 weight 1

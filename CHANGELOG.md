@@ -12,6 +12,25 @@
 
 ---
 
+## 2026-10-02 (4)
+
+### 추가
+- 실험 12 **ECMP 분산**, 13 **링크 다운 수렴**, 14 **스파인 무응답과 BFD** — docs/EXPERIMENTS §1·§2를 패킷 캡처로 다시 잰 장. 장마다 run.sh·restore.sh, 원본 pcap, Wireshark 화면
+- `experiments/_tools/timeline.sh` — T0 기준 ping 공백, 응답 없는 요청 수, BGP·BFD 메시지 타임라인
+- `ws-shot.ps1`에 `-Col`(사용자 열), `-Crop`(패킷 목록만 자르기)
+- 메인 README 상단에 바로 가기 카드 두 개(EVPN-VXLAN 설계, 장애 시나리오)
+
+### 변경
+- 실험 번호 재배치: 옛 04·05·06 → **02·03·04**, 옛 02 → **05**, 예정이던 03 플래핑 → **06**. 링크·제목·알람 주석(`실험 02` → `실험 05`)을 함께 고침
+- 메인 README 상단 링크를 설계와 이유 · 장애 시나리오 · 변경 기록 세 개로 줄임
+- `lab.sh`의 `WINROOT`를 환경변수로 덮어쓸 수 있게 함 (다른 PC에서 pcap 사본 경로)
+- `ws-shot.ps1` 버그 수정: 창 핸들 변수 `$h`가 높이 `$H`를 덮어써(PowerShell은 대소문자 구분 없음) `-H`가 무시되던 문제
+
+### 검증
+- 12: 정책 0은 40:0. 정책 1은 갈리지만 5-tuple이 같은 흐름을 다시 보내면 40개 중 18개가 다른 링크로 — 서버 소켓의 해시값(skb->hash)을 그대로 씀. 정책 3(필드 0x37)은 0개
+- 13: 끊김 0.20초. leaf1은 T0+0.011에 남은 링크로, leaf4는 T0+0.118에 경로 교체. spine1은 철회 대신 valley path(65001 65012 65002 65011)를 광고. 복구 시 OPEN 충돌(Connection Collision Resolution), 무손실. 스파인 AS 통일(RFC 7938 권고)은 미결정 항목으로 남김
+- 14: BFD 없이 7.61초(마지막 KEEPALIVE에서 9.003초 뒤 Hold Timer Expired), BFD 300ms×3에서 1.15초(마지막 BFD에서 0.900초 뒤 Down, NOTIFICATION Cease/Hard Reset 안에 BFD Down). 얼린 스파인의 커널은 TCP ACK를 계속 보냄
+
 ## 2026-10-02 (3)
 
 ### 추가

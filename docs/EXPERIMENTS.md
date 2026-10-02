@@ -9,6 +9,8 @@ ECMP 환경에서는 핑이 어느 스파인을 탈지 알 수 없으므로, 스
 
 ## 1. ECMP — 경로가 2개인 것과 반씩 나눠 가는 것은 다르다
 
+> 패킷 캡처로 다시 잰 장: [실험 12](../experiments/12-ecmp-hash/README.md). 정책 1에서 같은 흐름이 실행마다 다른 링크로 가는 것, 헤더만 보는 정책 3과의 비교가 거기 있다.
+
 라우팅 테이블에 넥스트홉이 2개 있어도, 실제 분산은 커널의 **해시 정책**이 결정한다.
 리눅스 기본값(정책 0)은 출발지·목적지 IP만 보므로, IP 쌍이 같으면 흐름이 아무리 많아도 한 링크로 몰린다.
 
@@ -41,6 +43,8 @@ $ ./scripts/ecmp-hash.sh
 **결론**: 리프에는 `net.ipv4.fib_multipath_hash_policy=1`이 필수다. ECMP는 해시 입력에 무엇을 넣느냐가 전부다.
 
 ## 2. 장애 수렴 — 감지 방식이 복구 시간을 결정한다
+
+> 패킷 캡처로 다시 잰 장: [실험 13 링크 다운](../experiments/13-link-down-convergence/README.md), [실험 14 스파인 무응답과 BFD](../experiments/14-spine-freeze-bfd/README.md).
 
 같은 스파인 장애라도 **어떻게 죽었느냐**에 따라 복구 시간이 40배 차이 난다 (`./scripts/failover.sh`):
 

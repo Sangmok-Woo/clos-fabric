@@ -1,4 +1,4 @@
-# 실험 06 — DNS 장애: IP로는 되는데 이름으로는 안 된다
+# 실험 04 — DNS 장애: IP로는 되는데 이름으로는 안 된다
 
 > [실험 목록](../README.md) · 백로그 ⑪ · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
 
@@ -29,7 +29,7 @@ h1은 `/etc/resolv.conf`로 h4를 DNS 서버로 쓰고, `curl http://web.lab/`�
 ```bash
 cd /root/labs/clos-fabric/experiments
 _tools/prep-hosts.sh       # 랩을 새로 띄웠을 때 한 번 (dnsmasq, curl, httpd)
-06-dns-failure/run.sh
+04-dns-failure/run.sh
 ```
 
 ## 패킷 흐름 ① 정상 — 이름 묻기 → 답 → 접속

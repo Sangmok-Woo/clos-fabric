@@ -1,0 +1,46 @@
+
+[1m=== 준비 — leaf1 의 경로와 원래 해시 정책 (0) ===[0m
+  Known via "bgp", distance 20, metric 0, best
+  * 10.1.1.0, via eth1, weight 1
+  * 10.1.2.0, via eth2, weight 1
+
+[1m=== Phase p0 — 해시 정책 0, 목적지 포트만 다른 UDP 흐름 40 개 (출발지 포트는 목적지+1000 고정) ===[0m
+  eth1(→spine1)  40    eth2(→spine2)   0
+
+[1m=== Phase p1a — 해시 정책 1, 같은 흐름 40 개 ===[0m
+  eth1(→spine1)  15    eth2(→spine2)  25
+
+[1m=== Phase p1b — 해시 정책 1, 같은 흐름 40 개를 한 번 더 ===[0m
+  eth1(→spine1)  19    eth2(→spine2)  21
+
+[1m=== p1a 와 p1b 비교 — 5-tuple 이 같은 흐름이 같은 링크로 갔나 ===[0m
+  40 개 중 같은 링크: 22  /  바뀐 링크: 18
+
+[1m=== Phase p3a — 해시 정책 3, 같은 흐름 40 개 ===[0m
+  eth1(→spine1)  25    eth2(→spine2)  15
+
+[1m=== Phase p3b — 해시 정책 3, 같은 흐름 40 개를 한 번 더 ===[0m
+  eth1(→spine1)  25    eth2(→spine2)  15
+
+[1m=== p3a 와 p3b 비교 — 5-tuple 이 같은 흐름이 같은 링크로 갔나 ===[0m
+  40 개 중 같은 링크: 40  /  바뀐 링크: 0
+
+[1m=== Phase p0ip — 해시 정책 0, 출발지 IP 8개(172.16.11.101~108)에서 ping 한 번씩 ===[0m
+  eth1(→spine1)   2    eth2(→spine2)   6
+  spine1 로 간 출발지: 172.16.11.104 172.16.11.108 
+  spine2 로 간 출발지: 172.16.11.101 172.16.11.102 172.16.11.103 172.16.11.105 172.16.11.106 172.16.11.107 
+
+[1m=== 원복 ===[0m
+  leaf1 해시 정책 0 · 필드 7, h1 주소 1개
+  p0-leaf1-eth1.pcap               40 패킷
+  p0-leaf1-eth2.pcap                0 패킷
+  p0ip-leaf1-eth1.pcap              2 패킷
+  p0ip-leaf1-eth2.pcap              6 패킷
+  p1a-leaf1-eth1.pcap              15 패킷
+  p1a-leaf1-eth2.pcap              25 패킷
+  p1b-leaf1-eth1.pcap              19 패킷
+  p1b-leaf1-eth2.pcap              21 패킷
+  p3a-leaf1-eth1.pcap              25 패킷
+  p3a-leaf1-eth2.pcap              15 패킷
+  p3b-leaf1-eth1.pcap              25 패킷
+  p3b-leaf1-eth2.pcap              15 패킷

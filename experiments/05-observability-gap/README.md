@@ -1,4 +1,4 @@
-# 실험 02 — 관측 사각지대: 세션은 멀쩡한데 데이터가 막힐 때
+# 실험 05 — 관측 사각지대: 세션은 멀쩡한데 데이터가 막힐 때
 
 > [실험 목록](../README.md) · 모니터링 구성 [monitoring/](../../monitoring/README.md) · 알람 정의 [alerts.yml](../../monitoring/prometheus/alerts.yml)
 
@@ -43,7 +43,7 @@ BGP 패킷은 작아서 MTU 1500을 문제없이 지나가기 때문이다.
 | `clos_if_{rx,tx}_dropped_total` 외 바이트·에러 | 라우터의 `/proc/net/dev` | 링크에서 버려지는 패킷 |
 | `clos_if_mtu` | `/sys/class/net/ethN/mtu` | 설정 불일치 |
 | `clos_host_tcp_retranssegs_total` | 서버의 `/proc/net/snmp` | 서버가 체감하는 손실 |
-| `clos_bgp_peer_drops_total` | FRR `connectionsDropped` | scrape 사이의 짧은 세션 끊김 (실험 03용) |
+| `clos_bgp_peer_drops_total` | FRR `connectionsDropped` | scrape 사이의 짧은 세션 끊김 (실험 06용) |
 
 인터페이스에는 `link` 라벨을 붙인다. 포트 번호가 계산식이라(spineS:ethL ↔ leafL:ethS) 토폴로지 파일 없이 정해진다.
 
@@ -57,7 +57,7 @@ BGP 패킷은 작아서 MTU 1500을 문제없이 지나가기 때문이다.
 ```bash
 cd /root/labs/clos-fabric/monitoring && ./up.sh       # 관측 포함 토폴로지
 cd .. && sleep 20 && ./scripts/evpn-apply.sh
-cd experiments/02-observability-gap && ./setup.sh      # MTU 통일, 해시정책, httpd, 테스트 파일
+cd experiments/05-observability-gap && ./setup.sh      # MTU 통일, 해시정책, httpd, 테스트 파일
 ```
 
 테스트 파일은 `files/video-small.mp4`(68MB 영상, `make-video.cmd`로 만든다)가 있으면 그것을 올리고,

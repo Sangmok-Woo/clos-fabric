@@ -30,7 +30,7 @@ groups:
         annotations:
           summary: "{{ $labels.node }} RIB 경로 급감: {{ $value }}"
 
-      # ── 2차: 데이터플레인 (실험 02) ──
+      # ── 2차: 데이터플레인 (실험 05) ──
       # 1차 규칙은 전부 세션·경로를 본다. MTU 장애는 세션이 멀쩡해서 하나도 안 울렸다.
       - alert: InterfaceDropping
         # veth 는 한 번의 드랍을 양쪽 끝(보낸 쪽 TX, 받은 쪽 RX)에 다 적는다 → 링크 단위로 묶는다.

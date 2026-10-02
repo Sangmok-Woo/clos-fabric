@@ -1,0 +1,92 @@
+
+[1m=== Phase nobfd — 경로 확인 ===[0m
+  요청 h1→h4: leaf1 eth1 → spine1   응답 h4→h1: leaf4 eth1 → spine1
+  얼릴 장비: spine1
+
+[1m=== T0 spine1 먹통 (ip_forward=0 + docker pause, 링크는 up) ===[0m
+
+[1m=== T0+15 spine1 복구 ===[0m
+  nobfd-h1-eth1.pcap             1369 패킷
+  nobfd-leaf1-ctl.pcap            111 패킷
+  nobfd-leaf4-ctl.pcap            113 패킷
+
+[1m=== Phase nobfd 결과 ===[0m
+  760 packets transmitted, 609 packets received, 19% packet loss
+  응답 없는 요청: 151 개 (0.05초 간격)
+  응답 공백 7.61초 (T0-0.04 ~ T0+7.57)
+  -- leaf1 BGP·BFD (keepalive 제외, T0-1 ~ T0+14) --
+  T0 +7.457  10.1.1.1.179 > 10.1.1.0.43530 Notification Message (3), Hold Timer Expired (4)
+  T0 +7.517  10.1.2.1.179 > 10.1.2.0.47846 Update Message (2)
+  T0 +7.517  10.1.2.1.179 > 10.1.2.0.47846 Update Message (2)
+  T0 +7.517  10.1.2.1.179 > 10.1.2.0.47846 Update Message (2)
+  T0 +7.517  10.1.2.1.179 > 10.1.2.0.47846 Update Message (2)
+  T0 +7.566  10.1.2.0.47846 > 10.1.2.1.179 Update Message (2)
+  T0 +8.467  10.1.1.1.58694 > 10.1.1.0.179 Open Message (1)
+  -- leaf4 BGP·BFD --
+  T0 +7.455  10.1.1.7.179 > 10.1.1.6.44950 Notification Message (3), Hold Timer Expired (4)
+  T0 +7.516  10.1.2.7.179 > 10.1.2.6.44588 Update Message (2)
+  T0 +7.516  10.1.2.7.179 > 10.1.2.6.44588 Update Message (2)
+  T0 +7.516  10.1.2.7.179 > 10.1.2.6.44588 Update Message (2)
+  T0 +7.516  10.1.2.7.179 > 10.1.2.6.44588 Update Message (2)
+  T0 +7.566  10.1.2.6.44588 > 10.1.2.7.179 Update Message (2)
+  T0 +7.616  10.1.2.7.179 > 10.1.2.6.44588 Update Message (2)
+  T0 +8.466  10.1.1.7.51452 > 10.1.1.6.179 Open Message (1)
+  -- spine1 가 leaf1 에 보낸 마지막 BGP 메시지 / BFD (T0 기준) --
+    BGP: T0-1.546
+    BFD: -
+
+[1m=== 세션 재수립 대기 ===[0m
+  leaf1 Established 2/2
+
+[1m=== BFD 적용 ===[0m
+SessionId  LocalAddress                             PeerAddress                             Status         
+=========  ============                             ===========                             ======         
+1094035516 10.1.2.1                                 10.1.2.0                                up             
+600103234  10.1.1.1                                 10.1.1.0                                up             
+
+[1m=== Phase bfd — 경로 확인 ===[0m
+  요청 h1→h4: leaf1 eth1 → spine1   응답 h4→h1: leaf4 eth1 → spine1
+  얼릴 장비: spine1
+  BFD 1094035516 10.1.2.1                                 10.1.2.0                                up             
+  BFD 600103234  10.1.1.1                                 10.1.1.0                                up             
+
+[1m=== T0 spine1 먹통 (ip_forward=0 + docker pause, 링크는 up) ===[0m
+
+[1m=== T0+15 spine1 복구 ===[0m
+  bfd-h1-eth1.pcap               1498 패킷
+  bfd-leaf1-ctl.pcap              650 패킷
+  bfd-leaf4-ctl.pcap              646 패킷
+  nobfd-h1-eth1.pcap             1369 패킷
+  nobfd-leaf1-ctl.pcap            111 패킷
+  nobfd-leaf4-ctl.pcap            113 패킷
+
+[1m=== Phase bfd 결과 ===[0m
+  760 packets transmitted, 738 packets received, 2% packet loss
+  응답 없는 요청: 22 개 (0.05초 간격)
+  응답 공백 1.15초 (T0-0.03 ~ T0+1.12)
+  -- leaf1 BGP·BFD (keepalive 제외, T0-1 ~ T0+14) --
+  T0 +0.867  10.1.1.1.49154 > 10.1.1.0.3784 BFD State Down (Control Detection Time Expired)
+  T0 +0.867  10.1.1.1.179 > 10.1.1.0.55176 Notification Message (3), Cease (6), subcode Unknown (9)
+  T0 +0.928  10.1.2.1.179 > 10.1.2.0.47846 Update Message (2)
+  T0 +0.971  10.1.2.0.47846 > 10.1.2.1.179 Update Message (2)
+  T0 +1.021  10.1.2.1.179 > 10.1.2.0.47846 Update Message (2)
+  T0 +1.135  10.1.2.0.47846 > 10.1.2.1.179 Update Message (2)
+  T0 +1.185  10.1.2.1.179 > 10.1.2.0.47846 Update Message (2)
+  -- leaf4 BGP·BFD --
+  T0 +0.971  10.1.2.6.44588 > 10.1.2.7.179 Update Message (2)
+  T0 +1.024  10.1.1.7.49154 > 10.1.1.6.3784 BFD State Down (Control Detection Time Expired)
+  T0 +1.024  10.1.1.7.179 > 10.1.1.6.57718 Notification Message (3), Cease (6), subcode Unknown (9)
+  T0 +1.085  10.1.2.7.179 > 10.1.2.6.44588 Update Message (2)
+  T0 +1.135  10.1.2.6.44588 > 10.1.2.7.179 Update Message (2)
+  -- spine1 가 leaf1 에 보낸 마지막 BGP 메시지 / BFD (T0 기준) --
+    BGP: T0-1.039
+    BFD: T0-0.033
+
+[1m=== 세션 재수립 대기 ===[0m
+  leaf1 Established 2/2
+
+[1m=== 원복 — BFD 해제 ===[0m
+Session count: 0
+SessionId  LocalAddress                             PeerAddress                             Status         
+=========  ============                             ===========                             ======         
+  leaf1 Established 2/2

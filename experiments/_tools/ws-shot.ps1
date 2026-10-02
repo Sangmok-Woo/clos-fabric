@@ -1,5 +1,7 @@
 # Open a pcap in Wireshark, resize the window, save a screenshot (PNG), close it.
-#   ws-shot.ps1 -Pcap x.pcap -Out x.png [-Filter "tcp"] [-Go 12] [-W 1600] [-H 900]
+#   ws-shot.ps1 -Pcap x.pcap -Out x.png [-Filter "tcp"] [-Go 12] [-W 1600] [-H 900] [-Col "AS path=bgp.update.path_attribute.as_path_segment"]
+# -Crop N keeps only the top N pixels of the window (packet list without the details pane).
+# -Col adds custom columns (Title=field, repeatable) before Info, in a separate profile (lab-chapters-cols).
 # -Go selects a packet so the details pane shows it (top-level rows only; for the full tree use
 # tshark -V, see detail.sh). No keystrokes are sent: Windows may refuse to focus the window and
 # the keys would land in whatever else is in front.
@@ -10,7 +12,9 @@ param(
   [string]$Filter = "",
   [int]$Go = 0,
   [int]$W = 1600,
-  [int]$H = 900
+  [int]$H = 900,
+  [string[]]$Col = @(),
+  [int]$Crop = 0
 )
 Add-Type @"
 using System; using System.Runtime.InteropServices;
@@ -28,9 +32,19 @@ $ws = "C:\Program Files\Wireshark\Wireshark.exe"
 $prof = Join-Path $env:APPDATA "Wireshark\profiles\lab-chapters"
 New-Item -ItemType Directory -Force $prof | Out-Null
 Copy-Item -Force (Join-Path $PSScriptRoot "wireshark-profile\*") $prof
+$profName = 'lab-chapters'
+if ($Col.Count -gt 0) {
+  $profName = 'lab-chapters-cols'
+  $p2 = Join-Path $env:APPDATA "Wireshark\profiles\$profName"
+  New-Item -ItemType Directory -Force $p2 | Out-Null
+  Copy-Item -Force (Join-Path $PSScriptRoot "wireshark-profile\*") $p2
+  $extra = ($Col | ForEach-Object { $t, $f = $_ -split '=', 2; "`t`"$t`", `"%Cus:$f`"," }) -join "`n"
+  $pref = (Get-Content (Join-Path $p2 'preferences') -Raw) -replace '(	"Info", "%i")', ($extra.Replace('$', '$$') + "`n" + '$1')
+  [IO.File]::WriteAllText((Join-Path $p2 'preferences'), $pref)
+}
 $Pcap = (Resolve-Path $Pcap).Path
 function Q($s) { '"' + ($s -replace '"', '\"') + '"' }
-$a = @('-C', 'lab-chapters', '-r', (Q $Pcap))
+$a = @('-C', $profName, '-r', (Q $Pcap))
 if ($Filter) { $a += @('-Y', (Q $Filter)) }
 if ($Go -gt 0) { $a += @('-g', "$Go") }
 $p = Start-Process $ws -ArgumentList ($a -join ' ') -PassThru
@@ -40,14 +54,19 @@ for ($i = 0; $i -lt 80; $i++) {
   if ($p.MainWindowTitle -like "*$name*") { break }
 }
 Start-Sleep 2
-$h = $p.MainWindowHandle
-[WsU]::SetWindowPos($h, [IntPtr]::Zero, 10, 10, $W, $H, 0x40) | Out-Null
+$hwnd = $p.MainWindowHandle   # not $h: PowerShell names are case-insensitive and $H is the height
+[WsU]::SetWindowPos($hwnd, [IntPtr]::Zero, 10, 10, $W, $H, 0x40) | Out-Null
 Start-Sleep 2
 $r = New-Object WsU+RECT
-[WsU]::GetWindowRect($h, [ref]$r) | Out-Null
+[WsU]::GetWindowRect($hwnd, [ref]$r) | Out-Null
 $bmp = New-Object Drawing.Bitmap ($r.R - $r.L), ($r.B - $r.T)
 $g = [Drawing.Graphics]::FromImage($bmp)
-$dc = $g.GetHdc(); [WsU]::PrintWindow($h, $dc, 2) | Out-Null; $g.ReleaseHdc($dc)
+$dc = $g.GetHdc(); [WsU]::PrintWindow($hwnd, $dc, 2) | Out-Null; $g.ReleaseHdc($dc)
+# -Crop keeps only the top N pixels (packet list only, when the details pane is not needed)
+if ($Crop -gt 0 -and $bmp.Height -gt $Crop) {
+  $cut = $bmp.Clone((New-Object Drawing.Rectangle 0, 0, $bmp.Width, $Crop), $bmp.PixelFormat)
+  $bmp.Dispose(); $bmp = $cut
+}
 New-Item -ItemType Directory -Force (Split-Path -Parent $Out) | Out-Null
 $bmp.Save($Out, [Drawing.Imaging.ImageFormat]::Png)
 Stop-Process -Id $p.Id -Force

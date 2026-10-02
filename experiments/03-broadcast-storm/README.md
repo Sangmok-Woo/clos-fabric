@@ -1,4 +1,4 @@
-# 실험 05 — L2 루프와 브로드캐스트 스톰
+# 실험 03 — L2 루프와 브로드캐스트 스톰
 
 > [실험 목록](../README.md) · 백로그 ⑩ · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
 
@@ -31,7 +31,7 @@ v3가 없는 주소(10.10.10.99)를 ARP로 한 번 묻는다. 그 브로드캐�
 
 ```bash
 cd /root/labs/clos-fabric/experiments
-05-broadcast-storm/run.sh        # 루프 → ARP 한 번 → 관찰 → 루프 제거 → EVPN 정리
+03-broadcast-storm/run.sh        # 루프 → ARP 한 번 → 관찰 → 루프 제거 → EVPN 정리
 ```
 
 ## 숫자
