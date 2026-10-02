@@ -19,11 +19,16 @@ BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
 
 </div>
 
-## 30초 요약
+## 프로젝트 개요
 
-- **무엇을**: 현대 데이터센터의 표준 구조(Clos/spine-leaf)를 노트북 위 FRR 컨테이너 12대(스파인 2 + 리프 4 + 서버 6)로 재현했다.
-- **어떻게**: RFC 7938 방식의 eBGP 언더레이(장비마다 AS 하나) → ECMP 부하분산 → 장애 주입·수렴 시간 실측 → BFD 튜닝 → VXLAN/EVPN 오버레이 순으로 쌓았다.
-- **왜**: 구성에서 끝내지 않고 **숫자로 검증했다**. 아래 표의 값은 전부 이 랩에서 직접 측정한 것이다.
+clos-fabric은 현대 데이터센터의 표준 구조인 Clos(spine-leaf) 패브릭을 노트북 위 FRR 컨테이너 12대(스파인 2 · 리프 4 · 서버 6)로 재현한 실습 랩이다.
+RFC 7938 방식의 eBGP 언더레이 위에 ECMP, BFD, VXLAN/EVPN 오버레이를 쌓았고, 구성에서 끝내지 않고 장애를 직접 넣어 **숫자로 검증**했다.
+골조가 갖춰진 지금은 그 위에서 장애를 하나씩 재현하고, **패킷 캡처와 모니터링으로 장애가 어떻게 보이는지 읽어내는 것**에 집중하고 있다.
+
+| 패킷 캡처 — 장애 지점의 흐름을 Wireshark로 | 모니터링 — 같은 장애를 Grafana로 |
+|---|---|
+| <img src="assets/readme-wireshark.png" alt="DNS가 없어진 서버 주소를 돌려줘 SYN 재전송 끝에 Host unreachable이 오는 Wireshark 화면"> | <img src="assets/readme-grafana.png" alt="세션은 16/16 정상인데 링크 드랍과 MTU 불일치 알람이 울리는 Grafana 대시보드"> |
+| 잘못된 DNS 레코드: 이름 해석은 성공하고, 없는 주소로 보낸 SYN이 재전송 끝에 Host unreachable로 끝난다 — [실험 06](experiments/06-dns-failure/README.md) | MTU 장애: BGP 세션은 16/16으로 멀쩡한데 링크 드랍과 MTU 불일치 알람이 울린다 — [실험 02](experiments/02-observability-gap/README.md) |
 
 <details>
 <summary><b>English summary</b></summary>
@@ -45,7 +50,7 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 
 > 첫 측정과 재측정(8.8초/1.2초)의 차이, 측정 방법, 전체 출력은 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)에 있다.
 
-### 하이라이트 — 같은 장애, BFD 전후
+### 같은 장애, BFD 전후
 
 <div align="center">
 <img src="assets/demo.svg" width="840" alt="failover.sh 실행 터미널 — BFD 없이 8.8초, BFD 적용 후 1.2초">
