@@ -129,7 +129,7 @@ spine1은 링크가 살아 있어서 인터페이스 다운으로 알 수 없다
 
 | 1차: 세션만 본다 | 2차: 데이터플레인을 더했다 |
 |---|---|
-| ![1차: 세션 16/16, 알람 0](gen1-vs-gen2/img/v1-stats.png) | ![2차: 세션 16/16, 알람 2, 드랍·MTU·재전송이 빨갛다](gen1-vs-gen2/img/v2-stats.png) |
+| ![1차: 세션 16/16, 알람 0](img/gen1-stats.png) | ![2차: 세션 16/16, 알람 2, 드랍·MTU·재전송이 빨갛다](img/gen2-stats.png) |
 | MTU 장애 중에도 세션 16/16, **알람 0**. 전송은 0바이트에서 멈춰 있었다 | 같은 장애에 **알람 2** (`FabricMTUMismatch`, `InterfaceDropping`). 세션은 그대로 16/16 |
 
 | 단계 | 무엇을 보나 | 이 장애에서 |
@@ -138,7 +138,7 @@ spine1은 링크가 살아 있어서 인터페이스 다운으로 알 수 없다
 | 2차 | 인터페이스 드랍·MTU, 서버 TCP 재전송 | 잡았다. 다만 트래픽이 끊기면 드랍·재전송도 0이 되어 초록으로 돌아간다 |
 | 3차 | 수집기가 직접 보내는 링크별 작은 ping / MTU 크기 ping | 결함 링크를 결함 기간 내내 가리켰다. 포워딩만 멈춘 스파인은 못 잡았다 (아래 성적표) |
 
-1차와 2차를 같은 장애로 비교한 측정과 화면은 부록 [gen1-vs-gen2/](gen1-vs-gen2/README.md)에 있다 (2026-10-02, v1 → v3 68MB 전송, spine1:eth3 MTU 1500).
+1차와 2차 비교는 2026-10-02에 spine1:eth3 MTU 1500 장애로 쟀다. 1차 아래에서는 v1 → v3 68MB 전송이 0바이트에서 멈췄는데도 세션 16/16, 알람 0이었고, 2차는 같은 장애에 링크 드랍(양 끝 73개)과 MTU 불일치로 알람 2개를 울렸다.
 
 ## 모니터링 성적표
 
@@ -184,7 +184,6 @@ spine2의 포트 하나에 MTU가 1500으로 잘못 들어가 있었다. 평소�
 | `report.py` | Phase별 성공률, Prometheus에서 알람 첫 firing 시각 |
 | `capture/rehash0/` | REHASH=0 캡처 (h1, leaf3:eth2, spine2:eth3, leaf1 BGP), `report.txt`, `timeline` |
 | `capture/rehash1/` | REHASH=1 캡처 (leaf3:eth1·eth2: 재전송이 빠져나가는 장면), `report.txt`, `timeline` |
-| `img/` | Wireshark 화면, Grafana 렌더(`grafana-rehash*.png`)와 잘라낸 패널 |
-| `gen1-vs-gen2/` | 부록: 1차·2차 모니터링을 같은 MTU 장애로 비교한 실험 (setup/fault/probe/teardown, 대시보드 화면) |
+| `img/` | Wireshark 화면, Grafana 렌더(`grafana-rehash*.png`)와 잘라낸 패널, 1·2차 모니터링 비교 화면(`gen1-*`, `gen2-*`) |
 
 > 이전의 실험 01(HTTP 전송 + MTU 장애, 2026-09-26)은 [_archive/01-http-mtu](../_archive/01-http-mtu/README.md)로 옮겼다. 경계값 1426/1427, VXLAN의 VTEP별 경로 캐시 같은 측정은 거기에 있다.

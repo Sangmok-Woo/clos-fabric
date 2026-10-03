@@ -86,7 +86,7 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 | 06 | [링크 다운 수렴](experiments/06-link-down-convergence/README.md) | 지금 쓰는 스파인 링크를 leaf1에서 내림 | 끊김 **0.20초**. leaf1은 0.011초에 남은 링크로 돌렸고, 끊김은 반대편 leaf4가 BGP로 듣기까지의 시간. spine1은 철회 대신 **valley path**(AS 4개)를 광고 |
 | 07 | [스파인 무응답과 BFD](experiments/07-spine-freeze-bfd/README.md) | 링크는 up인 채 spine1을 얼림, BFD 전후 | **7.61초 → 1.15초**. 마지막 KEEPALIVE에서 정확히 9.003초 뒤 Hold Timer Expired, 마지막 BFD에서 0.900초 뒤 BFD Down. 얼린 스파인의 커널은 TCP ACK를 계속 보냈다 |
 
-예정: 08~13(플래핑, 세션 고갈, IP 충돌, 비대칭 라우팅, 설정 실수, 마이크로버스트) — 전체 목록은 [experiments/](experiments/README.md).
+예정: 08 세션 테이블 고갈, 09 비대칭 라우팅 + 상태 기반 방화벽, 10 마이크로버스트 — 전체 목록은 [experiments/](experiments/README.md).
 
 ## 빠른 시작
 
