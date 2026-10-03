@@ -42,9 +42,9 @@ BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
 - [03 L2 루프](experiments/03-broadcast-storm/README.md) — ARP 하나가 3초에 **136만 개**
 - [04 DNS 장애](experiments/04-dns-failure/README.md) — 같은 고장, 실패까지 0.2초 / **10.8초**
 - [05 관측 사각지대](experiments/05-observability-gap/README.md) — 세션 16/16, **알람 0**
-- [12 ECMP 분산](experiments/12-ecmp-hash/README.md) — 같은 흐름이 **다른 스파인으로**
-- [13 링크 다운](experiments/13-link-down-convergence/README.md) — 0.20초, 스파인의 valley path
-- [14 스파인 먹통 + BFD](experiments/14-spine-freeze-bfd/README.md) — **7.61초 → 1.15초**
+- [07 ECMP 분산](experiments/07-ecmp-hash/README.md) — 같은 흐름이 **다른 스파인으로**
+- [08 링크 다운](experiments/08-link-down-convergence/README.md) — 0.20초, 스파인의 valley path
+- [09 스파인 먹통 + BFD](experiments/09-spine-freeze-bfd/README.md) — **7.61초 → 1.15초**
 
 </td>
 </tr>
@@ -75,14 +75,14 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 
 | 실험 | 조건 | 결과 |
 |---|---|---|
-| [링크 다운 복구](experiments/13-link-down-convergence/README.md) | 케이블 단선 (인터페이스 다운 감지) | **0.2초** |
-| [스파인 무응답 복구](experiments/14-spine-freeze-bfd/README.md) | BFD 없음 — BGP 타이머(3/9초)에 의존 | 7.6초 |
-| [스파인 무응답 복구](experiments/14-spine-freeze-bfd/README.md) | **BFD 300ms×3 적용** | **0.8초 (약 10배 개선)** |
-| [ECMP 분산 (흐름 40개)](experiments/12-ecmp-hash/README.md) | 해시가 IP만 볼 때 → L4 포트까지 볼 때 | 41:1 (몰빵) → **12:30 (분산)** |
+| [링크 다운 복구](experiments/08-link-down-convergence/README.md) | 케이블 단선 (인터페이스 다운 감지) | **0.2초** |
+| [스파인 무응답 복구](experiments/09-spine-freeze-bfd/README.md) | BFD 없음 — BGP 타이머(3/9초)에 의존 | 7.6초 |
+| [스파인 무응답 복구](experiments/09-spine-freeze-bfd/README.md) | **BFD 300ms×3 적용** | **0.8초 (약 10배 개선)** |
+| [ECMP 분산 (흐름 40개)](experiments/07-ecmp-hash/README.md) | 해시가 IP만 볼 때 → L4 포트까지 볼 때 | 41:1 (몰빵) → **12:30 (분산)** |
 | 랙을 넘는 L2 | VXLAN VNI 10010 + BGP EVPN | v1 ↔ v3 통신, 원격 MAC을 leaf3 VTEP으로 학습 |
 
 > 첫 측정과 재측정(8.8초/1.2초)의 차이, 측정 방법, 전체 출력은 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)에 있다.
-> ECMP·링크 다운·스파인 무응답은 [실험 12~14](#장애-시나리오)에서 패킷 캡처로 다시 쟀다 (2026-10-02: 0.20초 / 7.61초 → BFD 1.15초).
+> ECMP·링크 다운·스파인 무응답은 [실험 07~09](#장애-시나리오)에서 패킷 캡처로 다시 쟀다 (2026-10-02: 0.20초 / 7.61초 → BFD 1.15초).
 
 ### 같은 장애, BFD 전후
 
@@ -109,7 +109,7 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 
 위까지가 패브릭의 골조다. 골조는 고정해 두고, 그 위에서 장애를 하나씩 재현해 번호를 붙여 쌓는다.
 실험 하나가 디렉터리 하나이고, 끝나면 베이스를 원래 값으로 되돌린다 — 규칙과 추가 방법은 [experiments/](experiments/README.md).
-01~04번과 12~14번은 장애 지점 앞뒤를 동시에 캡처해 **Wireshark 화면으로 패킷 흐름을 읽는** 장이다. 원본 pcap도 함께 있다.
+01~04번과 07~09번은 장애 지점 앞뒤를 동시에 캡처해 **Wireshark 화면으로 패킷 흐름을 읽는** 장이다. 원본 pcap도 함께 있다.
 
 | # | 실험 | 주입하는 장애 | 본 것 |
 |---|---|---|---|
@@ -118,11 +118,11 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 | 03 | [L2 루프·브로드캐스트 스톰](experiments/03-broadcast-storm/README.md) | VXLAN 브리지에 veth 양 끝을 꽂음 | ARP 하나가 3초에 **136만 개**. MAC 표 오염으로 유니캐스트 100% 손실, EVPN이 남의 MAC을 광고해 MAC Mobility 순번 폭주 |
 | 04 | [DNS 장애](experiments/04-dns-failure/README.md) | 잘못된 레코드 / 프로세스 중지 / 53번 DROP | 셋 다 IP 접속은 정상. 실패까지 3.3초 / **0.2초** / **10.8초** — 고장 방식마다 패킷 모양이 다르다 |
 | 05 | [관측 사각지대](experiments/05-observability-gap/README.md) | MTU 장애를 모니터링 아래에서 주입 | 세션만 보던 1차 모니터링은 **16/16, 알람 0**. 드랍·MTU·TCP 재전송을 더한 2차는 같은 장애에 **알람 2개** |
-| 12 | [ECMP 분산](experiments/12-ecmp-hash/README.md) | 해시 정책 0 / 1 / 3에서 UDP 흐름 40개를 두 번씩 | 정책 0은 **40:0**. 정책 1은 갈리지만 같은 5-tuple을 다시 보내면 **18개가 다른 스파인으로** — 서버 소켓의 해시값을 그대로 쓴다. 헤더만 보는 정책 3은 0개 |
-| 13 | [링크 다운 수렴](experiments/13-link-down-convergence/README.md) | 지금 쓰는 스파인 링크를 leaf1에서 내림 | 끊김 **0.20초**. leaf1은 0.011초에 남은 링크로 돌렸고, 끊김은 반대편 leaf4가 BGP로 듣기까지의 시간. spine1은 철회 대신 **valley path**(AS 4개)를 광고 |
-| 14 | [스파인 무응답과 BFD](experiments/14-spine-freeze-bfd/README.md) | 링크는 up인 채 spine1을 얼림, BFD 전후 | **7.61초 → 1.15초**. 마지막 KEEPALIVE에서 정확히 9.003초 뒤 Hold Timer Expired, 마지막 BFD에서 0.900초 뒤 BFD Down. 얼린 스파인의 커널은 TCP ACK를 계속 보냈다 |
+| 07 | [ECMP 분산](experiments/07-ecmp-hash/README.md) | 해시 정책 0 / 1 / 3에서 UDP 흐름 40개를 두 번씩 | 정책 0은 **40:0**. 정책 1은 갈리지만 같은 5-tuple을 다시 보내면 **18개가 다른 스파인으로** — 서버 소켓의 해시값을 그대로 쓴다. 헤더만 보는 정책 3은 0개 |
+| 08 | [링크 다운 수렴](experiments/08-link-down-convergence/README.md) | 지금 쓰는 스파인 링크를 leaf1에서 내림 | 끊김 **0.20초**. leaf1은 0.011초에 남은 링크로 돌렸고, 끊김은 반대편 leaf4가 BGP로 듣기까지의 시간. spine1은 철회 대신 **valley path**(AS 4개)를 광고 |
+| 09 | [스파인 무응답과 BFD](experiments/09-spine-freeze-bfd/README.md) | 링크는 up인 채 spine1을 얼림, BFD 전후 | **7.61초 → 1.15초**. 마지막 KEEPALIVE에서 정확히 9.003초 뒤 Hold Timer Expired, 마지막 BFD에서 0.900초 뒤 BFD Down. 얼린 스파인의 커널은 TCP ACK를 계속 보냈다 |
 
-예정: 06 플래핑, 07~11(비대칭 라우팅, 설정 실수, 마이크로버스트, 세션 고갈, IP 충돌), 15~17(EVPN, BGP unnumbered, 동적 이웃 검증을 패킷 캡처로 다시 측정) — 전체 목록은 [experiments/](experiments/README.md).
+예정: 06 플래핑, 10~14(세션 고갈, IP 충돌, 비대칭 라우팅, 설정 실수, 마이크로버스트) — 전체 목록은 [experiments/](experiments/README.md).
 
 ## 빠른 시작
 

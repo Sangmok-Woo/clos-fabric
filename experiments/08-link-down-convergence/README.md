@@ -1,4 +1,4 @@
-# 실험 13 — 링크 다운 수렴: 케이블이 뽑히면 0.2초
+# 실험 08 — 링크 다운 수렴: 케이블이 뽑히면 0.2초
 
 > [실험 목록](../README.md) · 옛 [docs/EXPERIMENTS §2](../../docs/EXPERIMENTS.md)를 패킷 캡처로 다시 잰 장 · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
 
@@ -31,7 +31,7 @@
 
 ```bash
 cd /root/labs/clos-fabric/experiments
-13-link-down-convergence/run.sh
+08-link-down-convergence/run.sh
 ```
 
 ## 숫자
@@ -126,7 +126,7 @@ leaf1 BGP, keepalive 제외 (Time 4.94초 = T0, 12.94초 = 링크 업)
 - `ip link set down`은 한쪽(leaf1)의 관리자 다운이다. 실제 단선과 달리 leaf1은 자기가 내린 것을 즉시 안다. 반대편 spine1은 veth의 캐리어가 끊긴 것으로 안다.
   실제 광 링크는 신호 손실 감지에 수 ms~수십 ms가 더 걸릴 수 있다.
 - 응답 3개가 어디서 사라졌는지는 h4·spine1을 캡처하지 않아 직접 보지 못했다.
-- BFD는 끈 상태다. 링크 다운에서는 BFD가 없어도 이 속도가 나온다. BFD가 필요한 것은 [실험 14](../14-spine-freeze-bfd/README.md)의 경우다.
+- BFD는 끈 상태다. 링크 다운에서는 BFD가 없어도 이 속도가 나온다. BFD가 필요한 것은 [실험 09](../09-spine-freeze-bfd/README.md)의 경우다.
 
 ## 파일
 

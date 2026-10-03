@@ -1,8 +1,8 @@
-# 실험 14 — 스파인 무응답과 BFD: 링크는 살아 있는데 상대가 죽었을 때
+# 실험 09 — 스파인 무응답과 BFD: 링크는 살아 있는데 상대가 죽었을 때
 
 > [실험 목록](../README.md) · 옛 [docs/EXPERIMENTS §2](../../docs/EXPERIMENTS.md)를 패킷 캡처로 다시 잰 장 · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
 
-[실험 13](../13-link-down-convergence/README.md)의 케이블 단선은 0.2초에 끝났다. 인터페이스가 내려가니 장비가 바로 알았다.
+[실험 08](../08-link-down-convergence/README.md)의 케이블 단선은 0.2초에 끝났다. 인터페이스가 내려가니 장비가 바로 알았다.
 이번에는 링크가 멀쩡한 채로 스파인이 멈춘다. 리프는 상대가 죽었다는 것을 무엇으로 알 수 있을까.
 BGP만 있으면 hold timer(9초)가 다 지나야 안다. BFD를 붙이면 0.9초에 안다. 같은 장애를 두 번 넣고 두 경우를 패킷으로 비교한다.
 
@@ -30,7 +30,7 @@ h1 → h4 ping이 타는 스파인(이번에도 요청·응답 모두 spine1)을
 
 ```bash
 cd /root/labs/clos-fabric/experiments
-14-spine-freeze-bfd/run.sh     # nobfd → BFD 적용 → bfd → BFD 해제
+09-spine-freeze-bfd/run.sh     # nobfd → BFD 적용 → bfd → BFD 해제
 ```
 
 ## 숫자
@@ -118,7 +118,7 @@ nobfd에서 leaf1과 leaf4가 거의 같은 순간(2ms 차이)에 만료된 것�
 ## 이 랩의 한계
 
 - 먹통은 `docker pause` + `ip_forward=0`으로 흉내 냈다. 커널은 살아 있어서 TCP ACK와 ping에는 대답한다. 실제 장비 고장은 이와 다를 수 있다.
-  예를 들어 전원이 나가면 링크가 내려가서 실험 13처럼 된다. 이 장의 경우는 **소프트웨어가 멈추고 하드웨어 링크는 살아 있는** 고장이다.
+  예를 들어 전원이 나가면 링크가 내려가서 실험 08처럼 된다. 이 장의 경우는 **소프트웨어가 멈추고 하드웨어 링크는 살아 있는** 고장이다.
 - BFD는 bfdd라는 별도 프로세스가 보낸다. 그래서 FRR 전체를 멈추면 BFD도 멈춘다. 실제 장비에서는 BFD를 하드웨어가 처리해서 컨트롤플레인이 멈춰도 BFD가 살아 있는 경우가 있다. 그때는 BFD로도 못 잡는다.
 - 300ms × 3은 이 랩 기준이다. 더 짧게 하면 더 빨리 알지만, 잠깐의 지연에도 세션이 끊기는(오탐) 위험이 커진다.
 

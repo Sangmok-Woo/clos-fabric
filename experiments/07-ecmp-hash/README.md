@@ -1,4 +1,4 @@
-# 실험 12 — ECMP 분산: 경로가 2개인 것과 반씩 나눠 가는 것은 다르다
+# 실험 07 — ECMP 분산: 경로가 2개인 것과 반씩 나눠 가는 것은 다르다
 
 > [실험 목록](../README.md) · 옛 [docs/EXPERIMENTS §1](../../docs/EXPERIMENTS.md)을 패킷 캡처로 다시 잰 장 · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
 
@@ -36,7 +36,7 @@ h1이 h4로 UDP 흐름 40개를 보낸다. 목적지 포트 5000~5039, 출발지
 
 ```bash
 cd /root/labs/clos-fabric/experiments
-12-ecmp-hash/run.sh       # 다섯 Phase 를 돌리고 해시 정책·필드, h1 보조 IP 를 되돌린다
+07-ecmp-hash/run.sh       # 다섯 Phase 를 돌리고 해시 정책·필드, h1 보조 IP 를 되돌린다
 ```
 
 ## 숫자
