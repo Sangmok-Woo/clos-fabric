@@ -105,22 +105,18 @@ h1의 끊김(1.15초)은 둘 중 **늦은 쪽**(응답 방향인 leaf4)에서 �
 
 nobfd에서 leaf1과 leaf4가 거의 같은 순간(2ms 차이)에 만료된 것은 spine1이 모든 리프에게 keepalive를 같은 박자로 보냈기 때문이다.
 
-## 진단할 때 볼 것
+## 결론
 
-| 단서 | 어디서 | 뜻 |
-|---|---|---|
-| 링크는 up인데 6~9초 끊김 | ping 간격을 짧게 | BGP hold timer로 감지됐다. 장비가 멈췄거나 포워딩만 죽었다 |
-| `Hold Timer Expired (4)` | NOTIFICATION | 상대의 KEEPALIVE가 hold time 동안 안 왔다 |
-| 상대가 TCP ACK는 보내는데 KEEPALIVE는 안 보낸다 | 세션 캡처 (`tcp.len==0`과 `bgp` 구분) | 커널은 살아 있고 라우팅 프로세스가 멈췄다 |
-| `BFD Down`, `Control Detection Time Expired` | BFD 캡처 | 상대의 BFD가 감지 시간(간격 × 배수) 동안 안 왔다 |
-| `Cease / Hard Reset` + Data `060a` | NOTIFICATION | BFD가 세션을 내렸다 (FRR) |
+> **링크가 살아 있는 채로 장비가 멈추면 BGP는 최대 9초 뒤에야 알고, BFD는 0.9초에 안다.**
 
-## 이 랩의 한계
-
-- 먹통은 `docker pause` + `ip_forward=0`으로 흉내 냈다. 커널은 살아 있어서 TCP ACK와 ping에는 대답한다. 실제 장비 고장은 이와 다를 수 있다.
-  예를 들어 전원이 나가면 링크가 내려가서 실험 08처럼 된다. 이 장의 경우는 **소프트웨어가 멈추고 하드웨어 링크는 살아 있는** 고장이다.
-- BFD는 bfdd라는 별도 프로세스가 보낸다. 그래서 FRR 전체를 멈추면 BFD도 멈춘다. 실제 장비에서는 BFD를 하드웨어가 처리해서 컨트롤플레인이 멈춰도 BFD가 살아 있는 경우가 있다. 그때는 BFD로도 못 잡는다.
-- 300ms × 3은 이 랩 기준이다. 더 짧게 하면 더 빨리 알지만, 잠깐의 지연에도 세션이 끊기는(오탐) 위험이 커진다.
+| | |
+|---|---|
+| **넣은 장애** | spine1 먹통 (`ip_forward=0` + `docker pause`). BFD 없이 한 번, BFD 300ms×3으로 한 번 |
+| **겉으로 보인 것** | ping 끊김 **7.61초** vs **1.15초** |
+| **핵심 숫자** | 마지막 신호에서 판단까지 9.003초 (= hold time) vs 0.900초 (= 300ms × 3). 응답 없는 요청 151 vs 22 |
+| **왜 그랬나** | 링크는 up이고 커널은 TCP ACK까지 보내서 연결은 살아 보인다. BGP는 KEEPALIVE가 hold time 동안 안 오는 것으로만 안다. hold timer는 마지막 keepalive부터 세서 6~9초 사이로 흔들린다 |
+| **결정적 증거** | spine1이 KEEPALIVE는 안 보내는데 TCP ACK는 보낸다. BFD에선 `Control Detection Time Expired` → BGP `Cease / Hard Reset` (Data `060a` = BFD Down) |
+| **기억할 것** | 케이블 단선(실험 08)은 인터페이스 다운으로 0.2초에 안다. BFD가 필요한 건 이 경우처럼 링크는 살아 있고 상대만 멈췄을 때다 |
 
 ## 파일
 
