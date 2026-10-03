@@ -41,10 +41,9 @@ BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
 - [02 물리 계층 불량](experiments/02-physical-corruption/README.md) — 비트 하나가 `172.16` → `172.0`
 - [03 L2 루프](experiments/03-broadcast-storm/README.md) — ARP 하나가 3초에 **136만 개**
 - [04 DNS 장애](experiments/04-dns-failure/README.md) — 같은 고장, 실패까지 0.2초 / **10.8초**
-- [05 관측 사각지대](experiments/05-observability-gap/README.md) — 세션 16/16, **알람 0**
-- [07 ECMP 분산](experiments/07-ecmp-hash/README.md) — 같은 흐름이 **다른 스파인으로**
-- [08 링크 다운](experiments/08-link-down-convergence/README.md) — 0.20초, 스파인의 valley path
-- [09 스파인 먹통 + BFD](experiments/09-spine-freeze-bfd/README.md) — **7.61초 → 1.15초**
+- [05 ECMP 분산](experiments/05-ecmp-hash/README.md) — 같은 흐름이 **다른 스파인으로**
+- [06 링크 다운](experiments/06-link-down-convergence/README.md) — 0.20초, 스파인의 valley path
+- [07 스파인 먹통 + BFD](experiments/07-spine-freeze-bfd/README.md) — **7.61초 → 1.15초**
 
 </td>
 </tr>
@@ -75,20 +74,19 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 
 패브릭의 골조는 고정해 두고, 그 위에서 장애를 하나씩 재현해 번호를 붙여 쌓는다.
 실험 하나가 디렉터리 하나이고, 끝나면 베이스를 원래 값으로 되돌린다 — 규칙과 추가 방법은 [experiments/](experiments/README.md).
-01~04번과 07~09번은 장애 지점 앞뒤를 동시에 캡처해 **Wireshark 화면으로 패킷 흐름을 읽는** 장이다. 원본 pcap도 함께 있다.
+01~07번은 모두 장애 지점 앞뒤를 동시에 캡처해 **Wireshark 화면으로 패킷 흐름을 읽는** 장이다. 원본 pcap도 함께 있다.
 
 | # | 실험 | 주입하는 장애 | 본 것 |
 |---|---|---|---|
-| 01 | [숨은 MTU 결함 + 스파인 장애](experiments/01-hidden-mtu-meets-spine-failure/README.md) | spine2 포트 MTU 1500인 채로 spine1이 조용히 죽음 | 평소엔 HTTP 61%만 성공하던 회색 장애가 spine1이 죽자 **0%**. 작은 ping은 내내 정상. 리프는 hold timer 8.8초 뒤에야 spine1을 뺐고, 알람은 결함 +9초, 먹통 +9초 |
+| 01 | [숨은 MTU 결함 + 스파인 장애](experiments/01-hidden-mtu-meets-spine-failure/README.md) | spine2 포트 MTU 1500인 채로 spine1이 조용히 죽음 | 평소엔 HTTP 61%만 성공하던 회색 장애가 spine1이 죽자 **0%**. 작은 ping은 내내 정상. 리프는 hold timer 8.8초 뒤에야 spine1을 뺐고, 알람은 결함 +9초, 먹통 +9초. 같은 장애로 모니터링 1차(세션만, **알람 0**) → 2차(데이터플레인, 알람 2) → 3차(블랙박스 프로브)를 비교 |
 | 02 | [물리 계층 불량](experiments/02-physical-corruption/README.md) | leaf3→h3 구간에 비트 깨짐 4% / 몰려오는 손실 | 받는 쪽에서 체크섬 오류 프레임(주소 비트가 뒤집혀 `172.0.13.10`), 보내는 쪽에서 Dup ACK와 재전송. 몰린 손실은 ping 9개 연속 소실 |
 | 03 | [L2 루프·브로드캐스트 스톰](experiments/03-broadcast-storm/README.md) | VXLAN 브리지에 veth 양 끝을 꽂음 | ARP 하나가 3초에 **136만 개**. MAC 표 오염으로 유니캐스트 100% 손실, EVPN이 남의 MAC을 광고해 MAC Mobility 순번 폭주 |
 | 04 | [DNS 장애](experiments/04-dns-failure/README.md) | 잘못된 레코드 / 프로세스 중지 / 53번 DROP | 셋 다 IP 접속은 정상. 실패까지 3.3초 / **0.2초** / **10.8초** — 고장 방식마다 패킷 모양이 다르다 |
-| 05 | [관측 사각지대](experiments/05-observability-gap/README.md) | MTU 장애를 모니터링 아래에서 주입 | 세션만 보던 1차 모니터링은 **16/16, 알람 0**. 드랍·MTU·TCP 재전송을 더한 2차는 같은 장애에 **알람 2개** |
-| 07 | [ECMP 분산](experiments/07-ecmp-hash/README.md) | 해시 정책 0 / 1 / 3에서 UDP 흐름 40개를 두 번씩 | 정책 0은 **40:0**. 정책 1은 갈리지만 같은 5-tuple을 다시 보내면 **18개가 다른 스파인으로** — 서버 소켓의 해시값을 그대로 쓴다. 헤더만 보는 정책 3은 0개 |
-| 08 | [링크 다운 수렴](experiments/08-link-down-convergence/README.md) | 지금 쓰는 스파인 링크를 leaf1에서 내림 | 끊김 **0.20초**. leaf1은 0.011초에 남은 링크로 돌렸고, 끊김은 반대편 leaf4가 BGP로 듣기까지의 시간. spine1은 철회 대신 **valley path**(AS 4개)를 광고 |
-| 09 | [스파인 무응답과 BFD](experiments/09-spine-freeze-bfd/README.md) | 링크는 up인 채 spine1을 얼림, BFD 전후 | **7.61초 → 1.15초**. 마지막 KEEPALIVE에서 정확히 9.003초 뒤 Hold Timer Expired, 마지막 BFD에서 0.900초 뒤 BFD Down. 얼린 스파인의 커널은 TCP ACK를 계속 보냈다 |
+| 05 | [ECMP 분산](experiments/05-ecmp-hash/README.md) | 해시 정책 0 / 1 / 3에서 UDP 흐름 40개를 두 번씩 | 정책 0은 **40:0**. 정책 1은 갈리지만 같은 5-tuple을 다시 보내면 **18개가 다른 스파인으로** — 서버 소켓의 해시값을 그대로 쓴다. 헤더만 보는 정책 3은 0개 |
+| 06 | [링크 다운 수렴](experiments/06-link-down-convergence/README.md) | 지금 쓰는 스파인 링크를 leaf1에서 내림 | 끊김 **0.20초**. leaf1은 0.011초에 남은 링크로 돌렸고, 끊김은 반대편 leaf4가 BGP로 듣기까지의 시간. spine1은 철회 대신 **valley path**(AS 4개)를 광고 |
+| 07 | [스파인 무응답과 BFD](experiments/07-spine-freeze-bfd/README.md) | 링크는 up인 채 spine1을 얼림, BFD 전후 | **7.61초 → 1.15초**. 마지막 KEEPALIVE에서 정확히 9.003초 뒤 Hold Timer Expired, 마지막 BFD에서 0.900초 뒤 BFD Down. 얼린 스파인의 커널은 TCP ACK를 계속 보냈다 |
 
-예정: 06 플래핑, 10~14(세션 고갈, IP 충돌, 비대칭 라우팅, 설정 실수, 마이크로버스트) — 전체 목록은 [experiments/](experiments/README.md).
+예정: 08~13(플래핑, 세션 고갈, IP 충돌, 비대칭 라우팅, 설정 실수, 마이크로버스트) — 전체 목록은 [experiments/](experiments/README.md).
 
 ## 빠른 시작
 
@@ -119,7 +117,7 @@ git clone https://github.com/Sangmok-Woo/clos-fabric && cd clos-fabric
 
 - [ ] **설정 생성기** — `fabric.yml`의 숫자(스파인 수·리프 수)만 바꾸면 토폴로지와 FRR 설정 전체가 재생성되게. 주소·AS·포트가 전부 계산식이라([DESIGN §3~4](docs/DESIGN.md)) 코드로 옮기기만 하면 된다
 - [ ] **BGP unnumbered 전면 전환** — 검증은 끝났고([EXPERIMENTS §4](docs/EXPERIMENTS.md)), 재배포 때 링크 IP를 걷어낸다
-- [x] **모니터링** ✅ — Prometheus + Grafana. 자작 수집기가 세션·경로·BFD를 긁고, 기대값을 토폴로지에서 계산해 알람. 감지 시간 실측(BFD 없음 14.1초 → 있음 6.2초). 2차로 인터페이스 드랍·MTU·TCP 재전송 추가([실험 05](experiments/05-observability-gap/README.md)). → [monitoring/](monitoring/README.md)
+- [x] **모니터링** ✅ — Prometheus + Grafana. 자작 수집기가 세션·경로·BFD를 긁고, 기대값을 토폴로지에서 계산해 알람. 감지 시간 실측(BFD 없음 14.1초 → 있음 6.2초). 2차로 인터페이스 드랍·MTU·TCP 재전송, 3차로 블랙박스 링크 프로브 추가([실험 01](experiments/01-hidden-mtu-meets-spine-failure/README.md)). → [monitoring/](monitoring/README.md)
 - [x] **MTU** ✅ — 스파인 한 포트의 MTU 결함이 다른 스파인 장애 때 드러나는 과정을 재현·측정. → [실험 01](experiments/01-hidden-mtu-meets-spine-failure/README.md)
 - [ ] **쿠버네티스 연동** — Calico/Cilium이 리프와 BGP 피어링해 파드 네트워크를 패브릭에 직접 태우기
 

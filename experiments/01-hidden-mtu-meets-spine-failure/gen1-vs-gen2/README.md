@@ -1,6 +1,8 @@
-# 실험 05 — 관측 사각지대: 세션은 멀쩡한데 데이터가 막힐 때
+# 실험 01 부록 — 모니터링 1차 vs 2차: 세션은 멀쩡한데 데이터가 막힐 때
 
-> [실험 목록](../README.md) · 모니터링 구성 [monitoring/](../../monitoring/README.md) · 알람 정의 [alerts.yml](../../monitoring/prometheus/alerts.yml)
+> [실험 01 본문](../README.md) · [실험 목록](../../README.md) · 모니터링 구성 [monitoring/](../../../monitoring/README.md) · 알람 정의 [alerts.yml](../../../monitoring/prometheus/alerts.yml)
+>
+> 원래 독립된 실험(관측 사각지대)이었다가 같은 MTU 장애를 다루는 실험 01에 합쳤다. 실험 01이 3차(블랙박스)까지 간 모니터링의 출발점이 이 부록이다.
 
 1차 모니터링은 BGP 세션과 경로만 본다. 그런데 MTU 장애는 세션을 건드리지 않는다.
 BGP 패킷은 작아서 MTU 1500을 문제없이 지나가기 때문이다.
@@ -43,7 +45,7 @@ BGP 패킷은 작아서 MTU 1500을 문제없이 지나가기 때문이다.
 | `clos_if_{rx,tx}_dropped_total` 외 바이트·에러 | 라우터의 `/proc/net/dev` | 링크에서 버려지는 패킷 |
 | `clos_if_mtu` | `/sys/class/net/ethN/mtu` | 설정 불일치 |
 | `clos_host_tcp_retranssegs_total` | 서버의 `/proc/net/snmp` | 서버가 체감하는 손실 |
-| `clos_bgp_peer_drops_total` | FRR `connectionsDropped` | scrape 사이의 짧은 세션 끊김 (실험 06용) |
+| `clos_bgp_peer_drops_total` | FRR `connectionsDropped` | scrape 사이의 짧은 세션 끊김 (플래핑 실험용) |
 
 인터페이스에는 `link` 라벨을 붙인다. 포트 번호가 계산식이라(spineS:ethL ↔ leafL:ethS) 토폴로지 파일 없이 정해진다.
 
@@ -57,7 +59,7 @@ BGP 패킷은 작아서 MTU 1500을 문제없이 지나가기 때문이다.
 ```bash
 cd /root/labs/clos-fabric/monitoring && ./up.sh       # 관측 포함 토폴로지
 cd .. && sleep 20 && ./scripts/evpn-apply.sh
-cd experiments/05-observability-gap && ./setup.sh      # MTU 통일, 해시정책, httpd, 테스트 파일
+cd experiments/01-hidden-mtu-meets-spine-failure/gen1-vs-gen2 && ./setup.sh      # MTU 통일, 해시정책, httpd, 테스트 파일
 ```
 
 테스트 파일은 `files/video-small.mp4`(68MB 영상, `make-video.cmd`로 만든다)가 있으면 그것을 올리고,
@@ -83,7 +85,7 @@ Grafana `http://localhost:3000`의 아래쪽 데이터플레인 줄에서 시간
 
 ```bash
 ./teardown.sh                         # 장애 복구, httpd 중지, MTU·해시정책 원복
-cd ../../monitoring && ./down.sh
+cd ../../../monitoring && ./down.sh
 ```
 
 ## 숫자

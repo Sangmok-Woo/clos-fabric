@@ -1,8 +1,8 @@
-# 실험 09 — 스파인 무응답과 BFD: 링크는 살아 있는데 상대가 죽었을 때
+# 실험 07 — 스파인 무응답과 BFD: 링크는 살아 있는데 상대가 죽었을 때
 
 > [실험 목록](../README.md) · 옛 [docs/EXPERIMENTS §2](../../docs/EXPERIMENTS.md)를 패킷 캡처로 다시 잰 장 · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
 
-[실험 08](../08-link-down-convergence/README.md)의 케이블 단선은 0.2초에 끝났다. 인터페이스가 내려가니 장비가 바로 알았다.
+[실험 06](../06-link-down-convergence/README.md)의 케이블 단선은 0.2초에 끝났다. 인터페이스가 내려가니 장비가 바로 알았다.
 이번에는 링크가 멀쩡한 채로 스파인이 멈춘다. 리프는 상대가 죽었다는 것을 무엇으로 알 수 있을까.
 BGP만 있으면 hold timer(9초)가 다 지나야 안다. BFD를 붙이면 0.9초에 안다. 같은 장애를 두 번 넣고 두 경우를 패킷으로 비교한다.
 
@@ -30,7 +30,7 @@ h1 → h4 ping이 타는 스파인(이번에도 요청·응답 모두 spine1)을
 
 ```bash
 cd /root/labs/clos-fabric/experiments
-09-spine-freeze-bfd/run.sh     # nobfd → BFD 적용 → bfd → BFD 해제
+07-spine-freeze-bfd/run.sh     # nobfd → BFD 적용 → bfd → BFD 해제
 ```
 
 ## 숫자
@@ -116,7 +116,7 @@ nobfd에서 leaf1과 leaf4가 거의 같은 순간(2ms 차이)에 만료된 것�
 | **핵심 숫자** | 마지막 신호에서 판단까지 9.003초 (= hold time) vs 0.900초 (= 300ms × 3). 응답 없는 요청 151 vs 22 |
 | **왜 그랬나** | 링크는 up이고 커널은 TCP ACK까지 보내서 연결은 살아 보인다. BGP는 KEEPALIVE가 hold time 동안 안 오는 것으로만 안다. hold timer는 마지막 keepalive부터 세서 6~9초 사이로 흔들린다 |
 | **결정적 증거** | spine1이 KEEPALIVE는 안 보내는데 TCP ACK는 보낸다. BFD에선 `Control Detection Time Expired` → BGP `Cease / Hard Reset` (Data `060a` = BFD Down) |
-| **기억할 것** | 케이블 단선(실험 08)은 인터페이스 다운으로 0.2초에 안다. BFD가 필요한 건 이 경우처럼 링크는 살아 있고 상대만 멈췄을 때다 |
+| **기억할 것** | 케이블 단선(실험 06)은 인터페이스 다운으로 0.2초에 안다. BFD가 필요한 건 이 경우처럼 링크는 살아 있고 상대만 멈췄을 때다 |
 
 ## 파일
 

@@ -2,7 +2,7 @@
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 STATE=$HERE/state          # 원래 값 기록 (teardown 이 되돌릴 때 씀)
 IMG=$HERE/img
-WIN=/mnt/c/Users/sangmok/Desktop/Claude/clos-fabric/experiments/$(basename "$HERE")/img  # 윈도우 사본
+WIN=/mnt/c/Users/sangmok/Desktop/Claude/clos-fabric/experiments/01-hidden-mtu-meets-spine-failure/$(basename "$HERE")/img  # 윈도우 사본
 PROM=http://localhost:9090
 GRAFANA=http://localhost:3000
 

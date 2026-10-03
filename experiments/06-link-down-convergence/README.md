@@ -1,4 +1,4 @@
-# 실험 08 — 링크 다운 수렴: 케이블이 뽑히면 0.2초
+# 실험 06 — 링크 다운 수렴: 케이블이 뽑히면 0.2초
 
 > [실험 목록](../README.md) · 옛 [docs/EXPERIMENTS §2](../../docs/EXPERIMENTS.md)를 패킷 캡처로 다시 잰 장 · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
 
@@ -31,7 +31,7 @@
 
 ```bash
 cd /root/labs/clos-fabric/experiments
-08-link-down-convergence/run.sh
+06-link-down-convergence/run.sh
 ```
 
 ## 숫자

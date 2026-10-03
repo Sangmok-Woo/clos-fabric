@@ -86,11 +86,11 @@ Established 16/16, 알람 0이었다. 세션은 장애와 무관하게 살아 �
 
 그래서 같은 수집기에 인터페이스 바이트·드랍·에러·MTU와 서버별 TCP 재전송, 이웃별 세션 끊김 누적을 더했다.
 대시보드 아래쪽에 데이터플레인 줄이 생겼고, 같은 장애에서 알람 2개(`FabricMTUMismatch`, `InterfaceDropping`)가 울렸다.
-수집은 노드별 병렬이라 scrape 시간은 그대로다(평균 0.8초). 과정과 숫자는 [실험 05](../experiments/05-observability-gap/README.md).
+수집은 노드별 병렬이라 scrape 시간은 그대로다(평균 0.8초). 과정과 숫자는 [실험 01 부록](../experiments/01-hidden-mtu-meets-spine-failure/gen1-vs-gen2/README.md).
 
 | 1차 아래 MTU 장애 | 2차 아래 같은 장애 |
 |---|---|
-| ![1차](../experiments/05-observability-gap/img/v1-during-fault.png) | ![2차](../experiments/05-observability-gap/img/v2-during-fault.png) |
+| ![1차](../experiments/01-hidden-mtu-meets-spine-failure/gen1-vs-gen2/img/v1-during-fault.png) | ![2차](../experiments/01-hidden-mtu-meets-spine-failure/gen1-vs-gen2/img/v2-during-fault.png) |
 
 ## 3차 — 블랙박스 링크 프로브 (2026-10-02)
 
