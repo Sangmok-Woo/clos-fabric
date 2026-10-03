@@ -1,92 +1,77 @@
 # 변경 기록
 
-패치노트처럼 **무엇이 바뀌었는지**를 날짜별로 쌓는다. 최신이 위.
-설계 근거는 [docs/DESIGN.md](docs/DESIGN.md), 측정 결과는 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)에 적는다.
+패치노트처럼 **무엇이 바뀌었는지**를 쌓는다. 최신이 위.
+설계 근거는 [docs/DESIGN.md](docs/DESIGN.md), 측정 결과는 [experiments/](experiments/README.md)에 적는다.
 
 ## 쓰는 법
 
-- 분류는 다섯 개: **추가** · **변경** · **삭제** · **검증**(랩에서 실측) · **결정**(미결정 항목을 닫음)
-- 작업 하나가 끝날 때마다 맨 위 날짜 아래에 한 줄씩 적는다. 커밋 메시지와 같은 말이어도 된다
+- 작업은 **버전(마일스톤)** 으로 묶고, 제목에 그 작업을 한 실제 날짜(범위)를 적는다
+- 버전 안의 분류는 다섯 개: **추가** · **변경** · **삭제** · **검증**(랩에서 실측) · **결정**(미결정 항목을 닫음). 항목이 많은 버전은 주제별로 먼저 나눈다
 - 재배포가 필요한 변경에는 **⚠ 재배포**를 붙인다 — 받아 쓰는 쪽이 `./scripts/deploy.sh redeploy`를 해야 하는지 바로 알 수 있게
 - AS·주소·포트 같은 **값이 바뀌면 `이전 → 이후`**를 적는다
+- 실험 번호는 지금 번호로 적는다. 번호가 바뀐 이력은 해당 버전의 변경 항목에 남긴다
+
+| 버전 | 기간 | 한 줄 |
+|---|---|---|
+| [v0.5](#v05--패킷-캡처로-읽는-장애-2026-10-02--10-03) | 2026-10-02 ~ 10-03 | 장애 9개 장을 패킷 캡처·Wireshark 화면으로, 모니터링 2·3차 |
+| [v0.4](#v04--장애-시나리오-구조-2026-09-30) | 2026-09-30 | 실험을 디렉터리 단위로 쌓는 구조 |
+| [v0.3](#v03--관측-2026-09-20) | 2026-09-20 | Prometheus + Grafana, 감지 시간 실측 |
+| [v0.2](#v02--확장-검증과-운영-문서-2026-08-25--09-10) | 2026-08-25 ~ 09-10 | listen range 기각, BGP unnumbered 채택, 운영 문서 |
+| [v0.1](#v01--랩-초기-구성-2026-08-10) | 2026-08-10 | 스파인 2 + 리프 4 패브릭 |
 
 ---
 
-## 2026-10-03
+## v0.5 — 패킷 캡처로 읽는 장애 (2026-10-02 ~ 10-03)
 
-### 변경
-- 실험 번호: 12 ECMP 분산 → **07**, 13 링크 다운 수렴 → **08**, 14 스파인 무응답과 BFD → **09**. 예정이던 07 비대칭 라우팅·08 설정 실수·09 마이크로버스트는 12·13·14로
-- 목록에서 15 VXLAN/EVPN, 16 BGP unnumbered, 17 동적 이웃(옮겨올 예정이던 기본 검증)을 뺌
+설계 확장보다 트러블슈팅과 패킷 흐름 관찰에 집중하기로 방향을 바꾼 버전.
+장마다 장애 지점 앞뒤를 동시에 캡처하고, Wireshark 화면·원본 pcap·모니터링 성적표를 함께 둔다.
 
-## 2026-10-02 (4)
+### 장애 시나리오
+- **추가** 01 숨은 MTU 결함 + 스파인 장애 — 정상 → 결함 → 스파인 먹통 → 복구 시간표로 성공률·알람 시각 측정, 모니터링 성적표
+- **추가** 02 물리 계층 불량, 03 L2 루프·브로드캐스트 스톰, 04 DNS 장애 — run.sh, 원본 pcap, Wireshark 화면, 패킷 흐름 해설
+- **변경** 05 관측 사각지대를 같은 장 형식으로 다시 씀. 결과를 README로 합치고 다른 실험 없이 혼자 돌게 함
+- **변경** 옛 실험 01(HTTP 전송 + MTU)을 `experiments/_archive/01-http-mtu`로 옮김
 
-### 추가
-- 실험 12 **ECMP 분산**, 13 **링크 다운 수렴**, 14 **스파인 무응답과 BFD** — docs/EXPERIMENTS §1·§2를 패킷 캡처로 다시 잰 장. 장마다 run.sh·restore.sh, 원본 pcap, Wireshark 화면
-- `experiments/_tools/timeline.sh` — T0 기준 ping 공백, 응답 없는 요청 수, BGP·BFD 메시지 타임라인
-- `ws-shot.ps1`에 `-Col`(사용자 열), `-Crop`(패킷 목록만 자르기)
-- 메인 README 상단에 바로 가기 카드 두 개(EVPN-VXLAN 설계, 장애 시나리오)
+### 기본 검증 이관 (docs/EXPERIMENTS.md → 07~09)
+- **추가** 07 ECMP 분산, 08 링크 다운 수렴, 09 스파인 무응답과 BFD — EXPERIMENTS §1·§2를 패킷 캡처로 다시 잰 장
+- **결정** EXPERIMENTS §3(VXLAN/EVPN)·§4(unnumbered, listen range)는 장으로 옮기지 않는다
 
-### 변경
-- 실험 번호 재배치: 옛 04·05·06 → **02·03·04**, 옛 02 → **05**, 예정이던 03 플래핑 → **06**. 링크·제목·알람 주석(`실험 02` → `실험 05`)을 함께 고침
-- 메인 README 상단 링크를 설계와 이유 · 장애 시나리오 · 변경 기록 세 개로 줄임
-- `lab.sh`의 `WINROOT`를 환경변수로 덮어쓸 수 있게 함 (다른 PC에서 pcap 사본 경로)
-- `ws-shot.ps1` 버그 수정: 창 핸들 변수 `$h`가 높이 `$H`를 덮어써(PowerShell은 대소문자 구분 없음) `-H`가 무시되던 문제
+### 모니터링
+- **추가** 2차 — 인터페이스 바이트·드랍·에러·MTU(`clos_if_*`), 서버 TCP 재전송(`clos_host_tcp_*`), 이웃별 세션 끊김 누적(`clos_bgp_peer_drops_total`). 노드별 병렬 수집. 알람 `InterfaceDropping`, `FabricMTUMismatch`, 대시보드 데이터플레인 줄
+- **추가** 3차 — 리프→스파인 링크마다 작은 ping과 MTU 크기 ping(`clos_link_probe_success`), 알람 `LinkLargeFrameLoss`·`LinkProbeDown`, 대시보드 블랙박스 줄
 
-### 검증
-- 12: 정책 0은 40:0. 정책 1은 갈리지만 5-tuple이 같은 흐름을 다시 보내면 40개 중 18개가 다른 링크로 — 서버 소켓의 해시값(skb->hash)을 그대로 씀. 정책 3(필드 0x37)은 0개
-- 13: 끊김 0.20초. leaf1은 T0+0.011에 남은 링크로, leaf4는 T0+0.118에 경로 교체. spine1은 철회 대신 valley path(65001 65012 65002 65011)를 광고. 복구 시 OPEN 충돌(Connection Collision Resolution), 무손실. 스파인 AS 통일(RFC 7938 권고)은 미결정 항목으로 남김
-- 14: BFD 없이 7.61초(마지막 KEEPALIVE에서 9.003초 뒤 Hold Timer Expired), BFD 300ms×3에서 1.15초(마지막 BFD에서 0.900초 뒤 Down, NOTIFICATION Cease/Hard Reset 안에 BFD Down). 얼린 스파인의 커널은 TCP ACK를 계속 보냄
+### 도구
+- **추가** `experiments/_tools/` — `lab.sh`(netns 실행·캡처 함수), `prep-hosts.sh`(서버 도구 설치), `ws-shot.ps1`(Wireshark 화면 저장, `-Col`·`-Crop`), `detail.sh`(tshark 상세), `timeline.sh`(T0 기준 ping 공백·BGP·BFD 타임라인), Wireshark 프로필
+- **변경** `lab.sh`의 `WINROOT`를 환경변수로 덮어쓸 수 있게 함
+- **변경** `ws-shot.ps1` 버그 수정 — 창 핸들 변수 `$h`가 높이 `$H`를 덮어써(PowerShell은 대소문자 구분 없음) `-H`가 무시되던 문제
 
-## 2026-10-02 (3)
-
-### 추가
-- 실험 01을 새로 씀: **숨은 MTU 결함 + 스파인 장애**. 시간표(정상 → 결함 → 스파인 먹통 → 복구)로 성공률·알람 시각을 재고, 모니터링 성적표를 붙였다
-- 수집기 3차 — 리프→스파인 링크마다 작은 ping과 MTU 크기 ping(`clos_link_probe_success`), 알람 `LinkLargeFrameLoss`·`LinkProbeDown`, 대시보드 블랙박스 줄
-- 실험 목록에 docs/EXPERIMENTS.md의 기본 검증 6건을 12~17번으로 추가 (패킷 캡처로 다시 측정한 뒤 EXPERIMENTS.md는 지운다)
-- DESIGN.md에 그림 3장(3계층 vs spine-leaf, 장비별 AS, 번호에서 계산되는 값)과 한눈에 요약. 목표 규칙과 지금 랩의 차이를 적음
-
-### 변경
-- 옛 실험 01(HTTP 전송 + MTU)을 `experiments/_archive/01-http-mtu`로 옮김
-- 실험 02를 04~06과 같은 장 형식으로 다시 씀. 결과를 README로 합치고, 01에 기대던 스크립트를 02 안으로 가져와 혼자 돌게 함
+### 문서·구조
+- **추가** README 프로젝트 개요와 패킷 캡처·모니터링 화면, 바로 가기 카드
+- **추가** DESIGN.md 그림 3장(3계층 vs spine-leaf, 장비별 AS, 번호에서 계산되는 값)과 한눈에 요약. 목표 규칙과 지금 랩의 차이를 적음
+- **변경** 실험 번호 정리 — 옛 04·05·06 → 02·03·04, 옛 02 → 05, 예정이던 03 플래핑 → 06, 옛 12·13·14 → 07·08·09, 예정이던 07·08·09 → 12·13·14. 목록에서 15~17(EVPN, unnumbered, 동적 이웃) 제거
+- **삭제** README의 실측 결과 표, BFD 전후 데모, 검증의 흐름 절 (장애 시나리오 표로 합침)
 
 ### 검증
-- 01: 숨은 결함만 있을 때 HTTP 61%, spine1 먹통이 겹치면 0%, 작은 ping은 내내 정상. 리프는 hold timer 만료(8.8초) 뒤에 spine1을 뺌
-- 01: 리눅스 TCP의 해시 재선택(`net.core.txrehash`)이 veth를 넘어 리프의 ECMP 선택을 바꿔, 기본값에서는 결함 링크를 스스로 피해 갔다(HTTP 100%). 끄면 61%
-- 01: 링크 프로브는 MTU 결함을 결함 기간 내내 잡았지만, 포워딩만 멈춘 스파인은 커널이 ping에 대답해 못 잡았다
+- 01: 숨은 결함만 있을 때 HTTP 61%, spine1 먹통이 겹치면 0%, 작은 ping은 내내 정상. 리프는 hold timer 만료(8.8초) 뒤에 spine1을 뺌. 리눅스 TCP의 해시 재선택(`net.core.txrehash`)이 veth를 넘어 리프의 ECMP 선택을 바꿔, 기본값에서는 결함 링크를 스스로 피해 갔다(HTTP 100%). 링크 프로브는 MTU 결함을 잡았지만 포워딩만 멈춘 스파인은 커널이 ping에 대답해 못 잡았다
+- 02: 비트 깨짐 4%에서 h3 TCP 체크섬 오류 5·IP 헤더 오류 4, 몰린 손실에서 ping 9개 연속 소실. 이 커널(WSL 6.6)에서 netem `loss 5%`는 동작하지 않고 `loss gemodel`은 동작
+- 03: ARP 하나 → 3초에 136만 패킷, MAC 표 오염, EVPN MAC Mobility 순번 증가와 중복 감지. 루프 포트의 IPv6 멀티캐스트만으로도 스톰이 시작됨
+- 04: DNS 고장 방식별 실패 시간 3.3초(잘못된 레코드) / 0.2초(프로세스 중지) / 10.8초(DROP)
+- 05: 1차 모니터링 아래 MTU 장애는 Established 16/16, 알람 0. 2차는 같은 장애에 알람 2. scrape 평균 0.8초로 1차와 같음
+- 07: 정책 0은 40:0. 정책 1은 갈리지만 5-tuple이 같은 흐름을 다시 보내면 40개 중 18개가 다른 링크로 — 서버 소켓의 해시값(skb->hash)을 그대로 씀. 정책 3(필드 0x37)은 0개
+- 08: 끊김 0.20초. leaf1은 T0+0.011에 남은 링크로, leaf4는 T0+0.118에 경로 교체. spine1은 철회 대신 valley path(65001 65012 65002 65011)를 광고. 복구 시 OPEN 충돌(Connection Collision Resolution), 무손실. 스파인 AS 통일(RFC 7938 권고)은 미결정 항목으로 남김
+- 09: BFD 없이 7.61초(마지막 KEEPALIVE에서 9.003초 뒤 Hold Timer Expired), BFD 300ms×3에서 1.15초(마지막 BFD에서 0.900초 뒤 Down). 얼린 스파인의 커널은 TCP ACK를 계속 보냄
 
-## 2026-10-02 (2)
-
-### 추가
-- `experiments/_tools/` — 챕터 공통 도구: `lab.sh`(netns 실행·캡처 함수), `prep-hosts.sh`(서버 도구 설치), `ws-shot.ps1`(Wireshark 화면 저장), `detail.sh`(tshark 상세), Wireshark 프로필
-- 실험 04 물리 계층 불량, 05 L2 루프·브로드캐스트 스톰, 06 DNS 장애 — 장마다 run.sh, 원본 pcap, Wireshark 화면, 패킷 흐름 해설
-
-### 검증
-- 04: 비트 깨짐 4%에서 h3 TCP 체크섬 오류 5·IP 헤더 오류 4, 몰린 손실에서 ping 9개 연속 소실. 이 커널(WSL 6.6)에서 netem `loss 5%`는 동작하지 않고 `loss gemodel`은 동작
-- 05: ARP 하나 → 3초에 136만 패킷, MAC 표 오염, EVPN MAC Mobility 순번 증가와 중복 감지. 루프 포트의 IPv6 멀티캐스트만으로도 스톰이 시작됨
-- 06: DNS 고장 방식별 실패 시간 3.3초(잘못된 레코드) / 0.2초(프로세스 중지) / 10.8초(DROP)
-
-## 2026-10-02
-
-### 추가
-- 수집기 2차 — 인터페이스 바이트·드랍·에러·MTU(`clos_if_*`), 서버 TCP 재전송(`clos_host_tcp_*`), 이웃별 세션 끊김 누적(`clos_bgp_peer_drops_total`). 노드별 병렬 수집
-- 알람 `InterfaceDropping`, `FabricMTUMismatch`. 대시보드에 데이터플레인 줄(패널 8개)
-- `experiments/02-observability-gap/` — 같은 MTU 장애를 1차·2차 모니터링 아래에서 주입하는 `probe.sh`
-
-### 검증
-- 1차 모니터링 아래 MTU 장애: 전송 정지, Established 16/16, **알람 0**
-- 2차 아래 같은 장애: **알람 2** (MTU 불일치 spine1:eth3, spine1-leaf3 링크 드랍). scrape 평균 0.8초로 1차와 같음
-
-## 2026-09-30
+## v0.4 — 장애 시나리오 구조 (2026-09-30)
 
 ### 추가
 - `experiments/` — 장애 시나리오를 실험별 디렉터리로 쌓는 구조. 목록·규칙은 `experiments/README.md`, 새 실험 뼈대는 `experiments/_template/`
-- `experiments/01-http-mtu/` — HTTP 대용량 전송 + MTU 불일치 실험 (2026-09-26 실측분). 스크립트 7개와 결과 기록
+- `experiments/01-http-mtu/` — HTTP 대용량 전송 + MTU 불일치 실험 (2026-09-26 실측분, 지금은 `_archive/`)
 
 ### 변경
 - `experiments/http-mtu` → `experiments/01-http-mtu`. `lib.sh`의 윈도우 사본 경로를 디렉터리 이름에서 계산하도록 바꿈
 - README에 장애 시나리오 절 추가, Roadmap의 MTU 항목을 실험 01로 닫음
 
-## 2026-09-20
+## v0.3 — 관측 (2026-09-20)
 
 ### 추가
 - `monitoring/` — Prometheus + Grafana 관측 시나리오. 자작 경량 수집기(`exporter/collector.py`)가 docker 소켓으로 `vtysh … json`을 긁어 지표로 (frr_exporter 바이너리 대신 — 배포 단순·투명)
@@ -99,17 +84,22 @@
   - 관측 지연은 `scrape_interval`(5초)이 하한 — 데이터플레인 복구(1.2초)와 다른 축
   - 장애 시 대시보드: Established 8/16, 기대 미달 4, 알람 5
 
-## 2026-09-10
+## v0.2 — 확장 검증과 운영 문서 (2026-08-25 ~ 09-10)
+
+날짜 표시가 없는 항목은 09-10.
 
 ### 검증
-- spine1↔leaf1 한 링크만 BGP unnumbered로 바꿔 **혼합 상태**에서 확인 — 세션이 fe80(link-local)으로 붙고, IPv4 경로의 넥스트홉이 `fe80::… via eth1`로 바뀜. 나머지 `/31` 링크와 섞인 ECMP, 서버 간 통신 모두 정상. RA 설정 불필요 (FRR 10.2.1)
+- (08-25) 스파인 이웃 목록을 지우고 대역만 열어도(listen range) 리프 4대가 20초 안에 스스로 재접속하는 것 확인
+- (09-10) spine1↔leaf1 한 링크만 BGP unnumbered로 바꿔 **혼합 상태**에서 확인 — 세션이 fe80(link-local)으로 붙고, IPv4 경로의 넥스트홉이 `fe80::… via eth1`로 바뀜. 나머지 `/31` 링크와 섞인 ECMP, 서버 간 통신 모두 정상. RA 설정 불필요 (FRR 10.2.1)
 
 ### 결정
 - **BGP unnumbered 채택.** 전체 전환은 확장 작업 3번(§7 정리 재배포) 때 한 번에 한다
 - **스파인 동적 이웃(listen range) 기각.** 링크에 IP가 없어지면서 쓸 곳이 사라졌다
 
 ### 추가
-- `scripts/unnumbered-test.sh` — 위 검증 재현 (실행 중 설정만 바꾸고 자동 원복)
+- (08-25) `docs/10-확장규칙.md` — 이름·AS·주소·포트 규칙, 리프 추가 절차, 규칙과 어긋나는 곳 목록
+- (08-25) `scripts/listen-range-test.sh`, 30일 실습 코스 (`docs/40-하루5분-30일.md`, `scripts/day.sh` 등)
+- (09-10) `scripts/unnumbered-test.sh` — 위 검증 재현 (실행 중 설정만 바꾸고 자동 원복)
 - `CHANGELOG.md` — 이 파일
 - `docs/RUNBOOK.md` — 따라 하는 절차: 랩 띄우기, 원본→사본 동기화, 재배포, 리프 1대 추가, 고장 훈련 한 판
 - `docs/LOG.md` — 고장 훈련 기록 (날짜·증상·원인·해결 한 줄씩)
@@ -127,17 +117,7 @@
 - `docs/40-하루5분-30일.md` — 30일 코스 안내 문서 (훈련 자체는 `scripts/day.sh`로 계속된다. 절차는 RUNBOOK R5)
 - `docs/90-현업-예상질문.md`
 
-## 2026-08-25
-
-### 검증
-- 스파인 이웃 목록을 지우고 대역만 열어도(listen range) 리프 4대가 20초 안에 스스로 재접속하는 것 확인
-
-### 추가
-- `docs/10-확장규칙.md` — 이름·AS·주소·포트 규칙, 리프 추가 절차, 규칙과 어긋나는 곳 목록
-- `scripts/listen-range-test.sh`
-- 30일 실습 코스 (`docs/40-하루5분-30일.md`, `scripts/day.sh` 등)
-
-## 2026-08-10
+## v0.1 — 랩 초기 구성 (2026-08-10)
 
 ### 추가
 - 랩 초기 구성 — 스파인 2 + 리프 4 + 서버 6, eBGP 언더레이·ECMP·장애 측정·BFD·VXLAN/EVPN 스크립트와 문서
