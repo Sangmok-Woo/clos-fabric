@@ -107,16 +107,9 @@ nobfd에서 leaf1과 leaf4가 거의 같은 순간(2ms 차이)에 만료된 것�
 
 ## 결론
 
-> **링크가 살아 있는 채로 장비가 멈추면 BGP는 최대 9초 뒤에야 알고, BFD는 0.9초에 안다.**
+링크는 살아 있는 채로 spine1을 멈췄더니, BFD가 없을 때는 통신이 7.61초 끊겼고 BFD(300ms × 3)를 켜자 1.15초로 줄었다. 링크가 up이고 멈춘 spine1의 커널은 TCP ACK까지 보내서 연결은 살아 있는 것처럼 보였다. BGP는 KEEPALIVE가 hold time(9초) 동안 오지 않는 것으로만 장애를 알 수 있다. 캡처에서도 마지막 KEEPALIVE부터 정확히 9.003초 뒤에 Hold Timer Expired가 나갔다. BFD는 마지막 신호 0.900초 뒤에 Down을 판단했고, 그 신호로 BGP 세션을 바로 끊었다.
 
-| | |
-|---|---|
-| **넣은 장애** | spine1 먹통 (`ip_forward=0` + `docker pause`). BFD 없이 한 번, BFD 300ms×3으로 한 번 |
-| **겉으로 보인 것** | ping 끊김 **7.61초** vs **1.15초** |
-| **핵심 숫자** | 마지막 신호에서 판단까지 9.003초 (= hold time) vs 0.900초 (= 300ms × 3). 응답 없는 요청 151 vs 22 |
-| **왜 그랬나** | 링크는 up이고 커널은 TCP ACK까지 보내서 연결은 살아 보인다. BGP는 KEEPALIVE가 hold time 동안 안 오는 것으로만 안다. hold timer는 마지막 keepalive부터 세서 6~9초 사이로 흔들린다 |
-| **결정적 증거** | spine1이 KEEPALIVE는 안 보내는데 TCP ACK는 보낸다. BFD에선 `Control Detection Time Expired` → BGP `Cease / Hard Reset` (Data `060a` = BFD Down) |
-| **기억할 것** | 케이블 단선(실험 06)은 인터페이스 다운으로 0.2초에 안다. BFD가 필요한 건 이 경우처럼 링크는 살아 있고 상대만 멈췄을 때다 |
+케이블이 끊기는 장애(실험 06)는 인터페이스 다운으로 0.2초면 안다. BFD가 필요한 건 이번처럼 링크는 멀쩡한데 상대 장비만 멈췄을 때다.
 
 ## 파일
 
