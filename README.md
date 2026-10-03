@@ -71,43 +71,9 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 
 </details>
 
-## 실측 결과
-
-| 실험 | 조건 | 결과 |
-|---|---|---|
-| [링크 다운 복구](experiments/08-link-down-convergence/README.md) | 케이블 단선 (인터페이스 다운 감지) | **0.2초** |
-| [스파인 무응답 복구](experiments/09-spine-freeze-bfd/README.md) | BFD 없음 — BGP 타이머(3/9초)에 의존 | 7.6초 |
-| [스파인 무응답 복구](experiments/09-spine-freeze-bfd/README.md) | **BFD 300ms×3 적용** | **0.8초 (약 10배 개선)** |
-| [ECMP 분산 (흐름 40개)](experiments/07-ecmp-hash/README.md) | 해시가 IP만 볼 때 → L4 포트까지 볼 때 | 41:1 (몰빵) → **12:30 (분산)** |
-| 랙을 넘는 L2 | VXLAN VNI 10010 + BGP EVPN | v1 ↔ v3 통신, 원격 MAC을 leaf3 VTEP으로 학습 |
-
-> 첫 측정과 재측정(8.8초/1.2초)의 차이, 측정 방법, 전체 출력은 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)에 있다.
-> ECMP·링크 다운·스파인 무응답은 [실험 07~09](#장애-시나리오)에서 패킷 캡처로 다시 쟀다 (2026-10-02: 0.20초 / 7.61초 → BFD 1.15초).
-
-### 같은 장애, BFD 전후
-
-<div align="center">
-<img src="assets/demo.svg" width="840" alt="failover.sh 실행 터미널 — BFD 없이 8.8초, BFD 적용 후 1.2초">
-</div>
-
-위 터미널은 실제 실행 출력을 그대로 재생한 것이다. 스파인을 조용히 얼리는 같은 장애를 BFD 적용 전후로 두 번 주입했다 — 전체 출력과 타임라인 해설은 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
-
-## 검증의 흐름
-
-1. **언더레이** — 리프↔스파인 8링크 전부 eBGP(/31, 장비당 AS 하나). `maximum-paths` + `multipath-relax`로 ECMP 확보
-2. **부하분산** — 커널 해시 정책 0/1을 바꿔가며 링크별 분산을 tcpdump로 계수
-3. **장애와 수렴** — 링크 다운 / 스파인 freeze를 주입하고 끊긴 시간을 측정, BFD로 개선
-4. **오버레이** — VXLAN + BGP EVPN(Type-2/3)으로 랙이 다른 두 서버를 같은 L2로
-5. **확장 검증** — 동적 이웃(listen range)은 검증 후 **기각**, BGP unnumbered는 fe80 넥스트홉까지 확인 후 **채택** ([CHANGELOG](CHANGELOG.md))
-6. **관측** — Prometheus + Grafana로 세션·경로를 5초마다 긁고, 장애를 **모니터링이 알아채는 시간**을 실측 ([monitoring/](monitoring/README.md))
-
-여기에 매일 하나씩 고장 내고 복구하는 **30일 장애 훈련**(`scripts/day.sh`)을 얹어 운영 감각을 유지한다.
-
-> 이 브랜치(main)는 정리된 기록이다. 진행 중인 작업·운영 절차·훈련 일지는 [`lab` 브랜치](https://github.com/Sangmok-Woo/clos-fabric/tree/lab)에 있다.
-
 ## 장애 시나리오
 
-위까지가 패브릭의 골조다. 골조는 고정해 두고, 그 위에서 장애를 하나씩 재현해 번호를 붙여 쌓는다.
+패브릭의 골조는 고정해 두고, 그 위에서 장애를 하나씩 재현해 번호를 붙여 쌓는다.
 실험 하나가 디렉터리 하나이고, 끝나면 베이스를 원래 값으로 되돌린다 — 규칙과 추가 방법은 [experiments/](experiments/README.md).
 01~04번과 07~09번은 장애 지점 앞뒤를 동시에 캡처해 **Wireshark 화면으로 패킷 흐름을 읽는** 장이다. 원본 pcap도 함께 있다.
 
