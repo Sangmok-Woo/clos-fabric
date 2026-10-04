@@ -44,6 +44,7 @@ BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
 - [05 ECMP 분산](experiments/05-ecmp-hash/README.md) — 같은 흐름이 **다른 스파인으로**
 - [06 링크 다운](experiments/06-link-down-convergence/README.md) — 0.20초, 스파인의 valley path
 - [07 스파인 먹통 + BFD](experiments/07-spine-freeze-bfd/README.md) — **7.61초 → 1.15초**
+- [10 마이크로버스트](experiments/10-microburst/README.md) — 70% 손실인데 **드랍 0, 알람 0**
 
 </td>
 </tr>
@@ -60,7 +61,7 @@ RFC 7938 방식의 eBGP 언더레이 위에 ECMP, BFD, VXLAN/EVPN 오버레이�
 | 패킷 캡처 — 장애 지점의 흐름을 Wireshark로 | 모니터링 — 같은 장애를 Grafana로 |
 |---|---|
 | <img src="assets/readme-wireshark.png" alt="DNS가 없어진 서버 주소를 돌려줘 SYN 재전송 끝에 Host unreachable이 오는 Wireshark 화면"> | <img src="assets/readme-grafana.png" alt="세션은 16/16 정상인데 링크 드랍과 MTU 불일치 알람이 울리는 Grafana 대시보드"> |
-| 잘못된 DNS 레코드: 이름 해석은 성공하고, 없는 주소로 보낸 SYN이 재전송 끝에 Host unreachable로 끝난다 — [실험 04](experiments/04-dns-failure/README.md) | MTU 장애: BGP 세션은 16/16으로 멀쩡한데 링크 드랍과 MTU 불일치 알람이 울린다 — [실험 05](experiments/05-observability-gap/README.md) |
+| 잘못된 DNS 레코드: 이름 해석은 성공하고, 없는 주소로 보낸 SYN이 재전송 끝에 Host unreachable로 끝난다 — [실험 04](experiments/04-dns-failure/README.md) | MTU 장애: BGP 세션은 16/16으로 멀쩡한데 링크 드랍과 MTU 불일치 알람이 울린다 — [실험 01](experiments/01-hidden-mtu-meets-spine-failure/README.md) |
 
 <details>
 <summary><b>English summary</b></summary>
@@ -74,7 +75,7 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 
 패브릭의 골조는 고정해 두고, 그 위에서 장애를 하나씩 재현해 번호를 붙여 쌓는다.
 실험 하나가 디렉터리 하나이고, 끝나면 베이스를 원래 값으로 되돌린다 — 규칙과 추가 방법은 [experiments/](experiments/README.md).
-01~07번은 모두 장애 지점 앞뒤를 동시에 캡처해 **Wireshark 화면으로 패킷 흐름을 읽는** 장이다. 원본 pcap도 함께 있다.
+01~07번과 10번은 모두 장애 지점 앞뒤를 동시에 캡처해 **Wireshark 화면으로 패킷 흐름을 읽는** 장이다. 원본 pcap도 함께 있다.
 
 | # | 실험 | 주입하는 장애 | 본 것 |
 |---|---|---|---|
@@ -85,8 +86,9 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 | 05 | [ECMP 분산](experiments/05-ecmp-hash/README.md) | 해시 정책 0 / 1 / 3에서 UDP 흐름 40개를 두 번씩 | 정책 0은 **40:0**. 정책 1은 갈리지만 같은 5-tuple을 다시 보내면 **18개가 다른 스파인으로** — 서버 소켓의 해시값을 그대로 쓴다. 헤더만 보는 정책 3은 0개 |
 | 06 | [링크 다운 수렴](experiments/06-link-down-convergence/README.md) | 지금 쓰는 스파인 링크를 leaf1에서 내림 | 끊김 **0.20초**. leaf1은 0.011초에 남은 링크로 돌렸고, 끊김은 반대편 leaf4가 BGP로 듣기까지의 시간. spine1은 철회 대신 **valley path**(AS 4개)를 광고 |
 | 07 | [스파인 무응답과 BFD](experiments/07-spine-freeze-bfd/README.md) | 링크는 up인 채 spine1을 얼림, BFD 전후 | **7.61초 → 1.15초**. 마지막 KEEPALIVE에서 정확히 9.003초 뒤 Hold Timer Expired, 마지막 BFD에서 0.900초 뒤 BFD Down. 얼린 스파인의 커널은 TCP ACK를 계속 보냈다 |
+| 10 | [마이크로버스트](experiments/10-microburst/README.md) | 평균 90Mbit/s를 고르게 / 300개씩 몰아서 100Mbit·버퍼 64KB 포트로 | 고르게 보내면 손실 0, 몰아서 보내면 **70% 넘게 손실**. 버퍼 드랍은 큐 통계에만 쌓여 모니터링은 드랍 0·알람 0, 5초 평균 송신 속도는 오히려 90 → 25Mbit/s로 낮아 보였다. 1ms로 세면 순간 2,330Mbit/s |
 
-예정: 08 세션 테이블 고갈, 09 비대칭 라우팅 + 상태 기반 방화벽, 10 마이크로버스트 — 전체 목록은 [experiments/](experiments/README.md).
+예정: 08 세션 테이블 고갈, 09 비대칭 라우팅 + 상태 기반 방화벽 — 전체 목록은 [experiments/](experiments/README.md).
 
 ## 빠른 시작
 

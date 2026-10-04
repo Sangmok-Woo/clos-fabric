@@ -1,0 +1,43 @@
+
+[1m=== 준비 — leaf3:eth3 을 100Mbit / 버퍼 64KB 포트로, h3 에 iperf3 서버 3개 ===[0m
+  iperf3 서버 수: 0
+
+[1m=== Phase smooth — 세 대가 각각 -b 30M, 10초 ===[0m
+  h2 → h3: 받은 쪽 30.0 Mbits/sec, 손실 (0%) receiver
+  h4 → h3: 받은 쪽 30.0 Mbits/sec, 손실 (0%) receiver
+  h1 → h3: 받은 쪽 30.0 Mbits/sec, 손실 (0%) receiver
+  leaf3:eth3 버퍼에서 버려진 패킷 (tc): 0
+  같은 포트의 인터페이스 카운터 tx_dropped: 0  ← 모니터링 수집기가 읽는 값
+  모니터링이 본 leaf3:eth3 송신 속도 (5초 scrape, 구간 최대): 90.59 Mbit/s
+  그동안 울린 InterfaceDropping 알람: 0
+
+[1m=== Phase burst — 세 대가 각각 -b 30M/300, 10초 ===[0m
+  h2 → h3: 받은 쪽 8.32 Mbits/sec, 손실 (72%) receiver
+  h1 → h3: 받은 쪽 5.23 Mbits/sec, 손실 (83%) receiver
+  h4 → h3: 받은 쪽 11.8 Mbits/sec, 손실 (61%) receiver
+  leaf3:eth3 버퍼에서 버려진 패킷 (tc): 58368
+  같은 포트의 인터페이스 카운터 tx_dropped: 0  ← 모니터링 수집기가 읽는 값
+  모니터링이 본 leaf3:eth3 송신 속도 (5초 scrape, 구간 최대): 24.84 Mbit/s
+  그동안 울린 InterfaceDropping 알람: 0
+  h3-eth1.pcap                 103007 패킷
+  leaf3-eth1.pcap               53793 패킷
+  leaf3-eth2.pcap              107582 패킷
+
+[1m=== 원복 ===[0m
+qdisc noqueue 0: root refcnt 2 
+
+[1m=== 1ms 단위로 다시 세기 (캡처) ===[0m
+Traceback (most recent call last):
+  File "/root/labs/clos-fabric/experiments/10-microburst/io.py", line 38, in <module>
+    o, r = bins(offered, s, s + WIN), bins(arrived, s, s + WIN)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labs/clos-fabric/experiments/10-microburst/io.py", line 27, in bins
+    out[int((t - a) / w)] += sz
+    ~~~^^^^^^^^^^^^^^^^^^
+IndexError: list index out of range
+  smooth: 평균 제공  90.9 / 도착  90.9 Mbit/s · 1ms 최대 제공    519 Mbit/s, 1ms 중 링크(100) 넘은 칸 5521개 / 10201개
+  burst : 평균 제공  91.4 / 도착  25.5 Mbit/s · 1ms 최대 제공   2330 Mbit/s, 1ms 중 링크(100) 넘은 칸 1215개 / 10219개
+  그림: img/io-1ms.svg
+  smooth: 평균 제공  90.9 / 도착  90.9 Mbit/s · 1ms 최대 제공    519 Mbit/s, 1ms 중 링크(100) 넘은 칸 5521개 / 10201개
+  burst : 평균 제공  91.4 / 도착  25.5 Mbit/s · 1ms 최대 제공   2330 Mbit/s, 1ms 중 링크(100) 넘은 칸 1215개 / 10219개
+  그림: img/io-1ms.svg
