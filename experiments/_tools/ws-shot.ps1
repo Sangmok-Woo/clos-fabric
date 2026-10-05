@@ -33,6 +33,8 @@ $prof = Join-Path $env:APPDATA "Wireshark\profiles\lab-chapters"
 New-Item -ItemType Directory -Force $prof | Out-Null
 Copy-Item -Force (Join-Path $PSScriptRoot "wireshark-profile\*") $prof
 $profName = 'lab-chapters'
+# powershell -File passes "a=x,b=y" as one string: split it back into columns
+$Col = @($Col | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
 if ($Col.Count -gt 0) {
   $profName = 'lab-chapters-cols'
   $p2 = Join-Path $env:APPDATA "Wireshark\profiles\$profName"
