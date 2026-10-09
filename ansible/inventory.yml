@@ -1,0 +1,39 @@
+# 랩의 장비 목록. 셸 스크립트마다 흩어져 있던 "spine1 spine2 leaf1 ..." 를 여기 한 곳에만 적는다.
+# 장비별 값(AS 번호, 루프백, 링크)은 host_vars/<이름>.yml 에 있다.
+all:
+  children:
+    # 패브릭 스위치(FRR). python3 가 있어서 Ansible 모듈을 그대로 쓴다.
+    fabric:
+      vars:
+        ansible_connection: community.docker.docker   # SSH 대신 docker exec 로 접속
+        ansible_host: "clab-clos-{{ inventory_hostname }}"
+        ansible_python_interpreter: /usr/bin/python3
+      children:
+        spines:
+          hosts:
+            spine1:
+            spine2:
+        leaves:
+          hosts:
+            leaf1:
+            leaf2:
+            leaf3:
+            leaf4:
+    # 서버(alpine). python 이 없어서 raw 모듈만 쓸 수 있다.
+    servers:
+      vars:
+        ansible_connection: community.docker.docker
+        ansible_host: "clab-clos-{{ inventory_hostname }}"
+      hosts:
+        h1: { server_ip: 172.16.11.10 }
+        h2: { server_ip: 172.16.12.10 }
+        h3: { server_ip: 172.16.13.10 }
+        h4: { server_ip: 172.16.14.10 }
+        v1: { server_ip: 10.10.10.11 }
+        v3: { server_ip: 10.10.10.33 }
+    # 랩을 띄우는 WSL 자신
+    control:
+      hosts:
+        localhost:
+          ansible_connection: local
+          ansible_python_interpreter: "{{ ansible_playbook_python }}"

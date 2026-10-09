@@ -1,0 +1,69 @@
+# 랩 띄우기/내리기 (scripts/deploy.sh + 그 앞뒤로 손으로 하던 준비 과정)
+#   ./ansible/run.sh deploy.yml                         # 준비 → 배포(이미 떠 있으면 건너뜀) → 수렴 확인
+#   ./ansible/run.sh deploy.yml -e lab_state=redeploy   # 내렸다가 다시
+#   ./ansible/run.sh deploy.yml -e lab_state=down
+# 윈도우 쪽 준비(WSL 이 꺼지지 않게 붙잡아 두는 keepalive)는 Ansible 밖의 일이다. PowerShell 에서 먼저:
+#   Start-Process -WindowStyle Hidden wsl -ArgumentList '-d','Ubuntu','-u','root','--','sleep','infinity'
+# deploy.sh 와 다른 점
+#  - deploy.sh 는 containerlab 한 줄이다. 그 앞(docker 기동, 원본 복사)과 뒤(수렴 대기, 점검)가 손작업이었다
+#  - 이미 떠 있으면 다시 띄우지 않는다. 원본이 안 바뀌었으면 복사도 changed 로 잡히지 않는다
+
+- name: 랩 띄우기
+  hosts: localhost
+  gather_facts: false
+  vars:
+    lab_state: up            # up | down | redeploy
+  tasks:
+    - name: docker 데몬이 떠 있나
+      ansible.builtin.command: docker info --format '{{ "{{" }}.ServerVersion{{ "}}" }}'
+      register: docker_info
+      changed_when: false
+      failed_when: false
+
+    # WSL 에는 systemd 가 없어서 dockerd 가 저절로 뜨지 않는다
+    - name: docker 데몬 기동
+      ansible.builtin.command: service docker start
+      when: docker_info.rc != 0
+
+    - name: docker 가 응답할 때까지
+      ansible.builtin.command: docker info
+      register: r
+      changed_when: false
+      until: r.rc == 0
+      retries: 10
+      delay: 2
+
+    - name: 실행 사본 갱신 (윈도우 원본 → {{ lab_dir }})
+      ansible.builtin.command: >-
+        rsync -a --delete --itemize-changes
+        --exclude clab-{{ lab_name }}/ --exclude '.clab.*.bak' --exclude state/
+        {{ lab_src }}/ {{ lab_dir }}/
+      register: sync
+      changed_when: sync.stdout | length > 0     # rsync 가 옮긴 파일이 있을 때만 changed
+
+    # 모니터링 토폴로지도 랩 이름이 clos 라서, 이름이 아니라 토폴로지 파일로 구분한다
+    - name: 지금 떠 있는 노드 수
+      ansible.builtin.command: docker ps -q --filter label=clab-topo-file={{ lab_dir }}/{{ lab_name }}.clab.yml
+      register: running
+      changed_when: false
+
+    - name: 철거
+      ansible.builtin.command:
+        cmd: containerlab destroy -t {{ lab_name }}.clab.yml --cleanup
+        chdir: "{{ lab_dir }}"
+      when: lab_state in ['down', 'redeploy'] and running.stdout_lines | length > 0
+
+    - name: 배포
+      ansible.builtin.command:
+        cmd: containerlab deploy -t {{ lab_name }}.clab.yml
+        chdir: "{{ lab_dir }}"
+      when: lab_state == 'redeploy' or (lab_state == 'up' and running.stdout_lines | length == 0)
+
+    - name: 끝 (down)
+      ansible.builtin.meta: end_play
+      when: lab_state == 'down'
+
+# 배포 직후에는 BGP 가 아직 안 붙어 있다. check.yml 이 "될 때까지" 기다려 준다.
+- name: 수렴 확인
+  ansible.builtin.import_playbook: check.yml
+  when: lab_state | default('up') != 'down'

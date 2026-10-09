@@ -1,0 +1,87 @@
+# 스파인↔리프 링크 하나를 BGP unnumbered 로 바꿔 보고, 원래대로 되돌린다
+# (scripts/unnumbered-test.sh 를 옮긴 것)
+#   ./ansible/run.sh unnumbered.yml                            # spine1 ↔ leaf1
+#   ./ansible/run.sh unnumbered.yml -e spine=spine2 -e leaf=leaf3
+#   기존: neighbor 10.1.1.1 peer-group FABRIC       ... 링크 IP 를 계산해서 지정
+#   변경: neighbor eth1 interface peer-group FABRIC ... 인터페이스 이름만 지정
+# 세션은 IPv6 link-local(fe80::) 위에 붙고, IPv4 경로의 넥스트홉도 fe80 이 된다(RFC 5549).
+# unnumbered-test.sh 와 다른 점
+#  - 셸은 spine1/leaf1, eth1, 10.1.1.0/31, AS 65001/65011 을 전부 스크립트에 적었다.
+#    여기서는 두 장비 이름만 받고, 나머지(인터페이스·IP·AS)는 host_vars 의 links 에서 찾는다
+#  - block / always 로 원복을 보장한다
+
+- name: unnumbered 실험
+  hosts: "{{ spine | default('spine1') }},{{ leaf | default('leaf1') }}"
+  gather_facts: false
+  vars:
+    spine_name: "{{ spine | default('spine1') }}"
+    leaf_name: "{{ leaf | default('leaf1') }}"
+    peer_name: "{{ leaf_name if inventory_hostname == spine_name else spine_name }}"
+    # 내 links 중 상대 장비로 가는 링크 하나
+    link: "{{ links | selectattr('peer', 'eq', peer_name) | first }}"
+    to_unnumbered: |
+      interface {{ link.ifname }}
+      no ip address {{ link.ip }}
+      exit
+      router bgp {{ asn }}
+      no neighbor {{ link.peer_ip }}
+      neighbor {{ link.ifname }} interface peer-group {{ bgp_peer_group }}
+      neighbor {{ link.ifname }} description {{ peer_name }}
+    to_numbered: |
+      interface {{ link.ifname }}
+      ip address {{ link.ip }}
+      exit
+      router bgp {{ asn }}
+      no neighbor {{ link.ifname }} interface
+      neighbor {{ link.peer_ip }} peer-group {{ bgp_peer_group }}
+      neighbor {{ link.peer_ip }} description {{ peer_name }}
+  tasks:
+    - name: 0) {{ link.ifname }} 에 link-local 주소가 있나 (없으면 unnumbered 불가)
+      ansible.builtin.command: ip -6 -j addr show dev {{ link.ifname }} scope link
+      register: ll
+      changed_when: false
+      failed_when: (ll.stdout | from_json | map(attribute='addr_info') | flatten | length) == 0
+
+    - block:
+        # IP 를 먼저 지워야 한다. IPv4 가 남아 있으면 FRR 이 세션을 IPv4 로 붙여서 fe80 이 안 보인다
+        - name: 1) 링크 IP 를 지우고, IP 이웃을 인터페이스 이웃으로
+          ansible.builtin.command:
+            argv: "{{ ['vtysh'] + (['-c'] | product(['conf t'] + (to_unnumbered.splitlines() | select | list)) | map('list') | flatten) }}"
+
+        - name: 세션이 붙을 때까지 (최대 60초)
+          ansible.builtin.command: vtysh -c "show ip bgp neighbors {{ link.ifname }} json"
+          register: nb
+          changed_when: false
+          until: (nb.stdout | from_json)[link.ifname].bgpState | default('') == 'Established'
+          retries: 12
+          delay: 5
+          when: inventory_hostname == spine_name
+
+        - name: 2) 세션이 어디 위에 붙었나 (Local/Foreign host 가 fe80 이면 link-local 위의 세션)
+          ansible.builtin.shell: vtysh -c "show ip bgp neighbors {{ link.ifname }}" | grep -E "Extended nexthop|Local host|Foreign host"
+          register: where
+          changed_when: false
+          when: inventory_hostname == spine_name
+
+        - name: 3) 상대 서버망 경로 — 넥스트홉이 fe80
+          ansible.builtin.command: ip route show {{ hostvars[leaf_name].server_net }}
+          register: route
+          changed_when: false
+          when: inventory_hostname == spine_name
+
+        - ansible.builtin.debug:
+            msg: "{{ where.stdout_lines + route.stdout_lines }}"
+          when: inventory_hostname == spine_name
+
+      always:
+        - name: 4) 원래대로 되돌리기
+          ansible.builtin.command:
+            argv: "{{ ['vtysh'] + (['-c'] | product(['conf t'] + (to_numbered.splitlines() | select | list)) | map('list') | flatten) }}"
+
+        - name: 원복 확인 — 세션이 다 붙을 때까지
+          ansible.builtin.command: vtysh -c "show ip bgp summary json"
+          register: bgp
+          changed_when: false
+          until: (bgp.stdout | from_json).ipv4Unicast.peers | dict2items | selectattr('value.state', 'eq', 'Established') | list | length == expected_bgp_sessions | int
+          retries: 12
+          delay: 5

@@ -1,0 +1,92 @@
+# 스파인의 이웃 목록을 지우고 "대역만 열어 두는" 동적 이웃으로 바꿔 보고, 원래대로 되돌린다
+# (scripts/listen-range-test.sh 를 옮긴 것)
+#   ./ansible/run.sh listen-range.yml                  # spine1
+#   ./ansible/run.sh listen-range.yml -e spine=spine2
+# listen-range-test.sh 와 다른 점
+#  - 이웃 IP 목록(10.1.1.1 10.1.1.3 ...)과 description 을 스크립트에 적지 않는다. host_vars 의 links 에서 만든다
+#  - block / always: 중간에 실패해도(세션이 안 붙어도) 원복은 반드시 실행된다.
+#    셸은 중간에 멈추면 원복이 안 돼서 "원복 단계만 직접 실행할 것"이라고 안내해야 했다
+
+- name: listen range 실험
+  hosts: "{{ spine | default('spine1') }}"
+  gather_facts: false
+  vars:
+    # 링크 IP 10.1.1.x → 10.1.1.0/24 (spine2 면 10.1.2.0/24)
+    listen_range: "{{ links[0].peer_ip.rsplit('.', 1)[0] }}.0/24"
+    leaves: "{{ links | map(attribute='peer') | list }}"
+    want: "{{ links | length }}"
+    # vtysh 에 넣을 줄들. 위치(router bgp N)까지 포함해 한 번에 넣는다
+    to_dynamic: |
+      router bgp {{ asn }}
+      bgp listen range {{ listen_range }} peer-group {{ bgp_peer_group }}
+      bgp listen limit 128
+      {% for l in links %}
+      no neighbor {{ l.peer_ip }}
+      {% endfor %}
+    to_static: |
+      router bgp {{ asn }}
+      no bgp listen range {{ listen_range }} peer-group {{ bgp_peer_group }}
+      no bgp listen limit
+      {% for l in links %}
+      neighbor {{ l.peer_ip }} peer-group {{ bgp_peer_group }}
+      neighbor {{ l.peer_ip }} description {{ l.peer }}
+      {% endfor %}
+  tasks:
+    - name: 0) 지금 상태 — 이웃 줄 개수
+      ansible.builtin.shell: vtysh -c "show running-config" | grep -c "neighbor 10\." || true
+      register: before
+      changed_when: false
+
+    - ansible.builtin.debug:
+        msg: "이웃 줄 {{ before.stdout }}개 (이웃 {{ links | length }} × 2줄)"
+
+    - block:
+        - name: 1) 대역을 열고({{ listen_range }}), 이웃 목록은 전부 삭제
+          ansible.builtin.command:
+            argv: "{{ ['vtysh'] + (['-c'] | product(['conf t'] + (to_dynamic.splitlines() | select | list)) | map('list') | flatten) }}"
+
+        - name: 이웃 줄이 0이 됐나
+          ansible.builtin.shell: vtysh -c "show running-config" | grep -c "neighbor 10\." || true
+          register: after
+          changed_when: false
+          failed_when: after.stdout | int != 0
+
+        # 실제 환경에서는 리프의 재접속 타이머를 기다리면 된다. 여기서는 clear 로 즉시 시도시킨다
+        - name: 2) 리프가 다시 붙도록 재시도시키기
+          ansible.builtin.command: vtysh -c "clear bgp *"
+          delegate_to: "{{ item }}"
+          loop: "{{ leaves }}"
+
+        - name: 리프가 스스로 붙을 때까지 (최대 120초)
+          ansible.builtin.command: vtysh -c "show ip bgp summary json"
+          register: bgp
+          changed_when: false
+          until: (bgp.stdout | from_json).ipv4Unicast.peers | dict2items | selectattr('value.state', 'eq', 'Established') | list | length == want | int
+          retries: 12
+          delay: 10
+
+        - name: 3) 결과 — 이웃이 동적(*)으로 보인다
+          ansible.builtin.shell: vtysh -c "show ip bgp summary" | grep -E "Neighbor|10\.1\.|Dynamic|Total"
+          register: summary
+          changed_when: false
+
+        - ansible.builtin.debug:
+            msg: "{{ summary.stdout_lines }}"
+
+      always:
+        - name: 4) 원래 설정으로 되돌리기
+          ansible.builtin.command:
+            argv: "{{ ['vtysh'] + (['-c'] | product(['conf t'] + (to_static.splitlines() | select | list)) | map('list') | flatten) }}"
+
+        - name: 원복 후 세션 재시도
+          ansible.builtin.command: vtysh -c "clear bgp *"
+          delegate_to: "{{ item }}"
+          loop: "{{ leaves }}"
+
+        - name: 원복 확인 — 세션이 다 붙을 때까지
+          ansible.builtin.command: vtysh -c "show ip bgp summary json"
+          register: bgp
+          changed_when: false
+          until: (bgp.stdout | from_json).ipv4Unicast.peers | dict2items | selectattr('value.state', 'eq', 'Established') | list | length == want | int
+          retries: 12
+          delay: 5

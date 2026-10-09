@@ -1,0 +1,7 @@
+asn: 65011
+loopback: 10.255.1.1
+server_net: 172.16.11.0/24
+links:
+  - { ifname: eth1, ip: 10.1.1.1/31, peer: spine1, peer_ip: 10.1.1.0 }
+  - { ifname: eth2, ip: 10.1.2.1/31, peer: spine2, peer_ip: 10.1.2.0 }
+evpn_access_port: eth4   # v1 이 꽂힌 포트 → 이 리프는 VTEP

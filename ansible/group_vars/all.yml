@@ -1,0 +1,4 @@
+# 랩 전체에서 쓰는 값
+lab_src: /mnt/c/Users/wsm02/Desktop/Claude/clos-fabric   # 편집용 원본 (윈도우)
+lab_dir: /root/labs/clos-fabric                          # 실행용 사본 (WSL)
+lab_name: clos

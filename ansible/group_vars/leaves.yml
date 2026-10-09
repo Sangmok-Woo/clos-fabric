@@ -1,0 +1,3 @@
+expected_bgp_sessions: "{{ groups['spines'] | length }}"
+# EVPN: 리프는 세션만 열고, VNI 가 있는 리프만 advertise-all-vni 를 더한다 (host_vars 의 evpn_access_port)
+evpn_bgp_lines: "{{ ['neighbor FABRIC activate'] + (['advertise-all-vni'] if evpn_access_port is defined else []) }}"

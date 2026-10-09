@@ -13,6 +13,7 @@
 
 | 버전 | 기간 | 한 줄 |
 |---|---|---|
+| [v0.9](#v09--ansible-2026-10-09) | 2026-10-09 | 상태를 만드는 셸 스크립트 8개를 Ansible playbook으로 |
 | [v0.8](#v08--rocev2-2026-10-09) | 2026-10-09 | 실험 12 RoCEv2, 모니터링 4차(RoCE NIC 카운터) |
 | [v0.7](#v07--패킷의-일생-2026-10-05) | 2026-10-05 | 실험 08 패킷의 일생: EVPN-VXLAN vs 순수 L3 |
 | [v0.6](#v06--마이크로버스트-2026-10-04) | 2026-10-04 | 실험 10 마이크로버스트 |
@@ -21,6 +22,25 @@
 | [v0.3](#v03--관측-2026-09-20) | 2026-09-20 | Prometheus + Grafana, 감지 시간 실측 |
 | [v0.2](#v02--확장-검증과-운영-문서-2026-08-25--09-10) | 2026-08-25 ~ 09-10 | listen range 기각, BGP unnumbered 채택, 운영 문서 |
 | [v0.1](#v01--랩-초기-구성-2026-08-10) | 2026-08-10 | 스파인 2 + 리프 4 패브릭 |
+
+---
+
+## v0.9 — Ansible (2026-10-09)
+
+### 추가
+- `ansible/` — 인벤토리(fabric = spines·leaves, servers, control), group_vars·host_vars(AS·루프백·서버망·링크), 실행기 `run.sh`
+- playbook 8개: `deploy`·`check`·`bfd`·`evpn`·`prep-hosts`·`monitoring`·`listen-range`·`unnumbered`. 원래 셸 스크립트는 그대로 둠
+- `ansible/README.md` — 바꾼 것·셸로 남긴 것과 근거, 셸 값이 인벤토리·변수로 옮겨 간 자리
+
+### 검증
+- `bfd`·`evpn`·`prep-hosts` 두 번째 실행 changed=0, `bfd --check`가 바뀔 장비 6대를 보고
+- `deploy -e lab_state=redeploy` → `check` 수렴 대기 후 통과, 이어서 `evpn`으로 v1 → v3 통신
+- `listen-range`·`unnumbered` 실행 후 `always` 원복, `check` 통과
+- `monitoring` 올리기(베이스 내림 → 관측 토폴로지 16노드 → Grafana·Prometheus 응답) → 다시 실행 changed=0 → `mon_state=down` → `deploy`로 베이스 복귀
+
+### 결정
+- 캡처·트래픽·시간 측정(`capture`·`stream`·`traffic`·`failover`·`ecmp-hash`·`detect-time`·`timeline`), `day.sh`, 실험 `run.sh`는 셸로 유지. Ansible 작업당 지연이 측정값에 섞인다
+- 스파인 EVPN 설정에서 `neighbor FABRIC attribute-unchanged next-hop`을 원하는 상태에서 뺌. FRR 10.2가 running-config에 보이지 않아 매번 재적용 + 세션 재기동을 일으켰고, 빼고 새로 띄운 랩에서도 원격 VTEP 경로의 next-hop이 leaf 루프백으로 유지됨
 
 ---
 

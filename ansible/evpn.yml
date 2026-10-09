@@ -1,0 +1,112 @@
+# VXLAN + BGP EVPN 얹기 (scripts/evpn-apply.sh 를 옮긴 것)
+#   ./ansible/run.sh evpn.yml
+#   ./ansible/run.sh evpn.yml --check     # 바뀔 장비와 내용만 보기
+# evpn-apply.sh 와 다른 점
+#  - "leaf1 10.255.1.1" 같은 짝을 스크립트에 적지 않는다. VTEP 인지는 host_vars 의 evpn_access_port 로,
+#    VTEP 주소는 loopback 으로 정해진다. 새 리프에 VNI 를 주려면 host_vars 에 한 줄만 더하면 된다
+#  - "이미 있으면 에러 숨기기(2>/dev/null || true)" 대신, 없을 때만 만든다
+#  - BGP 세션 재기동(clear bgp)은 EVPN 설정이 "새로 들어간 장비"에서만 한다 (handler)
+
+- name: 1) VTEP 리프 — 브리지 + VXLAN 인터페이스
+  hosts: leaves
+  gather_facts: false
+  vars:
+    br: "br{{ evpn_vni }}"
+    vx: "vni{{ evpn_vni }}"
+  tasks:
+    - name: VTEP 이 아닌 리프는 여기서 빠진다
+      ansible.builtin.meta: end_host
+      when: evpn_access_port is not defined
+
+    - name: VXLAN 인터페이스가 이미 있나
+      ansible.builtin.command: ip link show {{ vx }}
+      register: vx_link
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: 계획
+      ansible.builtin.debug:
+        msg: "+ {{ br }}(bridge) + {{ vx }}(vxlan id {{ evpn_vni }}, local {{ loopback }}) + {{ evpn_access_port }} → {{ br }}"
+      when: vx_link.rc != 0
+      changed_when: ansible_check_mode
+
+    - name: 적용
+      ansible.builtin.shell: |
+        set -e
+        ip link add {{ br }} type bridge
+        ip link set {{ br }} type bridge stp_state 0
+        ip link set {{ br }} up
+        ip link add {{ vx }} type vxlan id {{ evpn_vni }} dstport 4789 local {{ loopback }} nolearning
+        ip link set {{ vx }} master {{ br }}
+        ip link set {{ vx }} up
+        ip link set {{ evpn_access_port }} master {{ br }}
+        ip link set {{ evpn_access_port }} up
+        bridge link set dev {{ vx }} neigh_suppress on learning off
+      when: vx_link.rc != 0
+
+- name: 2) BGP 에 EVPN 주소군 켜기
+  hosts: fabric
+  gather_facts: false
+  tasks:
+    - name: 지금 설정 읽기
+      ansible.builtin.command: vtysh -c "show running-config"
+      register: running
+      changed_when: false
+      check_mode: false
+
+    # running-config 에서 l2vpn evpn 블록만 잘라, 원하는 줄(evpn_bgp_lines, group_vars) 중 없는 것을 찾는다
+    - name: 비교
+      ansible.builtin.set_fact:
+        evpn_missing: "{{ evpn_bgp_lines | reject('in', evpn_block) | list }}"
+      vars:
+        evpn_block: >-
+          {{ (running.stdout.split('address-family l2vpn evpn')[1].split('exit-address-family')[0]
+              if 'address-family l2vpn evpn' in running.stdout else '').splitlines()
+             | map('trim') | list }}
+
+    - name: 계획
+      ansible.builtin.debug:
+        msg: "{{ evpn_missing | map('regex_replace', '^', '+ ') | list }}"
+      when: evpn_missing | length > 0
+      changed_when: ansible_check_mode
+
+    - name: 적용
+      ansible.builtin.command:
+        # vtysh -c "conf t" -c "router bgp N" -c "address-family l2vpn evpn" -c <줄1> -c <줄2> ...
+        argv: "{{ ['vtysh', '-c', 'conf t', '-c', 'router bgp ' ~ asn, '-c', 'address-family l2vpn evpn']
+                  + (['-c'] | product(evpn_missing) | map('list') | flatten) }}"
+      when: evpn_missing | length > 0
+      notify: BGP 세션 재기동
+
+  handlers:
+    # 세션이 붙은 채로 주소군을 새로 켜면 capability 재협상이 필요하다(=NoNeg).
+    # 소프트 클리어로는 안 되고 세션을 한 번 끊었다 붙여야 한다.
+    - name: BGP 세션 재기동
+      ansible.builtin.command: vtysh -c "clear bgp *"
+
+- name: 3) 확인
+  hosts: leaf1
+  gather_facts: false
+  tasks:
+    - name: leaf1 이 아는 VNI — 원격 VTEP 1개여야 정상
+      ansible.builtin.command: vtysh -c "show evpn vni {{ evpn_vni }} json"
+      register: vni
+      changed_when: false
+      when: not ansible_check_mode
+      until: (vni.stdout | from_json).numRemoteVteps | default(0) | int >= 1
+      retries: 10
+      delay: 3
+
+- name: 3) 확인 — v1 → v3 (랙을 넘는 같은 서브넷)
+  hosts: v1
+  gather_facts: false
+  tasks:
+    - name: ping
+      ansible.builtin.raw: ping -c1 -W2 {{ hostvars['v3'].server_ip }}
+      changed_when: false
+      when: not ansible_check_mode
+      register: ping
+      until: ping.rc == 0
+      retries: 5
+      delay: 2

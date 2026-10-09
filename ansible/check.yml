@@ -1,0 +1,78 @@
+# 패브릭 상태 점검 (scripts/check.sh 를 옮긴 것)
+#   ./ansible/run.sh check.yml              # 정상이 될 때까지 최대 60초 기다린다
+#   ./ansible/run.sh check.yml -e wait=0    # 지금 상태로 한 번만 판정
+# check.sh 와 다른 점
+#  - 기대값(세션 수, 넥스트홉 수, 핑 대상)을 인벤토리에서 계산한다. 리프를 늘려도 이 파일은 그대로다
+#  - 배포 직후처럼 아직 수렴 중이면 "될 때까지" 다시 본다 (until / retries)
+#  - 하나라도 틀리면 실패로 끝난다 → 다른 playbook 의 마지막 단계로 붙여 쓸 수 있다
+
+- name: 1) BGP 세션
+  hosts: fabric
+  gather_facts: false
+  vars:
+    wait: 60
+  tasks:
+    - name: Established 세션 수
+      ansible.builtin.command: vtysh -c "show ip bgp summary json"
+      register: bgp
+      changed_when: false
+      until: (bgp.stdout | from_json).ipv4Unicast.peers | dict2items | selectattr('value.state', 'eq', 'Established') | list | length == expected_bgp_sessions | int
+      retries: "{{ (wait | int) // 5 }}"
+      delay: 5
+      failed_when: false          # 판정은 아래 assert 가 한다
+
+    - name: 판정
+      ansible.builtin.assert:
+        that: established | int == expected_bgp_sessions | int
+        success_msg: "{{ established }} / {{ expected_bgp_sessions }}"
+        fail_msg: "{{ established }} / {{ expected_bgp_sessions }}  ← 모자란 세션: {{ down_peers }}"
+        quiet: true
+      vars:
+        peers: "{{ (bgp.stdout | from_json).ipv4Unicast.peers | dict2items }}"
+        established: "{{ peers | selectattr('value.state', 'eq', 'Established') | list | length }}"
+        down_peers: "{{ peers | rejectattr('value.state', 'eq', 'Established') | map(attribute='key') | list }}"
+
+- name: 2) ECMP — 리프마다 다른 랙 서버망으로 가는 넥스트홉이 스파인 수만큼 있어야 한다
+  hosts: leaves
+  gather_facts: false
+  tasks:
+    - name: 다른 랙 서버망 경로
+      ansible.builtin.command: ip -j route show {{ hostvars[item].server_net }}
+      loop: "{{ groups['leaves'] | difference([inventory_hostname]) }}"
+      register: routes
+      changed_when: false
+
+    - name: 판정
+      ansible.builtin.assert:
+        that: nexthops | int == groups['spines'] | length
+        success_msg: "{{ hostvars[item.item].server_net }} : nexthop {{ nexthops }}"
+        fail_msg: "{{ hostvars[item.item].server_net }} : nexthop {{ nexthops }}  ← {{ groups['spines'] | length }}개여야 정상"
+        quiet: true
+      loop: "{{ routes.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      vars:
+        r: "{{ item.stdout | from_json }}"
+        nexthops: "{{ (r[0].nexthops | default([r[0]])) | length if r else 0 }}"
+
+- name: 3) 서버 간 통신 — h1 에서 다른 랙 서버로
+  hosts: h1
+  gather_facts: false
+  tasks:
+    - name: ping
+      ansible.builtin.raw: ping -c1 -W1 {{ hostvars[item].server_ip }}
+      loop: [h2, h3, h4]
+      changed_when: false
+
+- name: 4) BFD 세션 (bfd.yml 적용 전이면 비어 있는 게 정상)
+  hosts: leaf1
+  gather_facts: false
+  tasks:
+    - name: show bfd peers brief
+      ansible.builtin.command: vtysh -c "show bfd peers brief"
+      register: bfd
+      changed_when: false
+
+    - name: 결과
+      ansible.builtin.debug:
+        msg: "{{ bfd.stdout_lines }}"

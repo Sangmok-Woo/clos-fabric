@@ -1,0 +1,6 @@
+asn: 65014
+loopback: 10.255.1.4
+server_net: 172.16.14.0/24
+links:
+  - { ifname: eth1, ip: 10.1.1.7/31, peer: spine1, peer_ip: 10.1.1.6 }
+  - { ifname: eth2, ip: 10.1.2.7/31, peer: spine2, peer_ip: 10.1.2.6 }

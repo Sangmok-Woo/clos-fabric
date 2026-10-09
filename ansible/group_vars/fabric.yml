@@ -1,0 +1,10 @@
+# 패브릭 스위치 공통 값
+bgp_peer_group: FABRIC
+
+# BFD (bfd.yml). 끄려면 -e bfd_enabled=false
+bfd_enabled: true
+bfd_detect_multiplier: 3
+bfd_interval_ms: 300
+
+# VXLAN/EVPN (evpn.yml)
+evpn_vni: 10010

@@ -1,0 +1,7 @@
+asn: 65002
+loopback: 10.255.0.2
+links:
+  - { ifname: eth1, ip: 10.1.2.0/31, peer: leaf1, peer_ip: 10.1.2.1 }
+  - { ifname: eth2, ip: 10.1.2.2/31, peer: leaf2, peer_ip: 10.1.2.3 }
+  - { ifname: eth3, ip: 10.1.2.4/31, peer: leaf3, peer_ip: 10.1.2.5 }
+  - { ifname: eth4, ip: 10.1.2.6/31, peer: leaf4, peer_ip: 10.1.2.7 }

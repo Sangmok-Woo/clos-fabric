@@ -1,0 +1,58 @@
+# 서버에 실험 도구 설치 + 웹 서버 기동 (experiments/_tools/prep-hosts.sh 를 옮긴 것)
+#   ./ansible/run.sh prep-hosts.yml
+# 서버(alpine)에는 python 이 없다 → Ansible 모듈을 못 쓰고 raw(셸 명령 그대로)만 쓸 수 있다.
+# raw 는 결과가 바뀌었는지 모르므로, "이미 돼 있나"를 먼저 보고 필요할 때만 실행한다.
+# prep-hosts.sh 와 다른 점
+#  - 이미 설치된 서버는 건너뛴다 (셸은 매번 apk 를 다시 돌렸다)
+#  - httpd 가 이미 떠 있으면 다시 띄우지 않는다 (셸은 매번 pkill 후 재기동)
+
+- name: 관리망 게이트웨이 알아두기
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: clab 관리망 게이트웨이
+      ansible.builtin.command: docker network inspect clab -f '{{ "{{" }}(index .IPAM.Config 0).Gateway{{ "}}" }}'
+      register: gw
+      changed_when: false
+    - ansible.builtin.set_fact:
+        mgmt_gw: "{{ gw.stdout }}"
+
+- name: 서버 준비
+  hosts: servers
+  gather_facts: false
+  vars:
+    packages: "{{ ['curl', 'busybox-extras', 'iperf3'] + (['dnsmasq'] if inventory_hostname == 'h4' else []) }}"
+    web_servers: [h1, h2, h3, h4]
+  tasks:
+    - name: 패키지가 이미 있나
+      ansible.builtin.raw: apk info -e {{ packages | join(' ') }}
+      register: have
+      changed_when: false
+      failed_when: false
+
+    # h1~h4 의 기본 경로는 패브릭(리프)을 향해 인터넷이 없다 → 설치하는 동안만 관리망(eth0)으로 돌린다.
+    # WSL 게이트웨이 resolver 가 alpine CDN 을 자주 못 풀어서 8.8.8.8 을 쓴다.
+    - name: 패키지 설치 ({{ packages | join(', ') }})
+      ansible.builtin.raw: |
+        gw=$(ip route show default | awk '{print $3; exit}')
+        echo nameserver 8.8.8.8 > /etc/resolv.conf
+        ip route replace default via {{ hostvars['localhost'].mgmt_gw }} dev eth0
+        apk add -q --no-progress {{ packages | join(' ') }}; rc=$?
+        [ -n "$gw" ] && ip route replace default via $gw
+        exit $rc
+      when: have.stdout_lines | length != packages | length
+
+    - name: httpd 가 떠 있나
+      ansible.builtin.raw: pgrep -x httpd
+      register: httpd
+      changed_when: false
+      failed_when: false
+      when: inventory_hostname in web_servers
+
+    - name: 웹 페이지 + httpd :80 (index.html, big.bin 20MB)
+      ansible.builtin.raw: |
+        mkdir -p /srv/www
+        echo 'hello from {{ inventory_hostname }}' > /srv/www/index.html
+        [ -f /srv/www/big.bin ] || dd if=/dev/urandom of=/srv/www/big.bin bs=1M count=20 2>/dev/null
+        httpd -p 80 -h /srv/www
+      when: inventory_hostname in web_servers and httpd.rc != 0

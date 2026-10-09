@@ -1,0 +1,58 @@
+# BGP 세션에 BFD 붙이기/떼기 (scripts/bfd-apply.sh 를 옮긴 것)
+#   ./ansible/run.sh bfd.yml                         # 켜기
+#   ./ansible/run.sh bfd.yml -e bfd_enabled=false    # 끄기
+#   ./ansible/run.sh bfd.yml --check                 # 바꾸지 않고, 바뀔 장비와 내용만 보기
+# bfd-apply.sh 와 다른 점
+#  - AS 번호를 장비에서 awk 로 긁지 않고 host_vars 에서 가져온다
+#  - 이미 원하는 상태인 장비는 건드리지 않고 ok 로 넘어간다 (두 번 돌려도 changed=0)
+#  - 셸은 "on/off 명령을 실행"했지만, 여기서는 "켜져 있어야 한다/꺼져 있어야 한다"를 적는다
+
+- name: BFD 상태 맞추기
+  hosts: fabric
+  gather_facts: false
+  vars:
+    bfd_line: "neighbor {{ bgp_peer_group }} bfd"
+  tasks:
+    - name: 지금 설정 읽기
+      ansible.builtin.command: vtysh -c "show running-config"
+      register: running
+      changed_when: false
+      check_mode: false            # --check 에서도 읽어야 비교가 된다
+
+    - name: 비교
+      ansible.builtin.set_fact:
+        bfd_on: "{{ bfd_line in running.stdout_lines | map('trim') }}"
+
+    # 계획: 무엇이 바뀔지 먼저 보여 준다. --check 일 때는 여기까지만 하고, 이 줄이 changed 로 집계된다
+    - name: 계획
+      ansible.builtin.debug:
+        msg: "{{ '+ ' ~ bfd_line ~ ' ' ~ bfd_detect_multiplier ~ ' ' ~ bfd_interval_ms ~ ' ' ~ bfd_interval_ms if bfd_enabled | bool else '- ' ~ bfd_line }}"
+      when: bfd_on != (bfd_enabled | bool)
+      changed_when: ansible_check_mode
+
+    # 적용: command 는 --check 에서 저절로 건너뛴다
+    - name: 적용 — BFD 켜기
+      ansible.builtin.command: >-
+        vtysh -c "conf t" -c "router bgp {{ asn }}"
+        -c "{{ bfd_line }}"
+        -c "{{ bfd_line }} {{ bfd_detect_multiplier }} {{ bfd_interval_ms }} {{ bfd_interval_ms }}"
+      when: bfd_enabled | bool and not bfd_on
+
+    - name: 적용 — BFD 끄기
+      ansible.builtin.command: vtysh -c "conf t" -c "router bgp {{ asn }}" -c "no {{ bfd_line }}"
+      when: not bfd_enabled | bool and bfd_on
+
+- name: 확인 — 리프마다 BFD 세션이 스파인 수만큼 up (켰을 때) / 0개 (껐을 때)
+  hosts: leaves
+  gather_facts: false
+  tasks:
+    - name: BFD peers
+      ansible.builtin.command: vtysh -c "show bfd peers json"
+      register: bfd
+      changed_when: false
+      when: not ansible_check_mode
+      until: (bfd.stdout | from_json | selectattr('status', 'eq', 'up') | list | length) == want | int
+      retries: 6
+      delay: 2
+      vars:
+        want: "{{ groups['spines'] | length if bfd_enabled | bool else 0 }}"

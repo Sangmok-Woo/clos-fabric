@@ -1,0 +1,67 @@
+# 모니터링 토폴로지 올리기/내리기 (monitoring/up.sh, down.sh 를 옮긴 것)
+#   ./ansible/run.sh monitoring.yml                     # 베이스 랩을 내리고 관측 포함 토폴로지로
+#   ./ansible/run.sh monitoring.yml -e mon_state=down   # 내리기 (베이스로 돌아가려면 deploy.yml)
+# 두 토폴로지는 랩 이름(clos)과 노드 이름이 같아서 동시에 띄울 수 없다. 그래서 하나를 올리기 전에 다른 하나를 내린다.
+# up.sh 와 다른 점
+#  - 이미 모니터링 토폴로지가 떠 있으면 아무것도 하지 않는다
+#  - 끝나면 Grafana·Prometheus 가 실제로 응답하는지까지 확인한다
+
+- name: 모니터링 토폴로지
+  hosts: localhost
+  gather_facts: false
+  vars:
+    mon_state: up            # up | down
+    base_topo: "{{ lab_dir }}/{{ lab_name }}.clab.yml"
+    mon_topo: "{{ lab_dir }}/monitoring/clos-mon.clab.yml"
+  tasks:
+    - name: 떠 있는 토폴로지 확인
+      ansible.builtin.command: docker ps -q --filter label=clab-topo-file={{ item }}
+      loop: ["{{ base_topo }}", "{{ mon_topo }}"]
+      register: topo
+      changed_when: false
+
+    - ansible.builtin.set_fact:
+        base_up: "{{ topo.results[0].stdout_lines | length > 0 }}"
+        mon_up: "{{ topo.results[1].stdout_lines | length > 0 }}"
+
+    - name: 모니터링 토폴로지 내리기
+      ansible.builtin.command: containerlab destroy -t {{ mon_topo }} --cleanup
+      when: mon_state == 'down' and mon_up
+
+    - name: 끝 (down)
+      ansible.builtin.meta: end_play
+      when: mon_state == 'down'
+
+    - name: 수집기 이미지 빌드 (clos-mon-exporter)
+      ansible.builtin.command: docker build -q -t clos-mon-exporter:latest {{ lab_dir }}/monitoring/exporter
+      register: build
+      changed_when: false      # 캐시가 있으면 금방 끝난다. 결과가 바뀌었는지는 docker 가 알아서 판단
+      when: not mon_up
+
+    - name: 베이스 랩 내리기 (이름이 같아 함께 못 뜬다)
+      ansible.builtin.command: containerlab destroy -t {{ base_topo }} --cleanup
+      when: base_up and not mon_up
+
+    - name: 모니터링 토폴로지 배포
+      ansible.builtin.command:
+        cmd: containerlab deploy -t clos-mon.clab.yml
+        chdir: "{{ lab_dir }}/monitoring"
+      when: not mon_up
+
+    - name: Grafana / Prometheus 응답 대기
+      ansible.builtin.uri:
+        url: "{{ item }}"
+      loop:
+        - http://localhost:3000/api/health
+        - http://localhost:9090/-/ready
+      register: web
+      until: web.status == 200
+      retries: 30
+      delay: 2
+
+    - name: 안내
+      ansible.builtin.debug:
+        msg:
+          - "Grafana    → http://localhost:3000   (익명 Admin, 로그인 불필요)"
+          - "Prometheus → http://localhost:9090   (Status ▸ Rules 에서 알람 확인)"
+          - "감지 시간 측정: monitoring/detect-time.sh (셸로 남겨 둔 측정 도구)"

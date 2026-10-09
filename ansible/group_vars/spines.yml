@@ -1,0 +1,9 @@
+# 스파인 수 × 리프 수만큼 세션이 생긴다. 기대 세션 수는 인벤토리에서 계산한다(하드코딩하지 않는다).
+expected_bgp_sessions: "{{ groups['leaves'] | length }}"
+# EVPN: 스파인은 경로를 중계만 한다.
+# evpn-apply.sh 는 "neighbor FABRIC attribute-unchanged next-hop" 도 넣었지만, FRR 10.2 는 이 줄을
+# running-config 에 보여 주지 않는다(EVPN 경로의 next-hop 은 원래 그대로 전달된다).
+# 장비가 보여 주지 않는 줄을 "있어야 할 상태"로 적으면 매번 없다고 판단해 다시 넣고, 그때마다
+# BGP 세션을 끊는다. 그래서 원하는 상태는 장비가 실제로 보여 주는 모양으로만 적는다.
+evpn_bgp_lines:
+  - neighbor FABRIC activate
