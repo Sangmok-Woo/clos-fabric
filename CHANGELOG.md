@@ -13,6 +13,7 @@
 
 | 버전 | 기간 | 한 줄 |
 |---|---|---|
+| [v0.10](#v010--acl-vs-방화벽-2026-10-10) | 2026-10-10 | 실험 14 ACL(stateless) vs 방화벽(stateful) |
 | [v0.9](#v09--ansible-2026-10-09) | 2026-10-09 | 상태를 만드는 셸 스크립트 8개를 Ansible playbook으로 |
 | [v0.8](#v08--rocev2-2026-10-09) | 2026-10-09 | 실험 12 RoCEv2, 모니터링 4차(RoCE NIC 카운터) |
 | [v0.7](#v07--패킷의-일생-2026-10-05) | 2026-10-05 | 실험 08 패킷의 일생: EVPN-VXLAN vs 순수 L3 |
@@ -24,6 +25,18 @@
 | [v0.1](#v01--랩-초기-구성-2026-08-10) | 2026-08-10 | 스파인 2 + 리프 4 패브릭 |
 
 ---
+
+## v0.10 — ACL vs 방화벽 (2026-10-10)
+
+### 추가
+- `experiments/14-acl-vs-firewall/` — 베이스와 따로 뜨는 작은 랩 `fwacl`(h1·leaf1·acl·fw·serverA·serverB, 우회 링크 2개), 단계 실행기 `run.sh`(Phase 0~6), 노트·결과표
+- 이미지 `fwlab:1`(ubuntu 24.04 + nftables·conntrack·hping3·dnsmasq) — alpine에는 hping3가 없어서
+
+### 검증
+- 관리망(clab)에 붙인 컨테이너에는 도커가 DNS용 NAT 규칙을 깔아 conntrack이 켜진다 → 전 노드 `network-mode: none`
+- `nf_conntrack_max`는 컨테이너(비 init netns) 안에서 읽기 전용 → Phase 6은 WSL 호스트 값을 바꿔야 한다
+- 1회차 `run.sh all`: 위조 ACK ACL 통과 3/3·FW 0/3, UDP `sport 53` 구멍으로 위조 2/2 통과, 비대칭 시 FW만 ping OK·curl 실패(SYN_SENT 고착), max 40에서 FW 39/60·기존 연결 유지·`table full` 로그
+- 비대칭 경로에선 서버 → h1 선제 접속이 ACL·FW 둘 다 우회로로 통과 — 장애이자 정책 우회
 
 ## v0.9 — Ansible (2026-10-09)
 

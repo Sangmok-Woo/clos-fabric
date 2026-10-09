@@ -1,0 +1,76 @@
+# 14장 — ACL(stateless) vs 방화벽(stateful)
+# 베이스 패브릭(clos.clab.yml)과 따로 뜨는 작은 랩. 컨테이너 이름은 clab-fwacl-* 라 clab-clos-* 와 안 겹친다.
+#
+#                  ┌─ acl ── serverA
+#    h1 ── leaf1 ──┤                       (acl: nftables, ct 없음 / fw: nftables, ct 있음)
+#                  └─ fw  ── serverB
+#          leaf1 ─────────── serverA, serverB   ← Phase 5용 우회 링크. 평소엔 안 쓴다.
+#
+# ★ 통제변인 — 모든 노드가 같은 이미지(fwlab:1), 같은 커널 포워딩. 남는 차이는 ct 한 줄뿐.
+# ★ network-mode: none 은 지우지 말 것. 관리망(clab)에 붙이면 도커가 컨테이너 안에
+#   DNS용 NAT 규칙을 깔고, 그 순간 ACL 노드에도 conntrack 이 켜져 버린다(실측 확인).
+#
+# 주소: 10.14.<구간>.0/24 — 1 h1망, 2 leaf1-acl, 3 leaf1-fw, 10 serverA망, 20 serverB망, 30·40 우회
+
+name: fwacl
+
+topology:
+  defaults:
+    kind: linux
+    image: fwlab:1
+    network-mode: none
+    binds:
+      - .:/lab:ro              # 이 디렉터리가 노드 안 /lab 으로 보인다 (nft 파일 적용용)
+
+  nodes:
+    h1:
+      exec:
+        - ip addr add 10.14.1.10/24 dev eth1
+        - ip route replace default via 10.14.1.1
+
+    leaf1:
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - sysctl -w net.ipv4.conf.all.rp_filter=0   # 우회 링크로 들어오는 응답을 역경로 검사로 버리지 않게
+        - ip addr add 10.14.1.1/24 dev eth1          # h1 쪽
+        - ip addr add 10.14.2.1/24 dev eth2          # acl 쪽
+        - ip addr add 10.14.3.1/24 dev eth3          # fw 쪽
+        - ip addr add 10.14.30.1/24 dev eth4         # serverB 우회
+        - ip addr add 10.14.40.1/24 dev eth5         # serverA 우회
+        - ip route add 10.14.10.0/24 via 10.14.2.2
+        - ip route add 10.14.20.0/24 via 10.14.3.2
+
+    acl:
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - ip addr add 10.14.2.2/24 dev eth1          # leaf1 쪽 (내부)
+        - ip addr add 10.14.10.1/24 dev eth2         # serverA 쪽 (외부)
+        - ip route add 10.14.1.0/24 via 10.14.2.1
+
+    fw:
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - ip addr add 10.14.3.2/24 dev eth1          # leaf1 쪽 (내부)
+        - ip addr add 10.14.20.1/24 dev eth2         # serverB 쪽 (외부)
+        - ip route add 10.14.1.0/24 via 10.14.3.1
+
+    serverA:
+      exec:
+        - ip addr add 10.14.10.10/24 dev eth1
+        - ip addr add 10.14.40.10/24 dev eth2        # 우회 (Phase 5)
+        - ip route replace default via 10.14.10.1
+
+    serverB:
+      exec:
+        - ip addr add 10.14.20.10/24 dev eth1
+        - ip addr add 10.14.30.10/24 dev eth2        # 우회 (Phase 5)
+        - ip route replace default via 10.14.20.1
+
+  links:
+    - endpoints: ["h1:eth1", "leaf1:eth1"]
+    - endpoints: ["leaf1:eth2", "acl:eth1"]
+    - endpoints: ["leaf1:eth3", "fw:eth1"]
+    - endpoints: ["acl:eth2", "serverA:eth1"]
+    - endpoints: ["fw:eth2", "serverB:eth1"]
+    - endpoints: ["leaf1:eth4", "serverB:eth2"]
+    - endpoints: ["leaf1:eth5", "serverA:eth2"]

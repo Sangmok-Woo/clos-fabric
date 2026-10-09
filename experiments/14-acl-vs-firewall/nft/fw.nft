@@ -1,0 +1,19 @@
+#!/usr/sbin/nft -f
+# FW 노드 (stateful) — ACL과 다른 점이 ct 한 줄이어야 비교가 공정하다.
+# 적용: docker exec clab-fwacl-fw nft -f /lab/nft/fw.nft   (확인: nft list ruleset, conntrack -L)
+
+flush ruleset
+
+table inet fw {
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+
+    # 1) 방명록에 있는 손님(이미 시작된 연결의 왕복)은 통과
+    ct state established,related accept
+
+    # 2) 내부→외부 "신규" 연결만 허용
+    ct state new iifname "eth1" accept
+
+    counter comment "여기까지 왔으면 drop"
+  }
+}

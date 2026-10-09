@@ -1,0 +1,136 @@
+
+=== Phase 0 — 베이스라인 (규칙 없음) ===
+                             ACL쪽(A)  FW쪽(B)  
+  h1 -> server ping          OK         OK        
+  h1 -> server curl          OK(200)    OK(200)   
+  server -> h1 curl (선제) OK(200)    OK(200)   
+  conntrack 엔트리 수  acl: 0   fw: 4
+
+=== Phase 1a — 같은 정책, ACL 1차 시도 (flags == ack) ===
+                             ACL쪽(A)  FW쪽(B)  
+  h1 -> server ping          OK         OK        
+  h1 -> server curl          FAIL(000)  OK(200)   
+  server -> h1 curl (선제) FAIL(000)  FAIL(000) 
+  drop 카운터  acl: packets 9   fw: packets 3
+  acl:eth2 (외부 쪽)에서 본 패킷 앞부분:
+    16:16:15.903859 IP 10.14.1.10.56976 > 10.14.10.10.80: Flags [S], seq 2958871925, win 56760, options [mss 9460,sackOK,TS val 729250148 ecr 0,nop,wscale 7], length 0
+    16:16:15.903874 IP 10.14.10.10.80 > 10.14.1.10.56976: Flags [S.], seq 3848185604, ack 2958871926, win 56688, options [mss 9460,sackOK,TS val 2568056018 ecr 729250148,nop,wscale 7], length 0
+    16:16:16.925680 IP 10.14.10.10.80 > 10.14.1.10.56976: Flags [S.], seq 3848185604, ack 2958871926, win 56688, options [mss 9460,sackOK,TS val 2568057040 ecr 729250148,nop,wscale 7], length 0
+    16:16:16.925690 IP 10.14.1.10.56976 > 10.14.10.10.80: Flags [S], seq 2958871925, win 56760, options [mss 9460,sackOK,TS val 729251170 ecr 0,nop,wscale 7], length 0
+
+=== Phase 1b — ACL 고친 판 (flags & (ack|rst) != 0) ===
+                             ACL쪽(A)  FW쪽(B)  
+  h1 -> server ping          OK         OK        
+  h1 -> server curl          OK(200)    OK(200)   
+  server -> h1 curl (선제) FAIL(000)  FAIL(000) 
+  drop 카운터  acl: packets 3   fw: packets 3
+
+=== Phase 2 — 구조 들여다보기 ===
+--- 규칙 목록 (둘 다 있다)
+  [acl]
+    iifname "eth1" oifname "eth2" accept
+    iifname "eth2" tcp flags rst,ack accept
+    iifname "eth2" icmp type echo-reply accept
+    counter packets 3 bytes 180 comment "여기까지 왔으면 drop"
+  [fw]
+    ct state established,related accept
+    ct state new iifname "eth1" accept
+    counter packets 3 bytes 180 comment "여기까지 왔으면 drop"
+--- (관찰용) fw 의 TIME_WAIT 타임아웃 120s -> 8s
+--- curl 직후 conntrack -L
+  [acl]
+    conntrack v1.4.8 (conntrack-tools): 0 flow entries have been shown.
+  [fw]
+    conntrack v1.4.8 (conntrack-tools): 1 flow entries have been shown.
+    tcp      6 7 TIME_WAIT src=10.14.1.10 dst=10.14.20.10 sport=52430 dport=80 src=10.14.20.10 dst=10.14.1.10 sport=80 dport=52430 [ASSURED] mark=0 use=1
+--- conntrack -E 이벤트 (14초 동안, 생성 -> 갱신 -> 소멸)
+  [acl]
+    conntrack v1.4.8 (conntrack-tools): 0 flow events have been shown.
+  [fw]
+    [1791562599.260736]	    [NEW] tcp      6 120 SYN_SENT src=10.14.1.10 dst=10.14.20.10 sport=52430 dport=80 [UNREPLIED] src=10.14.20.10 dst=10.14.1.10 sport=80 dport=52430
+    [1791562599.260821]	 [UPDATE] tcp      6 60 SYN_RECV src=10.14.1.10 dst=10.14.20.10 sport=52430 dport=80 src=10.14.20.10 dst=10.14.1.10 sport=80 dport=52430
+    [1791562599.260832]	 [UPDATE] tcp      6 432000 ESTABLISHED src=10.14.1.10 dst=10.14.20.10 sport=52430 dport=80 src=10.14.20.10 dst=10.14.1.10 sport=80 dport=52430 [ASSURED]
+    [1791562599.261575]	 [UPDATE] tcp      6 120 FIN_WAIT src=10.14.1.10 dst=10.14.20.10 sport=52430 dport=80 src=10.14.20.10 dst=10.14.1.10 sport=80 dport=52430 [ASSURED]
+    [1791562599.263098]	 [UPDATE] tcp      6 30 LAST_ACK src=10.14.1.10 dst=10.14.20.10 sport=52430 dport=80 src=10.14.20.10 dst=10.14.1.10 sport=80 dport=52430 [ASSURED]
+    [1791562599.263118]	 [UPDATE] tcp      6 8 TIME_WAIT src=10.14.1.10 dst=10.14.20.10 sport=52430 dport=80 src=10.14.20.10 dst=10.14.1.10 sport=80 dport=52430 [ASSURED]
+    conntrack v1.4.8 (conntrack-tools): 6 flow events have been shown.
+
+=== Phase 3 — 위조 ACK (서버 쪽에서 h1:80 으로 ACK만 세운 패킷 3개) ===
+  [serverA -> h1]  hping3 가 받은 회신:
+    3 packets transmitted, 3 packets received, 0% packet loss
+    len=40 ip=10.14.1.10 ttl=62 DF id=0 sport=80 flags=R seq=0 win=0 rtt=3.0 ms
+    len=40 ip=10.14.1.10 ttl=62 DF id=0 sport=80 flags=R seq=1 win=0 rtt=6.6 ms
+    len=40 ip=10.14.1.10 ttl=62 DF id=0 sport=80 flags=R seq=2 win=0 rtt=2.2 ms
+  h1:eth1 에 찍힌 것:
+    16:16:55.774747 IP 10.14.10.10.2444 > 10.14.1.10.80: Flags [.], ack 1540173670, win 512, length 0
+    16:16:55.774764 IP 10.14.1.10.80 > 10.14.10.10.2444: Flags [R], seq 1540173670, win 0, length 0
+    16:16:56.775392 IP 10.14.10.10.2445 > 10.14.1.10.80: Flags [.], ack 1696114634, win 512, length 0
+    16:16:56.775404 IP 10.14.1.10.80 > 10.14.10.10.2445: Flags [R], seq 1696114634, win 0, length 0
+    16:16:57.775474 IP 10.14.10.10.2446 > 10.14.1.10.80: Flags [.], ack 1615292223, win 512, length 0
+    16:16:57.775488 IP 10.14.1.10.80 > 10.14.10.10.2446: Flags [R], seq 1615292223, win 0, length 0
+    
+  [serverB -> h1]  hping3 가 받은 회신:
+    3 packets transmitted, 0 packets received, 100% packet loss
+  h1:eth1 에 찍힌 것:
+    
+  drop 카운터  acl: packets 3   fw: packets 6
+
+=== Phase 4 — UDP 왕복 (h1 -> server DNS 질의) ===
+  ① 지금 규칙 그대로                       ACL쪽: FAIL   FW쪽: OK(10.99.99.99)
+  ② ACL에 'udp sport 53 accept' 추가 후    ACL쪽: OK(10.99.99.99)   FW쪽: OK(10.99.99.99)
+  ③ 그 구멍으로: 서버가 출발포트 53을 달고 h1의 아무 UDP 포트(9999)로 먼저 쏘기
+    [serverA -> h1:9999] h1 도착 2개
+    16:17:13.509982 IP 10.14.10.10.53 > 10.14.1.10.9999: domain [length 0 < 12] (invalid)
+    [serverB -> h1:9999] h1 도착 0개
+    
+  FW 방명록의 UDP 엔트리:
+    udp      17 21 src=10.14.1.10 dst=10.14.20.10 sport=42950 dport=53 src=10.14.20.10 dst=10.14.1.10 sport=53 dport=42950 mark=0 use=1
+    udp      17 20 src=10.14.1.10 dst=10.14.20.10 sport=58779 dport=53 src=10.14.20.10 dst=10.14.1.10 sport=53 dport=58779 mark=0 use=1
+
+=== Phase 5 — 비대칭 라우팅 (서버 -> h1 리턴만 우회 링크로) ===
+  경로: 요청 h1->leaf1->(acl|fw)->server,  응답 server->leaf1(우회)->h1
+                             ACL쪽(A)  FW쪽(B)  
+  h1 -> server ping          OK         OK        
+  h1 -> server curl          OK(200)    FAIL(000) 
+  server -> h1 curl (선제) OK(200)    OK(200)   
+  FW 방명록:
+    icmp     1 24 src=10.14.1.10 dst=10.14.20.10 type=8 code=0 id=40 [UNREPLIED] src=10.14.20.10 dst=10.14.1.10 type=0 code=0 id=40 mark=0 use=1
+    tcp      6 115 SYN_SENT src=10.14.1.10 dst=10.14.20.10 sport=46758 dport=80 [UNREPLIED] src=10.14.20.10 dst=10.14.1.10 sport=80 dport=46758 mark=0 use=1
+  drop 카운터  acl: packets 0   fw: packets 10
+  h1:eth1 (serverB와 주고받은 것):
+    16:17:25.708711 IP 10.14.1.10.46758 > 10.14.20.10.80: Flags [S], seq 108632849, win 56760, options [mss 9460,sackOK,TS val 3674667716 ecr 0,nop,wscale 7], length 0
+    16:17:25.708769 IP 10.14.20.10.80 > 10.14.1.10.46758: Flags [S.], seq 389280548, ack 108632850, win 56688, options [mss 9460,sackOK,TS val 2934566582 ecr 3674667716,nop,wscale 7], length 0
+    16:17:25.708782 IP 10.14.1.10.46758 > 10.14.20.10.80: Flags [.], ack 1, win 444, options [nop,nop,TS val 3674667716 ecr 2934566582], length 0
+    16:17:25.708821 IP 10.14.1.10.46758 > 10.14.20.10.80: Flags [P.], seq 1:75, ack 1, win 444, options [nop,nop,TS val 3674667716 ecr 2934566582], length 74: HTTP: GET / HTTP/1.1
+    16:17:25.913662 IP 10.14.1.10.46758 > 10.14.20.10.80: Flags [P.], seq 1:75, ack 1, win 444, options [nop,nop,TS val 3674667921 ecr 2934566582], length 74: HTTP: GET / HTTP/1.1
+    16:17:26.125658 IP 10.14.1.10.46758 > 10.14.20.10.80: Flags [P.], seq 1:75, ack 1, win 444, options [nop,nop,TS val 3674668133 ecr 2934566582], length 74: HTTP: GET / HTTP/1.1
+    16:17:26.561659 IP 10.14.1.10.46758 > 10.14.20.10.80: Flags [P.], seq 1:75, ack 1, win 444, options [nop,nop,TS val 3674668569 ecr 2934566582], length 74: HTTP: GET / HTTP/1.1
+    16:17:26.721701 IP 10.14.20.10.80 > 10.14.1.10.46758: Flags [S.], seq 389280548, ack 108632850, win 56688, options [mss 9460,sackOK,TS val 2934567595 ecr 3674667716,nop,wscale 7], length 0
+  fw:eth1 (FW 내부 쪽 — 응답은 여기를 안 지난다):
+    16:17:25.708729 IP 10.14.1.10.46758 > 10.14.20.10.80: Flags [S], seq 108632849, win 56760, options [mss 9460,sackOK,TS val 3674667716 ecr 0,nop,wscale 7], length 0
+    16:17:25.708784 IP 10.14.1.10.46758 > 10.14.20.10.80: Flags [.], ack 389280549, win 444, options [nop,nop,TS val 3674667716 ecr 2934566582], length 0
+    16:17:25.708824 IP 10.14.1.10.46758 > 10.14.20.10.80: Flags [P.], seq 0:74, ack 1, win 444, options [nop,nop,TS val 3674667716 ecr 2934566582], length 74: HTTP: GET / HTTP/1.1
+    16:17:25.913687 IP 10.14.1.10.46758 > 10.14.20.10.80: Flags [P.], seq 0:74, ack 1, win 444, options [nop,nop,TS val 3674667921 ecr 2934566582], length 74: HTTP: GET / HTTP/1.1
+    16:17:26.125690 IP 10.14.1.10.46758 > 10.14.20.10.80: Flags [P.], seq 0:74, ack 1, win 444, options [nop,nop,TS val 3674668133 ecr 2934566582], length 74: HTTP: GET / HTTP/1.1
+    16:17:26.561683 IP 10.14.1.10.46758 > 10.14.20.10.80: Flags [P.], seq 0:74, ack 1, win 444, options [nop,nop,TS val 3674668569 ecr 2934566582], length 74: HTTP: GET / HTTP/1.1
+    16:17:26.721724 IP 10.14.1.10.46758 > 10.14.20.10.80: Flags [.], ack 1, win 444, options [nop,nop,TS val 3674668729 ecr 2934566582], length 0
+    16:17:27.389680 IP 10.14.1.10.46758 > 10.14.20.10.80: Flags [P.], seq 0:74, ack 1, win 444, options [nop,nop,TS val 3674669397 ecr 2934566582], length 74: HTTP: GET / HTTP/1.1
+  (리턴 경로 원복)
+
+=== Phase 6 — conntrack 고갈 ===
+  WSL 호스트 nf_conntrack_max 262144 -> 40  (한도는 netns마다 따로 적용)
+  h1 -> 각 서버로 연결 60개를 열어 15초 붙잡는다:
+  FW 방명록 엔트리 수: 40
+  붙잡은 상태에서 새 curl   ACL쪽: OK(200)   FW쪽: FAIL(000)
+    ACL쪽 열기 성공 60 / 실패 0
+    FW쪽  열기 성공 39 / 실패 21
+  기존 연결(longlived) 기록 마지막 5줄:
+    16:17:55 기존 연결 응답 OK
+    16:17:56 기존 연결 응답 OK
+    16:17:57 기존 연결 응답 OK
+    16:17:58 기존 연결 응답 OK
+    16:17:59 기존 연결 응답 OK
+  커널 로그:
+    [10536.758825] nf_conntrack: nf_conntrack: table full, dropping packet
+    [10540.886809] nf_conntrack: nf_conntrack: table full, dropping packet
+  nf_conntrack_max 원복 -> 262144

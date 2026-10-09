@@ -1,0 +1,28 @@
+#!/usr/sbin/nft -f
+# ACL 노드 (stateless) — 규칙에 ct 를 한 번이라도 쓰면 이 노드도 방명록을 켜게 된다. 금지.
+# 적용: docker exec clab-fwacl-acl nft -f /lab/nft/acl.nft   (확인: nft list ruleset)
+#
+# 정책: 내부(h1)→외부 허용, 외부에서 먼저 들어오는 접속은 차단.
+# 상태를 모르니 "돌아오는 응답처럼 생긴 패킷"을 헤더만 보고 추측해서 통과시켜야 한다.
+
+flush ruleset
+
+table inet acl {
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+
+    # 1) 내부→외부 나가는 건 허용
+    iifname "eth1" oifname "eth2" accept
+
+    # 2) 돌아오는 TCP 응답 흉내 — ACK나 RST가 섰으면 "응답"으로 친다 (시스코 established 키워드와 같은 뜻)
+    #    1차 시도(== ack)는 SYN-ACK을 못 받아 핸드셰이크가 깨졌다 → acl-v1.nft
+    iifname "eth2" tcp flags & (ack|rst) != 0 accept
+
+    # 3) 핑 응답
+    iifname "eth2" icmp type echo-reply accept
+
+    # 4) UDP(DNS) 응답은 Phase 4에서 run.sh가 런타임에 추가한다: udp sport 53 accept
+
+    counter comment "여기까지 왔으면 drop"
+  }
+}

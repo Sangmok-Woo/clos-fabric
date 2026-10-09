@@ -1,0 +1,15 @@
+#!/usr/sbin/nft -f
+# ACL 1차 시도 — 스켈레톤 빈칸에 가장 먼저 떠오르는 값(== ack)을 넣은 판.
+# Phase 1에서 이게 왜 정상 왕복조차 못 하는지 본다. 고친 판은 acl.nft.
+
+flush ruleset
+
+table inet acl {
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+    iifname "eth1" oifname "eth2" accept
+    iifname "eth2" tcp flags & (fin|syn|rst|ack) == ack accept
+    iifname "eth2" icmp type echo-reply accept
+    counter comment "여기까지 왔으면 drop"
+  }
+}
