@@ -101,6 +101,12 @@ Established 16/16, 알람 0이었다. 세션은 장애와 무관하게 살아 �
 [실험 01](../experiments/01-hidden-mtu-meets-spine-failure/README.md)에서 MTU 결함 링크를 결함이 있는 동안 정확히 가리켰다.
 반대로 포워딩만 멈춘 스파인(커널은 살아 ping에 대답)은 잡지 못했다. 장비 자신이 아니라 장비 너머로 보내는 프로브가 다음 과제다.
 
+## 4차 — RoCE NIC 카운터 (2026-10-09)
+
+[실험 12](../experiments/12-roce/README.md)에서 인캐스트로 스위치 큐 드랍이 20만 개 넘게 났는데 인터페이스 카운터는 0이었다(tc qdisc 드랍은 `tx_dropped`에 안 잡힌다).
+RoCE는 그 손실을 NIC가 재전송으로 메우므로 서버 NIC(rxe)의 카운터를 읽는다. 수집기 컨테이너에서는 카운터 파일이 안 보여서, 기본 네임스페이스에서 도는 실험 12의 도구 상자(rtool)에 docker exec로 들어가 읽는다.
+`clos_rdma_{sent_pkts,rcvd_pkts,out_of_seq_request,duplicate_request,completer_retry_err,rcvd_seq_err,retry_exceeded_err}_total`(장치별). rtool이 없으면 비어 있다.
+
 ## 알람 (`prometheus/alerts.yml`)
 
 | 알람 | 조건 | 뜻 |
@@ -112,6 +118,8 @@ Established 16/16, 알람 0이었다. 세션은 장애와 무관하게 살아 �
 | `FabricMTUMismatch` | 패브릭 포트 MTU ≠ 전체 중앙값 | 설정 불일치 (2차) |
 | `LinkLargeFrameLoss` | 링크 프로브: 작은 ping 성공, MTU 크기 ping 실패 (10초) | 그 링크의 MTU가 기대보다 작다 (3차) |
 | `LinkProbeDown` | 링크 프로브: 작은 ping 실패 (10초) | 링크나 상대 장비가 응답하지 않는다 (3차) |
+| `RoceRetransmitting` | 30초 동안 RoCE 재전송 / 보낸 패킷 > 0.2% | 경로 어딘가에서 RoCE 패킷이 버려진다 (4차) |
+| `RoceQPFailed` | 재전송 한도 초과 1번 이상 | RoCE 연결이 끊겼다 (4차) |
 
 ## 이 환경에서 걸렸던 것 (재현 시 또 만난다)
 

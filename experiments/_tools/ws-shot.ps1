@@ -1,4 +1,4 @@
-# Open a pcap in Wireshark, resize the window, save a screenshot (PNG), close it.
+﻿# Open a pcap in Wireshark, resize the window, save a screenshot (PNG), close it.
 #   ws-shot.ps1 -Pcap x.pcap -Out x.png [-Filter "tcp"] [-Go 12] [-W 1600] [-H 900] [-Col "AS path=bgp.update.path_attribute.as_path_segment"]
 # -Crop N keeps only the top N pixels of the window (packet list without the details pane).
 # -Col adds custom columns (Title=field, repeatable) before Info, in a separate profile (lab-chapters-cols).
@@ -23,6 +23,7 @@ public class WsU {
   [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr h, IntPtr dc, uint f);
   [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int n);
   public struct RECT { public int L, T, R, B; }
 }
 "@
@@ -56,11 +57,17 @@ for ($i = 0; $i -lt 80; $i++) {
   if ($p.MainWindowTitle -like "*$name*") { break }
 }
 Start-Sleep 2
-$hwnd = $p.MainWindowHandle   # not $h: PowerShell names are case-insensitive and $H is the height
-[WsU]::SetWindowPos($hwnd, [IntPtr]::Zero, 10, 10, $W, $H, 0x40) | Out-Null
-Start-Sleep 2
 $r = New-Object WsU+RECT
-[WsU]::GetWindowRect($hwnd, [ref]$r) | Out-Null
+# Wireshark can open minimized or still be swapping its splash for the main window (rect ~160x28):
+# restore without taking focus, resize, and retry until the window really has our size
+for ($k = 0; $k -lt 10; $k++) {
+  $p.Refresh(); $hwnd = $p.MainWindowHandle   # not $h: PowerShell names are case-insensitive and $H is the height
+  [WsU]::ShowWindow($hwnd, 4) | Out-Null   # SW_SHOWNOACTIVATE
+  [WsU]::SetWindowPos($hwnd, [IntPtr]::Zero, 10, 10, $W, $H, 0x40) | Out-Null
+  Start-Sleep 2
+  [WsU]::GetWindowRect($hwnd, [ref]$r) | Out-Null
+  if (($r.R - $r.L) -gt 400) { break }
+}
 $bmp = New-Object Drawing.Bitmap ($r.R - $r.L), ($r.B - $r.T)
 $g = [Drawing.Graphics]::FromImage($bmp)
 $dc = $g.GetHdc(); [WsU]::PrintWindow($hwnd, $dc, 2) | Out-Null; $g.ReleaseHdc($dc)

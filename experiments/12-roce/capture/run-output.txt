@@ -1,0 +1,108 @@
+
+[1m=== R1 설치와 연결 — 커널 모듈, 장치, GID ===[0m
+  crc32_generic
+  rdma_rxe
+  ib_uverbs
+  ib_core
+  link rxe_g1/1 state ACTIVE physical_state LINK_UP netdev vg1 
+  link rxe_g2/1 state ACTIVE physical_state LINK_UP netdev vg2 
+  link rxe_g3/1 state ACTIVE physical_state LINK_UP netdev vg3 
+  link rxe_g4/1 state ACTIVE physical_state LINK_UP netdev vg4 
+  transport:			InfiniBand (0)
+  state:			PORT_ACTIVE (4)
+  max_mtu:		4096 (5)
+  active_mtu:		4096 (5)
+  link_layer:		Ethernet
+  rxe_g1 GID[1] = 0000:0000:0000:0000:0000:ffff:ac10:150a  (IPv4 172.16.21.10 을 IPv6 모양으로)
+  수신 소켓: 0.0.0.0:4791 [::]:4791  ← 기본 네임스페이스에만 있다
+
+[1m=== R1 연결 — rdma_cm (rping) 협상을 캡처 ===[0m
+  client: cma event RDMA_CM_EVENT_REJECTED, error 28
+  client: wait for CONNECTED state 4
+  client: connect error -1
+  r1-cm-leaf3.pcap                  2 패킷
+
+[1m=== R1 연결 — perftest 방식 (QP 정보를 TCP 로 교환, RoCE 는 바로 데이터) ===[0m
+  g1 → g3 ib_write_bw 64KB × 3초: 1.56 Gb/s
+  r1-cm-leaf3.pcap                  2 패킷
+  r1-first-leaf3.pcap          151623 패킷
+
+[1m=== R2 패킷 해부 — Write / Send / Read 를 8KB 메시지 5개씩 ===[0m
+  r1-cm-leaf3.pcap                  2 패킷
+  r1-first-leaf3.pcap             400 패킷
+  r2-leaf1.pcap                    45 패킷
+  r2-leaf3.pcap                    45 패킷
+
+[1m=== R3 RoCE MTU — 64KB 메시지, 4초씩 (병목은 CPU: Soft-RoCE 는 패킷마다 CPU 가 일한다) ===[0m
+  MTU 1024: 0.63 Gb/s, 보낸 패킷 297269, 받은 ACK 6611
+  MTU 2048: 0.76 Gb/s, 보낸 패킷 220873, 받은 ACK 7593
+  MTU 4096: 1.92 Gb/s, 보낸 패킷 204755, 받은 ACK 13175
+
+[1m=== R3 메시지 크기 — MTU 4096, 크기별 (작은 메시지는 패킷당 고정비용이 지배) ===[0m
+  64B: 0.011704 Gb/s
+  1024B: 0.29 Gb/s
+  4096B: 0.84 Gb/s
+  16384B: 1.68 Gb/s
+  65536B: 1.59 Gb/s
+  1048576B: 1.34 Gb/s
+
+[1m=== R4 손실 한 번의 값 — leaf3:eth5(→g3) 에 무작위 손실, RoCE vs TCP ===[0m
+  손실 0%: RoCE 1.52 Gb/s (g3 NAK seq_err 0, 중복수신 496, g1 재시도 63, 재시도 초과 0) | TCP 5.18 Gb/s
+  손실 0.01%: RoCE 1.54 Gb/s (g3 NAK seq_err 18, 중복수신 476, g1 재시도 73, 재시도 초과 0) | TCP 3.34 Gb/s
+  r1-cm-leaf3.pcap                  2 패킷
+  r1-first-leaf3.pcap             400 패킷
+  r2-leaf1.pcap                    45 패킷
+  r2-leaf3.pcap                    45 패킷
+  r4-loss-leaf1.pcap           227604 패킷
+  r4-loss-leaf3.pcap           227392 패킷
+  손실 0.1%: RoCE 1.60 Gb/s (g3 NAK seq_err 210, 중복수신 432, g1 재시도 260, 재시도 초과 0) | TCP 4.67 Gb/s
+  손실 1%: RoCE 0.38 Gb/s (g3 NAK seq_err 572, 중복수신 55, g1 재시도 585, 재시도 초과 0) | TCP 4.17 Gb/s
+
+[1m=== R5 인캐스트 — g1·g2·g4 → g3, leaf3:eth5 를 300Mbit 포트로 ===[0m
+  혼자 보낼 때 g1 → g3: 0.74 Gb/s (병목 없음)
+  버퍼 16kb: g1 0.008676 + g2 0.008382 + g4 0.008815 Gb/s | 큐 드랍 28271, g3 NAK 497, 중복수신 0, 송신측 재시도 604, ping 평균 0.283ms
+  버퍼 64kb: g1 0.008828 + g2 0.008962 + g4 0.010695 Gb/s | 큐 드랍 33432, g3 NAK 399, 중복수신 0, 송신측 재시도 504, ping 평균 0.378ms
+  버퍼 512kb: g1 0.033804 + g2 0.048136 + g4 0.053156 Gb/s | 큐 드랍 38334, g3 NAK 495, 중복수신 1, 송신측 재시도 544, ping 평균 10.749ms
+  버퍼 4mb: g1 0.097699 + g2 0.097701 + g4 0.098446 Gb/s | 큐 드랍 0, g3 NAK 4, 중복수신 5, 송신측 재시도 2, ping 평균 39.670ms
+  버퍼 64kb + 속도 제한 90Mbit×3 (burst 기본값): g1 0.022536 + g2 0.024982 + g4 0.025780 Gb/s | 큐 드랍 24978, g3 NAK 630, 중복수신 3, 송신측 재시도 816, ping 평균 0.447ms
+  버퍼 64kb + 속도 제한 90Mbit×3 (burst 1): g1 0.029174 + g2 0.030833 + g4 0.030840 Gb/s | 큐 드랍 0, g3 NAK 0, 중복수신 6, 송신측 재시도 6, ping 평균 0.124ms
+  버퍼 64kb + 속도 제한 100Mbit×3 (burst 1, 합 300 = 포트 속도): g1 0.032513 + g2 0.014850 + g4 0.019109 Gb/s | 큐 드랍 13368, g3 NAK 400, 중복수신 8, 송신측 재시도 535, ping 평균 0.134ms
+  버퍼 64kb + 타임아웃 -u 10 (4.2ms): g1 0.029420 + g2 0.025788 + g4 0.027551 Gb/s | 큐 드랍 112231, g3 NAK 1760, 중복수신 48, 송신측 재시도 2942, ping 평균 1.208ms
+  버퍼 64kb + 타임아웃 -u 8 (1.0ms): g1 0.023574 + g2 0.021971 + g4 0.028549 Gb/s | 큐 드랍 120498, g3 NAK 1804, 중복수신 37, 송신측 재시도 3082, ping 평균 1.248ms
+  버퍼 64kb + 창 4 (-t 4): g1 0.076283 + g2 0.073680 + g4 0.077250 Gb/s | 큐 드랍 0, g3 NAK 12, 중복수신 17, 송신측 재시도 12, ping 평균 0.160ms
+  버퍼 64kb + 창 16 (-t 16): g1 0.061932 + g2 0.089365 + g4 0.052991 Gb/s | 큐 드랍 1254, g3 NAK 237, 중복수신 8, 송신측 재시도 324, ping 평균 0.110ms
+
+[1m=== R6 ECMP 엔트로피 — g1 → g3 QP 수별, leaf1 의 스파인 두 링크로 나간 바이트 ===[0m
+  leaf1 해시 정책 0 (IP 만)
+    QP 1: 1.98 Gb/s, spine1 0MB : spine2 952MB
+    QP 2: 1.97 Gb/s, spine1 0MB : spine2 893MB
+    QP 4: 1.43 Gb/s, spine1 0MB : spine2 855MB
+    QP 8: 1.24 Gb/s, spine1 0MB : spine2 764MB
+    QP 16: 1.59 Gb/s, spine1 0MB : spine2 784MB
+  leaf1 해시 정책 1 (IP + UDP 포트)
+    QP 1: 1.38 Gb/s, spine1 807MB : spine2 0MB
+    QP 2: 1.66 Gb/s, spine1 840MB : spine2 0MB
+    QP 4: 1.98 Gb/s, spine1 451MB : spine2 456MB
+    QP 8: 1.86 Gb/s, spine1 110MB : spine2 781MB
+    QP 16: 1.40 Gb/s, spine1 620MB : spine2 212MB
+  QP 8 의 UDP 출발 포트 (QP 마다 하나):
+     28320 57452
+     26624 57636
+     26624 57822
+     26624 58010
+     26624 58200
+     26624 58392
+     26624 58586
+     26631 58782
+
+[1m=== R7 카운터 — 패브릭 모니터링이 못 보는 것 ===[0m
+  rxe 카운터 (누적, 서버 쪽 /sys/class/infiniband/*/ports/1/hw_counters):
+   g1  sent_pkts=4817833  rcvd_pkts=584717  out_of_seq_request=0  duplicate_request=0  completer_retry_err=2598  retry_exceeded_err=0
+   g2  sent_pkts=168382  rcvd_pkts=51088  out_of_seq_request=0  duplicate_request=0  completer_retry_err=1103  retry_exceeded_err=0
+   g3  sent_pkts=692995  rcvd_pkts=4945348  out_of_seq_request=3581  duplicate_request=8224  completer_retry_err=0  retry_exceeded_err=0
+   g4  sent_pkts=175970  rcvd_pkts=57190  out_of_seq_request=0  duplicate_request=0  completer_retry_err=1152  retry_exceeded_err=0
+  같은 시간 패브릭 쪽 인터페이스 드랍 (모니터링 수집기가 읽는 값):
+   leaf1:eth5 tx_dropped=0 rx_dropped=0
+   leaf2:eth5 tx_dropped=0 rx_dropped=0
+   leaf3:eth5 tx_dropped=0 rx_dropped=0
+   leaf4:eth5 tx_dropped=0 rx_dropped=0

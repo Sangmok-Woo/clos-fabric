@@ -22,6 +22,12 @@
 재전송·드랍도 0이 되어 오히려 초록이 된다. 그래서 수집기가 직접 패킷을 보내 본다(블랙박스).
   - 리프마다 업링크 상대(스파인)에게 작은 ping 과 인터페이스 MTU 꽉 채운 ping 을 보낸다
   - 작은 건 되는데 큰 게 안 되면 그 링크의 MTU 문제, 둘 다 안 되면 링크·장비 문제
+
+4차(실험 12): RoCE 는 손실을 NIC 가 재전송으로 메운다. 스위치 큐(tc qdisc) 드랍은 인터페이스
+카운터에 안 잡히므로, 서버 NIC(rxe)의 NAK·재전송 카운터를 읽는다.
+  - rxe 장치는 WSL 기본 네임스페이스에 있고 컨테이너 안에서는 카운터 파일이 안 보인다 →
+    기본 네임스페이스에서 도는 도구 상자(rtool)에 docker exec 로 들어가 hw_counters 를 읽는다
+  - rtool 이 없으면(실험 12 를 안 띄웠으면) 이 지표는 비어 있다
 """
 import json
 import re
@@ -134,6 +140,23 @@ def tcp_stats(host):
     return dict(zip(names, map(int, vals)))
 
 
+RDMA_SH = ('for f in /sys/class/infiniband/*/ports/1/hw_counters/*; do '
+           'd=${f#/sys/class/infiniband/}; echo "${d%%/*} ${f##*/} $(cat $f)"; done')
+RDMA_KEYS = ("sent_pkts", "rcvd_pkts", "out_of_seq_request", "duplicate_request",
+             "completer_retry_err", "retry_exceeded_err", "rcvd_seq_err")
+
+
+def rdma_stats():
+    """{장치: {카운터: 값}}. rtool 컨테이너가 없으면 예외 → None."""
+    out = sh(["docker", "exec", "rtool", "sh", "-c", RDMA_SH]).decode()
+    res = {}
+    for line in out.splitlines():
+        dev, key, val = line.split()
+        if key in RDMA_KEYS:
+            res.setdefault(dev, {})[key] = int(val)
+    return res
+
+
 def router(name, role):
     """라우터 한 대의 모든 지표. 실패한 부분은 None 으로 남긴다."""
     r = {"bgp": None, "bfd": None, "ifs": None}
@@ -177,6 +200,7 @@ def collect():
     with ThreadPoolExecutor(max_workers=8) as pool:
         results = list(pool.map(lambda n: router(n[0], n[1]), order))
         tcp = dict(zip(hosts, pool.map(lambda h: _try(tcp_stats, h), hosts)))
+        rdma = _try(rdma_stats) or {}
 
     for (name, role, num), r in zip(order, results):
         short = name.replace("clab-clos-", "")
@@ -229,6 +253,16 @@ def collect():
 
     add("clos_link_probe_success", "gauge",
         "리프→스파인 링크 ping 성공(1). size=small 은 56B, full 은 인터페이스 MTU 꽉 채운 크기", probes)
+
+    # ── RoCE NIC (4차) ──
+    for k, help_ in (("sent_pkts", "보낸 RoCE 패킷"), ("rcvd_pkts", "받은 RoCE 패킷"),
+                     ("out_of_seq_request", "순서가 어긋나 보낸 NAK (받는 쪽)"),
+                     ("duplicate_request", "이미 받은 패킷을 또 받음 (받는 쪽)"),
+                     ("completer_retry_err", "재전송 (보내는 쪽)"),
+                     ("retry_exceeded_err", "재전송 한도 초과로 QP 오류 (보내는 쪽)"),
+                     ("rcvd_seq_err", "NAK 을 받음 (보내는 쪽)")):
+        add(f"clos_rdma_{k}_total", "counter", f"rxe {help_} 누적",
+            [(f'dev="{d}"', c[k]) for d, c in sorted(rdma.items()) if k in c])
 
     add("clos_routers_discovered", "gauge", "발견한 라우터 수",
         [('role="spine"', n_spine), ('role="leaf"', n_leaf)])

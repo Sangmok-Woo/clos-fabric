@@ -73,3 +73,26 @@ groups:
           severity: critical
         annotations:
           summary: "{{ $labels.link }} ping 무응답 ({{ $labels.node }}:{{ $labels.ifname }})"
+
+      # ── 4차: RoCE NIC 카운터 (실험 12) ──
+      # 스위치 큐 드랍(tc qdisc)은 인터페이스 카운터에 안 잡힌다. RoCE 는 그 손실을 NIC 재전송으로 메우므로 NIC 를 본다.
+      - alert: RoceRetransmitting
+        # 보낸 패킷 대비 재전송 비율. 실험 12 실측: 손실 0% 에서 0.03%(Soft-RoCE 의 타이머 재전송),
+        # 손실 0.1% 에서 0.1%, 손실 1%·인캐스트에서 1% 이상 → 0.2% 를 넘으면 경로 어딘가에서 버려지고 있다
+        expr: >
+          increase(clos_rdma_completer_retry_err_total[30s])
+          / clamp_min(increase(clos_rdma_sent_pkts_total[30s]), 1) > 0.002
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.dev }} RoCE 재전송 {{ $value | humanizePercentage }} — 경로 손실 또는 큐 넘침"
+
+      - alert: RoceQPFailed
+        # 재전송 한도(기본 7번)를 넘기면 QP 가 오류 상태가 되고 애플리케이션이 끊긴다
+        expr: increase(clos_rdma_retry_exceeded_err_total[1m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.dev }} RoCE QP 재전송 한도 초과 — 연결이 끊겼다"
