@@ -1,0 +1,17 @@
+{
+ "g1": {
+  "roce_pkts": 19387,
+  "ce_pkts": 14575,
+  "cnp_sent": 2280
+ },
+ "g2": {
+  "roce_pkts": 19585,
+  "ce_pkts": 14900,
+  "cnp_sent": 2285
+ },
+ "g4": {
+  "roce_pkts": 19441,
+  "ce_pkts": 15021,
+  "cnp_sent": 2269
+ }
+}

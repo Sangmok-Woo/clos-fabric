@@ -1,0 +1,186 @@
+{
+ "watch": [
+  {
+   "name": "leaf3:eth5",
+   "node": "leaf3",
+   "dev": "eth5",
+   "handle": "10:",
+   "xoff": 1048576,
+   "xon": 524288,
+   "targets": [
+    "spine1:eth3",
+    "spine2:eth3"
+   ]
+  },
+  {
+   "name": "spine1:eth3",
+   "node": "spine1",
+   "dev": "eth3",
+   "handle": "11:",
+   "xoff": 1048576,
+   "xon": 524288,
+   "targets": [
+    "leaf1:eth1",
+    "leaf2:eth1",
+    "leaf4:eth1"
+   ]
+  },
+  {
+   "name": "leaf1:eth1",
+   "node": "leaf1",
+   "dev": "eth1",
+   "handle": "11:",
+   "xoff": 1048576,
+   "xon": 524288,
+   "targets": [
+    "g1",
+    "h1"
+   ]
+  },
+  {
+   "name": "leaf2:eth1",
+   "node": "leaf2",
+   "dev": "eth1",
+   "handle": "11:",
+   "xoff": 1048576,
+   "xon": 524288,
+   "targets": [
+    "g2",
+    "h2"
+   ]
+  },
+  {
+   "name": "leaf4:eth1",
+   "node": "leaf4",
+   "dev": "eth1",
+   "handle": "11:",
+   "xoff": 1048576,
+   "xon": 524288,
+   "targets": [
+    "g4",
+    "h4"
+   ]
+  },
+  {
+   "name": "spine2:eth3",
+   "node": "spine2",
+   "dev": "eth3",
+   "handle": "11:",
+   "xoff": 1048576,
+   "xon": 524288,
+   "targets": [
+    "leaf1:eth2",
+    "leaf2:eth2",
+    "leaf4:eth2"
+   ]
+  },
+  {
+   "name": "leaf1:eth2",
+   "node": "leaf1",
+   "dev": "eth2",
+   "handle": "11:",
+   "xoff": 1048576,
+   "xon": 524288,
+   "targets": [
+    "g1",
+    "h1"
+   ]
+  },
+  {
+   "name": "leaf2:eth2",
+   "node": "leaf2",
+   "dev": "eth2",
+   "handle": "11:",
+   "xoff": 1048576,
+   "xon": 524288,
+   "targets": [
+    "g2",
+    "h2"
+   ]
+  },
+  {
+   "name": "leaf4:eth2",
+   "node": "leaf4",
+   "dev": "eth2",
+   "handle": "11:",
+   "xoff": 1048576,
+   "xon": 524288,
+   "targets": [
+    "g4",
+    "h4"
+   ]
+  }
+ ],
+ "targets": {
+  "spine1:eth3": {
+   "node": "spine1",
+   "dev": "eth3",
+   "parent": "1:1"
+  },
+  "leaf1:eth1": {
+   "node": "leaf1",
+   "dev": "eth1",
+   "parent": "1:1"
+  },
+  "leaf2:eth1": {
+   "node": "leaf2",
+   "dev": "eth1",
+   "parent": "1:1"
+  },
+  "leaf4:eth1": {
+   "node": "leaf4",
+   "dev": "eth1",
+   "parent": "1:1"
+  },
+  "spine2:eth3": {
+   "node": "spine2",
+   "dev": "eth3",
+   "parent": "1:1"
+  },
+  "leaf1:eth2": {
+   "node": "leaf1",
+   "dev": "eth2",
+   "parent": "1:1"
+  },
+  "leaf2:eth2": {
+   "node": "leaf2",
+   "dev": "eth2",
+   "parent": "1:1"
+  },
+  "leaf4:eth2": {
+   "node": "leaf4",
+   "dev": "eth2",
+   "parent": "1:1"
+  },
+  "g1": {
+   "node": "host",
+   "dev": "g1",
+   "parent": "1:10"
+  },
+  "h1": {
+   "node": "h1",
+   "dev": "eth1",
+   "parent": "1:1"
+  },
+  "g2": {
+   "node": "host",
+   "dev": "g2",
+   "parent": "1:10"
+  },
+  "h2": {
+   "node": "h2",
+   "dev": "eth1",
+   "parent": "1:1"
+  },
+  "g4": {
+   "node": "host",
+   "dev": "g4",
+   "parent": "1:10"
+  },
+  "h4": {
+   "node": "h4",
+   "dev": "eth1",
+   "parent": "1:1"
+  }
+ }
+}

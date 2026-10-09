@@ -1,0 +1,23 @@
+{
+ "g1": {
+  "cnp_rcvd": 1955,
+  "cuts": 441,
+  "min_rate_mbit": 5.0,
+  "end_rate_mbit": 1000.0,
+  "end_alpha": 0.0
+ },
+ "g2": {
+  "cnp_rcvd": 466,
+  "cuts": 107,
+  "min_rate_mbit": 13.3,
+  "end_rate_mbit": 1000.0,
+  "end_alpha": 0.0
+ },
+ "g4": {
+  "cnp_rcvd": 1912,
+  "cuts": 402,
+  "min_rate_mbit": 23.9,
+  "end_rate_mbit": 1000.0,
+  "end_alpha": 0.0
+ }
+}

@@ -1,0 +1,6 @@
+ping: Warning: source address might be selected on device other than: vg1
+PING 172.16.23.10 (172.16.23.10) from 172.16.21.11 vg1: 56(84) bytes of data.
+
+--- 172.16.23.10 ping statistics ---
+160 packets transmitted, 160 received, 0% packet loss, time 8295ms
+rtt min/avg/max/mdev = 0.052/29.966/42.919/18.908 ms

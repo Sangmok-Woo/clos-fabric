@@ -1,0 +1,102 @@
+
+[1m=== A  기준 — 꼬리 드랍, 버퍼 64KB ===[0m
+  병목 큐: bfifo limit 65536   RoCE tclass=104 (ECN 비트 0)   DCQCN=0   PFC XOFF=0
+  처리량       g1    4  g2    6  g4    4  합 15 Mbit (포트 300)
+  병목 큐     드랍 51061   CE 도장 0
+  RoCE 재전송  g3 NAK 345   송신측 재시도 194 183 175 
+  ping g1→g3  평균 0.352ms 최대 1.828ms  손실 0%
+  병목 큐 깊이  중앙값     0KB (  0.0ms)   95%    60KB (  1.7ms)   최대    60KB   표본 323
+  피해자 V1    받은  50.0 Mbit / 보낸 50   손실 0.0%   지터 0.01ms
+  피해자 V2    받은  50.0 Mbit / 보낸 50   손실 0.0%   지터 0.01ms
+
+[1m=== B  ECN만 — 도장은 찍지만 아무도 반응하지 않는다 (ECN 100~300KB) ===[0m
+  병목 큐: red limit 4000000 min 100000 max 300000 avpkt 4200 burst 25 probability 0.5 bandwidth 300mbit ecn   RoCE tclass=106 (ECN 비트 2)   DCQCN=0   PFC XOFF=0
+  처리량       g1   98  g2   98  g4   98  합 293 Mbit (포트 300)
+  병목 큐     드랍 0   CE 도장 74068
+  RoCE 재전송  g3 NAK 0   송신측 재시도 0 0 0 
+  ping g1→g3  평균 29.966ms 최대 42.919ms  손실 0%
+  병목 큐 깊이  중앙값  1517KB ( 41.4ms)   95%  1541KB ( 42.1ms)   최대  1541KB   표본 336
+  피해자 V1    받은  50.0 Mbit / 보낸 50   손실 0.0%   지터 0.01ms
+  피해자 V2    받은  50.0 Mbit / 보낸 50   손실 0.0%   지터 0.01ms
+
+[1m=== C  ECN + DCQCN — 도장을 보고 송신자가 속도를 줄인다 (ECN 100~300KB) ===[0m
+  병목 큐: red limit 4000000 min 100000 max 300000 avpkt 4200 burst 25 probability 0.5 bandwidth 300mbit ecn   RoCE tclass=106 (ECN 비트 2)   DCQCN=1   PFC XOFF=0
+  처리량       g1   75  g2   75  g4   79  합 229 Mbit (포트 300)
+  병목 큐     드랍 0   CE 도장 44621
+  RoCE 재전송  g3 NAK 0   송신측 재시도 0 0 0 
+  ping g1→g3  평균 13.022ms 최대 47.066ms  손실 0%
+  병목 큐 깊이  중앙값   182KB (  5.0ms)   95%  1399KB ( 38.2ms)   최대  1517KB   표본 335
+  피해자 V1    받은  50.0 Mbit / 보낸 50   손실 0.0%   지터 0.01ms
+  피해자 V2    받은  50.0 Mbit / 보낸 50   손실 0.0%   지터 0.01ms
+  DCQCN g1    CE 받음  14575 → CNP 2280 → 실제로 깎음  483회   정한 속도 평균   237  최저    8 Mbit
+  DCQCN g2    CE 받음  14900 → CNP 2285 → 실제로 깎음  474회   정한 속도 평균   238  최저    8 Mbit
+  DCQCN g4    CE 받음  15021 → CNP 2269 → 실제로 깎음  472회   정한 속도 평균   241  최저    8 Mbit
+
+[1m=== D  PFC만 — 버리지 않고 한 홉 앞을 멈춘다 (XOFF 1MB) ===[0m
+  병목 큐: bfifo limit 4000000   RoCE tclass=104 (ECN 비트 0)   DCQCN=0   PFC XOFF=1048576
+  처리량       g1   83  g2   79  g4   69  합 231 Mbit (포트 300)
+  병목 큐     드랍 0   CE 도장 0
+  RoCE 재전송  g3 NAK 320   송신측 재시도 65 50 21 
+  ping g1→g3  평균 24.699ms 최대 85.374ms  손실 0%
+  병목 큐 깊이  중앙값   969KB ( 26.5ms)   95%  2109KB ( 57.6ms)   최대  2925KB   표본 290
+  피해자 V1    받은  42.6 Mbit / 보낸 50   손실 14.9%   지터 2.38ms
+  피해자 V2    받은  48.7 Mbit / 보낸 50   손실 2.7%   지터 0.45ms
+  PFC XOFF    leaf3:eth5 138회 (큐 최고 3757KB)
+  PFC 멈춤     1홉 스파인 → leaf3     276회   가장 오래 멈춘 곳 spine2:eth3     6059ms
+  PFC 멈춤     2홉 리프 업링크          219회   가장 오래 멈춘 곳 leaf4:eth1      1663ms
+  PFC 멈춤     3홉 서버 g              3회   가장 오래 멈춘 곳 g1                40ms
+  PFC 멈춤     3홉 서버 h              3회   가장 오래 멈춘 곳 h1                43ms
+
+[1m=== E  ECN + DCQCN + PFC — ECN 문턱(100~300KB) < XOFF(1MB) ===[0m
+  병목 큐: red limit 4000000 min 100000 max 300000 avpkt 4200 burst 25 probability 0.5 bandwidth 300mbit ecn   RoCE tclass=106 (ECN 비트 2)   DCQCN=1   PFC XOFF=1048576
+  처리량       g1    0  g2  100  g4  110  합 210 Mbit (포트 300)
+  병목 큐     드랍 8   CE 도장 42172
+  RoCE 재전송  g3 NAK 39   송신측 재시도 4 23 18 
+  ping g1→g3  평균 9.692ms 최대 43.575ms  손실 4.375%
+  병목 큐 깊이  중앙값    85KB (  2.3ms)   95%   969KB ( 26.5ms)   최대  1481KB   표본 289
+  피해자 V1    받은  49.7 Mbit / 보낸 50   손실 0.5%   지터 0.29ms
+  피해자 V2    받은  49.9 Mbit / 보낸 50   손실 0.3%   지터 0.11ms
+  DCQCN g1    CE 받음   1163 → CNP  155 → 실제로 깎음   50회   정한 속도 평균   926  최저    5 Mbit
+  DCQCN g2    CE 받음  18474 → CNP 1842 → 실제로 깎음  380회   정한 속도 평균   390  최저    6 Mbit
+  DCQCN g4    CE 받음  21249 → CNP 1803 → 실제로 깎음  360회   정한 속도 평균   431  최저   30 Mbit
+  PFC XOFF    leaf3:eth5 7회 (큐 최고 1862KB)
+  PFC 멈춤     1홉 스파인 → leaf3      14회   가장 오래 멈춘 곳 spine2:eth3      280ms
+  PFC 멈춤     2홉 리프 업링크            6회   가장 오래 멈춘 곳 leaf1:eth1        65ms
+  PFC 멈춤     3홉 서버 g              0회   가장 오래 멈춘 곳 g1                 0ms
+  PFC 멈춤     3홉 서버 h              0회   가장 오래 멈춘 곳 h1                 0ms
+
+[1m=== F  순서 반대 — ECN 문턱(1.5~3MB) > XOFF(1MB) ===[0m
+  병목 큐: red limit 4000000 min 1500000 max 3000000 avpkt 4200 burst 360 probability 0.5 bandwidth 300mbit ecn   RoCE tclass=106 (ECN 비트 2)   DCQCN=1   PFC XOFF=1048576
+  처리량       g1   89  g2   85  g4   72  합 247 Mbit (포트 300)
+  병목 큐     드랍 0   CE 도장 4470
+  RoCE 재전송  g3 NAK 321   송신측 재시도 50 43 15 
+  ping g1→g3  평균 21.489ms 최대 75.467ms  손실 0%
+  병목 큐 깊이  중앙값   998KB ( 27.3ms)   95%  2170KB ( 59.3ms)   최대  2726KB   표본 267
+  피해자 V1    받은  43.4 Mbit / 보낸 50   손실 13.2%   지터 1.42ms
+  피해자 V2    받은  48.6 Mbit / 보낸 50   손실 2.9%   지터 0.59ms
+  DCQCN g1    CE 받음   1534 → CNP  314 → 실제로 깎음  134회   정한 속도 평균   978  최저  611 Mbit
+  DCQCN g2    CE 받음   1457 → CNP  321 → 실제로 깎음  138회   정한 속도 평균   981  최저  584 Mbit
+  DCQCN g4    CE 받음   1332 → CNP  227 → 실제로 깎음   84회   정한 속도 평균   993  최저  735 Mbit
+  PFC XOFF    leaf3:eth5 137회 (큐 최고 3469KB)
+  PFC 멈춤     1홉 스파인 → leaf3     274회   가장 오래 멈춘 곳 spine2:eth3     5911ms
+  PFC 멈춤     2홉 리프 업링크          201회   가장 오래 멈춘 곳 leaf2:eth1      1529ms
+  PFC 멈춤     3홉 서버 g              2회   가장 오래 멈춘 곳 g1                28ms
+  PFC 멈춤     3홉 서버 h              2회   가장 오래 멈춘 곳 h1                35ms
+
+[1m=== E  ECN + DCQCN + PFC — ECN 문턱(100~300KB) < XOFF(1MB) ===[0m
+  병목 큐: red limit 4000000 min 100000 max 300000 avpkt 4200 burst 25 probability 0.5 bandwidth 300mbit ecn   RoCE tclass=106 (ECN 비트 2)   DCQCN=1   PFC XOFF=1048576
+  처리량       g1  110  g2    0  g4  140  합 250 Mbit (포트 300)
+  병목 큐     드랍 2   CE 도장 46585
+  RoCE 재전송  g3 NAK 161   송신측 재시도 14 18 11 
+  ping g1→g3  평균 10.755ms 최대 50.195ms  손실 0%
+  병목 큐 깊이  중앙값   121KB (  3.3ms)   95%   969KB ( 26.5ms)   최대  1996KB   표본 301
+  피해자 V1    받은  49.0 Mbit / 보낸 50   손실 2.0%   지터 0.11ms
+  피해자 V2    받은  49.9 Mbit / 보낸 50   손실 0.1%   지터 0.02ms
+  DCQCN g1    CE 받음  18168 → CNP 1955 → 실제로 깎음  441회   정한 속도 평균   308  최저    5 Mbit
+  DCQCN g2    CE 받음   4058 → CNP  466 → 실제로 깎음  107회   정한 속도 평균   855  최저   13 Mbit
+  DCQCN g4    CE 받음  22762 → CNP 1912 → 실제로 깎음  402회   정한 속도 평균   366  최저   24 Mbit
+  PFC XOFF    leaf3:eth5 17회 (큐 최고 2028KB)
+  PFC 멈춤     1홉 스파인 → leaf3      34회   가장 오래 멈춘 곳 spine2:eth3      578ms
+  PFC 멈춤     2홉 리프 업링크           18회   가장 오래 멈춘 곳 leaf4:eth1       147ms
+  PFC 멈춤     3홉 서버 g              0회   가장 오래 멈춘 곳 g1                 0ms
+  PFC 멈춤     3홉 서버 h              0회   가장 오래 멈춘 곳 h1                 0ms
