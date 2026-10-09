@@ -92,7 +92,7 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 | 10 | [마이크로버스트](experiments/10-microburst/README.md) | 평균 90Mbit/s를 고르게 / 300개씩 몰아서 100Mbit·버퍼 64KB 포트로 | 고르게 보내면 손실 0, 몰아서 보내면 **70% 넘게 손실**. 버퍼 드랍은 큐 통계에만 쌓여 모니터링은 드랍 0·알람 0, 5초 평균 송신 속도는 오히려 90 → 25Mbit/s로 낮아 보였다. 1ms로 세면 순간 2,330Mbit/s |
 | 12 | [RoCEv2: 깔고, 보고, 튜닝하기](experiments/12-roce/README.md) | Soft-RoCE를 커널에 올려 g1~g4(VRF)를 leaf에 붙임. 손실 주입, 3:1 인캐스트, QP 수 | 손실 1%에 RoCE **−75%**(TCP는 거의 그대로) — NAK 뒤 빠진 PSN부터 전부 다시 보내는 go-back-N. 얕은 큐 인캐스트는 포트의 6~9%로 붕괴(송신자가 65ms 타이머만 기다림). 타이머를 줄이면 드랍만 4배, 버퍼를 키우면 지연 100배, **송신 창 4**로 드랍 0·포트의 76~92%·ping 0.2ms |
 
-예정: 09 세션 테이블 고갈, 11 비대칭 라우팅 + 상태 기반 방화벽 — 전체 목록은 [experiments/](experiments/README.md).
+예정: 09 세션 테이블 고갈, 11 비대칭 라우팅 + 상태 기반 방화벽, 15 EVPN 패브릭 위의 5G 코어 — 전체 목록은 [experiments/](experiments/README.md).
 
 ## 빠른 시작
 

@@ -13,6 +13,7 @@
 
 | 버전 | 기간 | 한 줄 |
 |---|---|---|
+| [v0.11](#v011--5g-코어-기획-2026-10-10) | 2026-10-10 | 실험 15 EVPN 패브릭 위의 5G 코어 (기획만) |
 | [v0.10](#v010--acl-vs-방화벽-2026-10-10) | 2026-10-10 | 실험 14 ACL(stateless) vs 방화벽(stateful) |
 | [v0.9](#v09--ansible-2026-10-09) | 2026-10-09 | 상태를 만드는 셸 스크립트 8개를 Ansible playbook으로 |
 | [v0.8](#v08--rocev2-2026-10-09) | 2026-10-09 | 실험 12 RoCEv2, 모니터링 4차(RoCE NIC 카운터) |
@@ -25,6 +26,18 @@
 | [v0.1](#v01--랩-초기-구성-2026-08-10) | 2026-08-10 | 스파인 2 + 리프 4 패브릭 |
 
 ---
+
+## v0.11 — 5G 코어 기획 (2026-10-10)
+
+### 추가
+- `experiments/15-5g-core-evpn/README.md` — Open5GS·UERANSIM을 리프 4개에 CP/UP 분리로 올리는 실험의 기획(Phase 0~7, 비유표, 빈 주소·VRF 계획표, 설정 스켈레톤, 관찰 기록표). 토폴로지·스크립트는 아직 없음
+
+### 검증
+- WSL 커널 6.6.114.1: `CONFIG_IP_SCTP=m`(modprobe 성공), `CONFIG_TUN=m`, `CONFIG_VXLAN=y`, `CONFIG_NET_VRF=m`, 커널 GTP 없음(사용자 공간 UPF라 무관)
+
+### 결정
+- Phase 순서 5 → 4: VXLAN 안의 GTP-U를 보려면 N3가 먼저 L3VNI를 타야 한다
+- Phase 7의 kind는 Docker Desktop의 `shop`이 아니라 WSL dockerd 위에 새로 — containerlab과 같은 도커여야 leaf2에 붙는다
 
 ## v0.10 — ACL vs 방화벽 (2026-10-10)
 
