@@ -1,0 +1,81 @@
+
+=== Phase 0 — 기록 안 하는 경비실 (필터 없음, 관측만). 해시: 양쪽 리프 '출발IP+출발포트'만 ===
+  leafA: policy=3 fields=17   leafB: policy=3 fields=17   leafB 넥스트홉 순서: 10.15.21.2 10.15.22.2 
+  흐름 100 | 갈 때 fw1 46·fw2 54 | 성공 100·실패 0 (실패율 0%)
+  경로별 실패: 대칭 0/46, 비대칭 0/54 | 늦은 성공: connect ≥0.9s 0개, 데이터 ≥0.15s 지연 0개
+
+=== Phase 1 — 같은 해시, 이제 FW가 방명록을 쓴다 ===
+  leafA: policy=3 fields=17   leafB: policy=3 fields=17   leafB 넥스트홉 순서: 10.15.21.2 10.15.22.2 
+  [fw1 방명록, 1.2초 시점] 전체 21개, 그중 UNREPLIED 0개. 예:
+    tcp      6 118 TIME_WAIT src=10.15.1.10 dst=10.15.2.10 sport=21000 dport=80 [ASSURED]
+    tcp      6 118 TIME_WAIT src=10.15.1.10 dst=10.15.2.10 sport=21020 dport=80 [ASSURED]
+  [fw2 방명록, 1.2초 시점] 전체 20개, 그중 UNREPLIED 20개. 예:
+    tcp      6 118 SYN_SENT src=10.15.1.10 dst=10.15.2.10 sport=21023 dport=80 [UNREPLIED]
+    tcp      6 118 SYN_SENT src=10.15.1.10 dst=10.15.2.10 sport=21028 dport=80 [UNREPLIED]
+  흐름 100 | 갈 때 fw1 51·fw2 49 | 성공 51·실패 49 (실패율 49%)
+  경로별 실패: 대칭 0/51, 비대칭 49/49 | 늦은 성공: connect ≥0.9s 0개, 데이터 ≥0.15s 지연 0개
+  같은 h1 -> srv:80, 출발포트만 다른 연속 12개:
+    21000  fw1→fw1  성공
+    21001  fw1→fw1  성공
+    21002  fw2→fw1  실패
+    21003  fw1→fw1  성공
+    21004  fw1→fw1  성공
+    21005  fw2→fw1  실패
+    21006  fw2→fw1  실패
+    21007  fw1→fw1  성공
+    21008  fw1→fw1  성공
+    21009  fw2→fw1  실패
+    21010  fw2→fw1  실패
+    21011  fw1→fw1  성공
+  drop 카운터  fw1: packets 114   fw2: packets 0
+
+=== Phase 2 — 비대칭이 생기는 다른 원인들 ===
+--- 2a. 분류센터마다 해시 방식이 다름: leafA = 5-튜플, leafB = L3(주소만)
+  leafA: policy=3 fields=55   leafB: policy=0 fields=17   leafB 넥스트홉 순서: 10.15.21.2 10.15.22.2 
+  흐름 100 | 갈 때 fw1 50·fw2 50 | 성공 50·실패 50 (실패율 50%)
+  경로별 실패: 대칭 0/50, 비대칭 50/50 | 늦은 성공: connect ≥0.9s 0개, 데이터 ≥0.15s 지연 0개
+--- 2b. 해시 방식은 같고(둘 다 5-튜플 대칭) 넥스트홉 순서만 다름
+  leafA: policy=3 fields=55   leafB: policy=3 fields=55   leafB 넥스트홉 순서: 10.15.22.2 10.15.21.2 
+  흐름 100 | 갈 때 fw1 51·fw2 49 | 성공 0·실패 100 (실패율 100%)
+  경로별 실패: 대칭 0/0, 비대칭 100/100 | 늦은 성공: connect ≥0.9s 0개, 데이터 ≥0.15s 지연 0개
+--- 2c. 함정: 리눅스 기본 'L4 해시'(policy 1). 패킷에 이미 해시값(보낸 소켓의 무작위 txhash)이 붙어 있으면 헤더 대신 그걸 쓴다
+  leafA: policy=1 fields=55   leafB: policy=1 fields=55   leafB 넥스트홉 순서: 10.15.21.2 10.15.22.2 
+  흐름 100 | 갈 때 fw1 40·fw2 42 | 성공 78·실패 22 (실패율 22%)
+  경로별 실패: 대칭 1/59, 비대칭 12/12, 재전송 때 경로바뀜 9/29 | 늦은 성공: connect ≥0.9s 28개, 데이터 ≥0.15s 지연 37개
+
+=== Phase 3 — 해결 ① 대칭 해시: 두 리프 다 5-튜플(policy 3, fields 0x37), 넥스트홉 순서 같게 ===
+  leafA: policy=3 fields=55   leafB: policy=3 fields=55   leafB 넥스트홉 순서: 10.15.21.2 10.15.22.2 
+  흐름 100 | 갈 때 fw1 42·fw2 58 | 성공 100·실패 0 (실패율 0%)
+  경로별 실패: 대칭 0/100, 비대칭 0/0 | 늦은 성공: connect ≥0.9s 0개, 데이터 ≥0.15s 지연 0개
+--- 3b. 대칭이긴 한 L3 해시 (주소만) — 실패는 없지만 분산은?
+  leafA: policy=0 fields=55   leafB: policy=0 fields=55   leafB 넥스트홉 순서: 10.15.21.2 10.15.22.2 
+  흐름 100 | 갈 때 fw1 0·fw2 100 | 성공 100·실패 0 (실패율 0%)
+  경로별 실패: 대칭 0/100, 비대칭 0/0 | 늦은 성공: connect ≥0.9s 0개, 데이터 ≥0.15s 지연 0개
+
+=== Phase 4 — 해결 ② 방명록 동기화(conntrackd). 해시는 Phase 1의 비대칭 그대로 ===
+  leafA: policy=3 fields=17   leafB: policy=3 fields=17   leafB 넥스트홉 순서: 10.15.21.2 10.15.22.2 
+  conntrackd: fw1 1개, fw2 1개 실행 중 (FTFW, DisableExternalCache on, 동기화 링크 10.15.99.0/24)
+--- 4a. 랩 그대로 (RTT 약 0.1ms)
+  [fw1 방명록, 1.2초 시점] 전체 42개, 그중 UNREPLIED 10개. 예:
+    tcp      6 119 TIME_WAIT src=10.15.1.10 dst=10.15.2.10 sport=26061 dport=80 [ASSURED]
+    tcp      6 119 SYN_SENT src=10.15.1.10 dst=10.15.2.10 sport=26040 dport=80 [UNREPLIED]
+  [fw2 방명록, 1.2초 시점] 전체 79개, 그중 UNREPLIED 20개. 예:
+    tcp      6 119 SYN_SENT src=10.15.1.10 dst=10.15.2.10 sport=26072 dport=80 [UNREPLIED]
+    tcp      6 119 SYN_SENT src=10.15.1.10 dst=10.15.2.10 sport=26066 dport=80 [UNREPLIED]
+  흐름 100 | 갈 때 fw1 50·fw2 50 | 성공 98·실패 2 (실패율 2%)
+  경로별 실패: 대칭 0/50, 비대칭 2/50 | 늦은 성공: connect ≥0.9s 50개, 데이터 ≥0.15s 지연 45개
+--- 4b. leafB -> srv 에 지연 1ms (RTT 약 1ms) — 동기화가 SYN-ACK보다 먼저 도착할까
+  흐름 100 | 갈 때 fw1 51·fw2 49 | 성공 100·실패 0 (실패율 0%)
+  경로별 실패: 대칭 0/51, 비대칭 0/49 | 늦은 성공: connect ≥0.9s 1개, 데이터 ≥0.15s 지연 42개
+--- 4b. leafB -> srv 에 지연 10ms (RTT 약 10ms) — 동기화가 SYN-ACK보다 먼저 도착할까
+  흐름 100 | 갈 때 fw1 44·fw2 56 | 성공 100·실패 0 (실패율 0%)
+  경로별 실패: 대칭 0/44, 비대칭 0/56 | 늦은 성공: connect ≥0.9s 0개, 데이터 ≥0.15s 지연 49개
+--- 4d. 지연을 양쪽에 10ms씩 (leafB -> srv, leafA -> h1) — 두 번째 경주(SYN-ACK -> ACK)도 넉넉하게
+  흐름 100 | 갈 때 fw1 39·fw2 61 | 성공 100·실패 0 (실패율 0%)
+  경로별 실패: 대칭 0/39, 비대칭 0/61 | 늦은 성공: connect ≥0.9s 0개, 데이터 ≥0.15s 지연 0개
+  동기화 통계 (fw1):
+    Packets lost:		                   0
+    112808 Bytes sent                44284 Bytes recv
+--- 4c. 대조군: 같은 지연 10ms, 동기화 끔
+  흐름 100 | 갈 때 fw1 44·fw2 56 | 성공 44·실패 56 (실패율 56%)
+  경로별 실패: 대칭 0/44, 비대칭 56/56 | 늦은 성공: connect ≥0.9s 0개, 데이터 ≥0.15s 지연 0개

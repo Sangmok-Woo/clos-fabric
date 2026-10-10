@@ -1,0 +1,80 @@
+# 16장 — ECMP + 방화벽 두 대: 갈 때와 올 때 다른 경비실
+#
+#                  ┌── fw1 ──┐
+#    h1 ── leafA ──┤    ║    ├── leafB ── srv
+#                  └── fw2 ──┘
+#                       ║ = 동기화 전용 링크 (conntrackd, Phase 4에서만 씀)
+#
+# leafA·leafB 는 상대 쪽 서브넷으로 가는 경로를 fw1·fw2 두 넥스트홉으로 나눠 쓴다(ECMP).
+# 해시 방식은 run.sh 가 런타임에 바꾼다 (fib_multipath_hash_policy / _fields, 넥스트홉 순서).
+# 14장과 같은 이유로 network-mode: none (관리망에 붙이면 도커 NAT 규칙이 conntrack 을 켠다).
+#
+# 주소: 10.15.<구간>.0/24 — 1 h1망, 2 srv망, 11·12 leafA-fw1·fw2, 21·22 fw1·fw2-leafB, 99 동기화
+
+name: fwecmp
+
+topology:
+  defaults:
+    kind: linux
+    image: fwlab:2
+    network-mode: none
+    binds:
+      - .:/lab:ro
+
+  nodes:
+    h1:
+      exec:
+        - ip addr add 10.15.1.10/24 dev eth1
+        - ip route replace default via 10.15.1.1
+
+    leafA:
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - sysctl -w net.ipv4.conf.all.rp_filter=0
+        - ip addr add 10.15.1.1/24 dev eth1
+        - ip addr add 10.15.11.1/24 dev eth2         # fw1 쪽
+        - ip addr add 10.15.12.1/24 dev eth3         # fw2 쪽
+        - ip route add 10.15.2.0/24 nexthop via 10.15.11.2 nexthop via 10.15.12.2
+
+    leafB:
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - sysctl -w net.ipv4.conf.all.rp_filter=0
+        - ip addr add 10.15.21.1/24 dev eth1         # fw1 쪽
+        - ip addr add 10.15.22.1/24 dev eth2         # fw2 쪽
+        - ip addr add 10.15.2.1/24 dev eth3
+        - ip route add 10.15.1.0/24 nexthop via 10.15.21.2 nexthop via 10.15.22.2
+
+    fw1:
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - sysctl -w net.ipv4.conf.all.rp_filter=0
+        - ip addr add 10.15.11.2/24 dev eth1         # 내부 (leafA)
+        - ip addr add 10.15.21.2/24 dev eth2         # 외부 (leafB)
+        - ip addr add 10.15.99.1/24 dev eth3         # 동기화
+        - ip route add 10.15.1.0/24 via 10.15.11.1
+        - ip route add 10.15.2.0/24 via 10.15.21.1
+
+    fw2:
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - sysctl -w net.ipv4.conf.all.rp_filter=0
+        - ip addr add 10.15.12.2/24 dev eth1
+        - ip addr add 10.15.22.2/24 dev eth2
+        - ip addr add 10.15.99.2/24 dev eth3
+        - ip route add 10.15.1.0/24 via 10.15.12.1
+        - ip route add 10.15.2.0/24 via 10.15.22.1
+
+    srv:
+      exec:
+        - ip addr add 10.15.2.10/24 dev eth1
+        - ip route replace default via 10.15.2.1
+
+  links:
+    - endpoints: ["h1:eth1", "leafA:eth1"]
+    - endpoints: ["leafA:eth2", "fw1:eth1"]
+    - endpoints: ["leafA:eth3", "fw2:eth1"]
+    - endpoints: ["fw1:eth2", "leafB:eth1"]
+    - endpoints: ["fw2:eth2", "leafB:eth2"]
+    - endpoints: ["leafB:eth3", "srv:eth1"]
+    - endpoints: ["fw1:eth3", "fw2:eth3"]

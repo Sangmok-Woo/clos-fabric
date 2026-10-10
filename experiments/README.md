@@ -21,6 +21,7 @@
 | 12 | [RoCEv2: 깔고, 보고, 튜닝하기](12-roce/README.md) | Soft-RoCE 를 커널에 올려 패브릭 위로. 손실 1%, 3:1 인캐스트(버퍼·속도 제한·송신 창), QP 수와 ECMP 해시 | 완료 |
 | 14 | [ACL vs 방화벽](14-acl-vs-firewall/README.md) | 같은 정책을 stateless/stateful에. 위조 ACK·UDP 왕복·비대칭 라우팅·conntrack 고갈 | 완료 |
 | 15 | [EVPN 패브릭 위의 5G 코어](15-5g-core-evpn/README.md) | Open5GS CP/UP 분리, GTP-U in VXLAN의 MTU 두 겹, 구간별 VRF, N2·N4 차단·UPF 정지, AMF 파드 삭제 | 기획 |
+| 16 | [ECMP + 방화벽 두 대](16-ecmp-fw-sync/README.md) | 갈 때·올 때 다른 FW로 갈리는 ECMP. 해시 5종 비교, 대칭 해시 vs conntrackd(+RTT별 경주) | 완료 |
 
 01~04와 10은 장애를 넣고 패킷으로 읽는 장, 08은 오버레이가 하는 일을 패킷으로 따라간 장, 05~07은 패브릭의 기본 동작(분산·수렴·BFD)을 패킷으로 다시 잰 장이다.
 05~07은 원래 [docs/EXPERIMENTS.md](../docs/EXPERIMENTS.md) §1·§2에 있던 측정을 캡처와 함께 다시 한 것이다.

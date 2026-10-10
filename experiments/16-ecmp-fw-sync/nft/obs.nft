@@ -1,0 +1,13 @@
+#!/usr/sbin/nft -f
+# 관측용 (fw1·fw2 공통). 어느 FW가 어느 흐름의 SYN / SYN-ACK 을 봤는지 h1 출발포트로 집합에 적는다.
+# ct 를 안 쓰고 막지도 않는다 — 필터(fw.nft)보다 먼저(priority -10) 보고 지나간다.
+
+table inet obs {
+  set syn    { type inet_service; size 65535; flags dynamic; }   # 갈 때: h1 -> srv SYN, 키 = tcp sport
+  set synack { type inet_service; size 65535; flags dynamic; }   # 올 때: srv -> h1 SYN-ACK, 키 = tcp dport
+  chain forward {
+    type filter hook forward priority -10; policy accept;
+    tcp dport 80 tcp flags & (syn|ack) == syn     add @syn    { tcp sport }
+    tcp sport 80 tcp flags & (syn|ack) == syn|ack add @synack { tcp dport }
+  }
+}

@@ -1,0 +1,11 @@
+#!/usr/sbin/nft -f
+# fw1·fw2 공통 필터 — 14장 fw.nft 와 같은 정책. eth1 = 내부(leafA), eth2 = 외부(leafB), eth3 = 동기화.
+
+table inet fw {
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+    ct state established,related accept
+    ct state new iifname "eth1" accept
+    counter comment "여기까지 왔으면 drop"
+  }
+}
