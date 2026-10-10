@@ -1,6 +1,6 @@
 # 실험 16 — ECMP + 방화벽 두 대: 갈 때와 올 때 다른 경비실
 
-> [실험 목록](../README.md) · 실험 노트 [NOTES.md](NOTES.md) · 실행 기록 [capture/run-output.txt](capture/run-output.txt) · 앞 장 [14 ACL vs 방화벽](../14-acl-vs-firewall/README.md)
+> [실험 목록](../../README.md) · 실험 노트 [NOTES.md](NOTES.md) · 실행 기록 [capture/run-output.txt](capture/run-output.txt) · 앞 장 [14 ACL vs 방화벽](../14-acl-vs-firewall/README.md)
 
 14장 Phase 5(비대칭 라우팅)를 일부러 만든 뒷문이 아니라 **ECMP가 저절로 만드는** 상황으로 옮긴다. 경로가 두 개고 길마다 FW가 하나씩 있을 때, 갈 때와 올 때를 서로 다른 리프가 따로 해시하면 같은 대화가 다른 FW로 갈린다. 그러면 "가끔만 안 되는" 장애가 된다. 그걸 재고, 두 가지 해결책 **① 대칭 해시**(같은 경비실로 보내기)와 **② 방명록 동기화 conntrackd**(어느 경비실이든 알게 하기)를 비교한다.
 
@@ -38,8 +38,8 @@
 WSL root:
 
 ```bash
-bash /mnt/c/Users/wsm02/Desktop/Claude/clos-fabric/experiments/16-ecmp-fw-sync/sync.sh
-cd /root/labs/clos-fabric/experiments/16-ecmp-fw-sync
+bash /mnt/c/Users/wsm02/Desktop/Claude/clos-fabric/experiments/_planned/16-ecmp-fw-sync/sync.sh
+cd /root/labs/clos-fabric/experiments/_planned/16-ecmp-fw-sync
 docker image inspect fwlab:2 >/dev/null 2>&1 || image/build.sh     # fwlab:1(14장) 위에 conntrackd
 containerlab deploy -t topology.yml           # 내리기: containerlab destroy -t topology.yml
 ./run.sh all                                  # Phase 0~4, 약 5분 → capture/

@@ -1,6 +1,6 @@
 # 실험 14 — ACL(stateless) vs 방화벽(stateful)
 
-> [실험 목록](../README.md) · 실험 노트 [NOTES.md](NOTES.md) · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
+> [실험 목록](../../README.md) · 실험 노트 [NOTES.md](NOTES.md) · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
 
 같은 정책을 상태 없는 노드(ACL)와 상태를 기억하는 노드(FW)에 똑같이 주문하고, **상태 테이블(방명록) 유무**라는 구조 차이가 어디서 결과를 가르는지 잰다.
 
@@ -40,8 +40,8 @@ leaf1은 `rp_filter=0` — 우회 링크로 들어오는 응답(출발지 10.14.
 WSL root:
 
 ```bash
-bash /mnt/c/Users/wsm02/Desktop/Claude/clos-fabric/experiments/14-acl-vs-firewall/sync.sh   # 윈도우 원본 → /root/labs 사본
-cd /root/labs/clos-fabric/experiments/14-acl-vs-firewall
+bash /mnt/c/Users/wsm02/Desktop/Claude/clos-fabric/experiments/_planned/14-acl-vs-firewall/sync.sh   # 윈도우 원본 → /root/labs 사본
+cd /root/labs/clos-fabric/experiments/_planned/14-acl-vs-firewall
 docker image inspect fwlab:1 >/dev/null 2>&1 || image/build.sh    # 최초 1회
 containerlab deploy -t topology.yml          # 내리기: containerlab destroy -t topology.yml
 ./run.sh all                                 # Phase 0~6 → capture/run-output.txt   (한 단계만: ./run.sh 3)
