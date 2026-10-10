@@ -1,11 +1,13 @@
-# 실험 14 — ACL(stateless) vs 방화벽(stateful)
+# 실험 14 — ACL vs 방화벽, 그리고 ECMP 뒤의 방화벽 두 대
 
-> [실험 목록](../../README.md) · 실험 노트 [NOTES.md](NOTES.md) · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
+> [실험 목록](../../README.md) · 실험 노트 [NOTES.md](NOTES.md) · 실행 기록 [capture/run-output.txt](capture/run-output.txt) · 2부 [ECMP + 방화벽 두 대](ecmp/README.md)
 
 같은 정책을 상태 없는 노드(ACL)와 상태를 기억하는 노드(FW)에 똑같이 주문하고, **상태 테이블(방명록) 유무**라는 구조 차이가 어디서 결과를 가르는지 잰다.
 
 **가설:** 평상시엔 구별이 안 된다. ① 위조 ACK ② UDP 왕복 ③ 비대칭 라우팅 세 지점에서 갈린다. → **맞았다.** 여기에 ④ 테이블 고갈이 FW에만 걸린다.
 (목록의 09 세션 테이블 고갈, 11 비대칭 라우팅이 이 장의 Phase 6·5로 들어왔다.)
+
+두 부로 나뉜다. **1부**(Phase 0~6, 랩 `fwacl`)는 ACL과 FW를 나란히 놓고 상태 테이블이 어디서 결과를 가르는지 본다. **2부**(Phase 7, 랩 `fwecmp`, [ecmp/](ecmp/README.md))는 1부 Phase 5의 비대칭을 ECMP가 저절로 만드는 상황으로 옮겨, FW 두 대 앞에서 대칭 해시와 conntrackd를 비교한다.
 
 ## 구성
 
@@ -45,6 +47,12 @@ cd /root/labs/clos-fabric/experiments/_planned/14-acl-vs-firewall
 docker image inspect fwlab:1 >/dev/null 2>&1 || image/build.sh    # 최초 1회
 containerlab deploy -t topology.yml          # 내리기: containerlab destroy -t topology.yml
 ./run.sh all                                 # Phase 0~6 → capture/run-output.txt   (한 단계만: ./run.sh 3)
+containerlab destroy -t topology.yml
+
+cd ecmp                                      # 2부 (Phase 7)
+docker image inspect fwlab:2 >/dev/null 2>&1 || image/build.sh
+containerlab deploy -t topology.yml
+./run.sh all                                 # 회차 0~4, 약 5분 → ecmp/capture/
 ```
 
 노드 안에서 명령: `docker exec -it clab-fwacl-<노드> bash`. 이 디렉터리가 노드 안 `/lab`(읽기 전용)으로 보인다.
@@ -75,7 +83,7 @@ containerlab deploy -t topology.yml          # 내리기: containerlab destroy -
 
 단계별 증상·추적·원인은 [NOTES.md](NOTES.md).
 
-## 결론
+## 결론 (1부)
 
 평상시(Phase 1)에는 두 노드가 똑같이 보인다. 다만 그 "똑같음"을 만드는 수고가 다르다. FW는 `ct state established` 한 줄이면 되고, ACL은 응답의 모양을 사람이 묘사해야 한다. 스켈레톤 빈칸에 가장 먼저 떠오르는 `== ack`를 넣었더니 응답의 첫 패킷인 SYN-ACK이 걸러져 정상 접속부터 깨졌다. 고친 규칙(`ack|rst != 0`)은 시스코 `established`와 같은 뜻인데, 바로 그 규칙이 Phase 3에서 위조 ACK 3개를 전부 들여보냈다. h1은 RST로 답했고, 보낸 쪽은 h1이 살아 있다는 걸 알게 됐다. UDP(Phase 4)는 더 나쁘다. 깃발이 없으니 단서가 포트뿐이고, DNS 응답을 받으려고 연 `sport 53`은 "출발 53이면 누구든 어느 포트로든"이 되어 위조 UDP 2개가 h1에 닿았다. FW는 같은 질의를 방명록(UDP 의사 연결, 약 30초)으로 받고 위조는 하나도 들이지 않았다.
 
@@ -85,6 +93,19 @@ containerlab deploy -t topology.yml          # 내리기: containerlab destroy -
 
 다음에 "ping은 되는데 접속만 안 된다"를 만나면 경로 대칭(`conntrack -L`에 `UNREPLIED`가 쌓이는지)부터, "기존 연결은 되는데 새 연결만 안 된다"면 `conntrack -C` vs `nf_conntrack_max`와 dmesg부터 본다.
 
+## 2부 — ECMP 뒤의 방화벽 두 대 (Phase 7)
+
+자세한 구성·결과·결론은 [ecmp/README.md](ecmp/README.md), 노트는 [ecmp/NOTES.md](ecmp/NOTES.md).
+
+Phase 5에서는 리턴 경로를 일부러 우회시켜 비대칭을 만들었다. 실제로는 ECMP가 이걸 저절로 만든다. 경로 두 개에 FW가 하나씩 있고, 갈 때와 올 때를 서로 다른 리프가 따로 해시하면 같은 대화가 다른 FW로 갈린다.
+
+- 필터가 없으면 비대칭 54개 흐름도 전부 성공했다. 장애의 조건은 **비대칭 + 방명록**이다. FW를 켜자 비대칭 49개가 정확히 전부 실패했다
+- 비대칭이 생기는 길은 셋: 방향 따라 달라지는 해시 칸(49%), 두 리프의 해시 방식이 다름(50%), 해시는 대칭인데 넥스트홉 순서가 다름(100%). 리눅스 기본 L4 해시(policy 1)는 재전송 때 바뀌는 txhash를 써서 22% 실패에 늦은 성공이 섞였다
+- **해결 ① 대칭 해시**(두 리프 같은 5-튜플 함수, 같은 넥스트홉 순서): 실패 0%, 분산 42:58. L3 해시로 대칭을 맞추면 한 FW로 다 몰린다
+- **해결 ② conntrackd**: 실패 49% → 2%. 다만 RTT가 동기화보다 짧으면 비대칭 흐름마다 SYN-ACK 재전송으로 1초씩 늦는다. 양쪽에 10ms를 주자 지연도 0
+
+**두 부를 합친 한 줄:** stateful FW는 왕복이 같은 장비를 지나야 한다. 경로가 하나면 우회로를, ECMP면 해시 함수와 넥스트홉 순서를 같이 맞추고, conntrackd는 RTT가 긴 경계에서만 보험으로 쓴다.
+
 ## 파일
 
 | 파일 | 내용 |
@@ -92,8 +113,9 @@ containerlab deploy -t topology.yml          # 내리기: containerlab destroy -
 | `topology.yml` | 랩 정의 |
 | `nft/acl.nft`, `nft/fw.nft` | 양쪽 규칙. `acl-v1.nft`는 Phase 1의 틀린 1차 시도 |
 | `run.sh` | `./run.sh all` 또는 `./run.sh <0~6>` — 단계별 주입·관찰·원복 |
-| `sync.sh` | 윈도우 원본 → WSL 실행 사본 (CRLF 제거) |
+| `sync.sh` | 윈도우 원본 → WSL 실행 사본 (CRLF 제거, `ecmp/` 포함) |
 | `tools/` | `hold.py`(연결 n개 붙잡기), `longlived.py`(장기 연결 하나) |
 | `image/` | `fwlab:1` Dockerfile, 빌드 스크립트 |
 | `NOTES.md` | 단계별 실험 노트 (시나리오/주입/증상/추적/원인/교훈) |
 | `capture/run-output.txt` | 1회차 실행 기록 |
+| `ecmp/` | 2부: 랩 `fwecmp`, `run.sh`(회차 0~4), conntrackd 설정, `fwlab:2` 이미지, 회차별 흐름 표 |

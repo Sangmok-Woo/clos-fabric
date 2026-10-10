@@ -1,8 +1,8 @@
-# 실험 16 — ECMP + 방화벽 두 대: 갈 때와 올 때 다른 경비실
+# 실험 14 2부 — ECMP + 방화벽 두 대: 갈 때와 올 때 다른 경비실
 
-> [실험 목록](../../README.md) · 실험 노트 [NOTES.md](NOTES.md) · 실행 기록 [capture/run-output.txt](capture/run-output.txt) · 앞 장 [14 ACL vs 방화벽](../14-acl-vs-firewall/README.md)
+> [1부 ACL vs 방화벽](../README.md) · [실험 목록](../../../README.md) · 실험 노트 [NOTES.md](NOTES.md) · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
 
-14장 Phase 5(비대칭 라우팅)를 일부러 만든 뒷문이 아니라 **ECMP가 저절로 만드는** 상황으로 옮긴다. 경로가 두 개고 길마다 FW가 하나씩 있을 때, 갈 때와 올 때를 서로 다른 리프가 따로 해시하면 같은 대화가 다른 FW로 갈린다. 그러면 "가끔만 안 되는" 장애가 된다. 그걸 재고, 두 가지 해결책 **① 대칭 해시**(같은 경비실로 보내기)와 **② 방명록 동기화 conntrackd**(어느 경비실이든 알게 하기)를 비교한다.
+1부 Phase 5(비대칭 라우팅)를 일부러 만든 뒷문이 아니라 **ECMP가 저절로 만드는** 상황으로 옮긴다. 경로가 두 개고 길마다 FW가 하나씩 있을 때, 갈 때와 올 때를 서로 다른 리프가 따로 해시하면 같은 대화가 다른 FW로 갈린다. 그러면 "가끔만 안 되는" 장애가 된다. 그걸 재고, 두 가지 해결책 **① 대칭 해시**(같은 경비실로 보내기)와 **② 방명록 동기화 conntrackd**(어느 경비실이든 알게 하기)를 비교한다.
 
 ## 구성
 
@@ -17,9 +17,9 @@
 |---|---|
 | leafA | h1 → srv 방향 ECMP (`10.15.2.0/24 nexthop fw1 nexthop fw2`) |
 | leafB | srv → h1 방향 ECMP (`10.15.1.0/24 nexthop fw1 nexthop fw2`) |
-| fw1, fw2 | 14장과 같은 stateful 규칙(`nft/fw.nft`) + 관측 테이블(`nft/obs.nft`) |
+| fw1, fw2 | 1부와 같은 stateful 규칙(`nft/fw.nft`) + 관측 테이블(`nft/obs.nft`) |
 
-베이스 패브릭과 따로 뜨는 작은 랩(`fwecmp`)이다. 이미지는 14장 `fwlab:1`에 conntrackd를 더한 `fwlab:2`. 14장과 같은 이유로 `network-mode: none`.
+베이스 패브릭과 따로 뜨는 작은 랩(`fwecmp`)이다. 이미지는 1부 `fwlab:1`에 conntrackd를 더한 `fwlab:2`. 1부와 같은 이유로 `network-mode: none`.
 
 **측정 방법:** 회차마다 h1 → srv:80 curl 100번(출발포트만 다름, 20개씩 동시). FW 두 대의 관측 테이블이 SYN과 SYN-ACK을 볼 때마다 h1 출발포트를 집합에 적는다(ct 없이, priority -10). 그래서 흐름마다 **갈 때 FW · 올 때 FW · 성공 여부 · 걸린 시간**을 맞춰 볼 수 있다 → `capture/<회차>.tsv`.
 
@@ -38,9 +38,9 @@
 WSL root:
 
 ```bash
-bash /mnt/c/Users/wsm02/Desktop/Claude/clos-fabric/experiments/_planned/16-ecmp-fw-sync/sync.sh
-cd /root/labs/clos-fabric/experiments/_planned/16-ecmp-fw-sync
-docker image inspect fwlab:2 >/dev/null 2>&1 || image/build.sh     # fwlab:1(14장) 위에 conntrackd
+bash /mnt/c/Users/wsm02/Desktop/Claude/clos-fabric/experiments/_planned/14-acl-vs-firewall/sync.sh   # 1부와 함께 동기화
+cd /root/labs/clos-fabric/experiments/_planned/14-acl-vs-firewall/ecmp
+docker image inspect fwlab:2 >/dev/null 2>&1 || image/build.sh     # fwlab:1(1부) 위에 conntrackd
 containerlab deploy -t topology.yml           # 내리기: containerlab destroy -t topology.yml
 ./run.sh all                                  # Phase 0~4, 약 5분 → capture/
 ```
@@ -86,10 +86,10 @@ containerlab deploy -t topology.yml           # 내리기: containerlab destroy 
 | 파일 | 내용 |
 |---|---|
 | `topology.yml` | 랩 정의 (주소 10.15.<구간>.0/24) |
-| `nft/fw.nft` | FW 정책 (14장과 같음) |
+| `nft/fw.nft` | FW 정책 (1부와 같음) |
 | `nft/obs.nft` | 관측: 어느 FW가 어느 흐름의 SYN·SYN-ACK을 봤는지 집합에 기록 |
 | `conntrackd/fw1.conf`, `fw2.conf` | FTFW 모드, `DisableExternalCache on`(액티브-액티브) |
 | `run.sh` | `./run.sh all` 또는 `./run.sh <0~4>` |
 | `tools/flows.sh` | h1에서 출발포트를 바꿔 가며 curl N개 |
-| `sync.sh`, `image/` | 실행 사본 동기화, `fwlab:2` 이미지 |
+| `image/` | `fwlab:2` 이미지 (실행 사본 동기화는 1부의 `sync.sh`가 같이 한다) |
 | `capture/` | 실행 기록, 회차별 흐름 표(`.tsv`: 출발포트·갈 때 FW·올 때 FW·경로·결과·시간) |

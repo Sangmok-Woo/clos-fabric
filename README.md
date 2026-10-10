@@ -93,7 +93,7 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 | 12 | [RoCEv2: 깔고, 보고, 튜닝하기](experiments/12-roce/README.md) | Soft-RoCE를 커널에 올려 g1~g4(VRF)를 leaf에 붙임. 손실 주입, 3:1 인캐스트, QP 수, R8 ECN·DCQCN·PFC(진행 중) | 손실 1%에 RoCE **−75%**(TCP는 거의 그대로) — NAK 뒤 빠진 PSN부터 전부 다시 보내는 go-back-N. 얕은 큐 인캐스트는 포트의 6~9%로 붕괴(송신자가 65ms 타이머만 기다림). 타이머를 줄이면 드랍만 4배, 버퍼를 키우면 지연 100배, **송신 창 4**로 드랍 0·포트의 76~92%·ping 0.2ms |
 
 예정: 09 세션 테이블 고갈, 11 비대칭 라우팅 + 상태 기반 방화벽.
-계획 중([experiments/_planned/](experiments/_planned/README.md)): 14 ACL vs 방화벽, 15 EVPN 패브릭 위의 5G 코어, 16 ECMP + 방화벽 두 대 — 전체 목록은 [experiments/](experiments/README.md).
+계획 중([experiments/_planned/](experiments/_planned/README.md)): 14 ACL vs 방화벽 + ECMP 뒤의 방화벽 두 대, 15 EVPN 패브릭 위의 5G 코어 — 전체 목록은 [experiments/](experiments/README.md).
 
 ## 빠른 시작
 

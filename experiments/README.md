@@ -31,9 +31,8 @@
 
 | # | 실험 | 주입하는 장애 | 상태 |
 |---|---|---|---|
-| 14 | [ACL vs 방화벽](_planned/14-acl-vs-firewall/README.md) | 같은 정책을 stateless/stateful에. 위조 ACK·UDP 왕복·비대칭 라우팅·conntrack 고갈 | 완료 |
+| 14 | [ACL vs 방화벽 + ECMP 뒤의 방화벽 두 대](_planned/14-acl-vs-firewall/README.md) | 1부: 같은 정책을 stateless/stateful에. 위조 ACK·UDP 왕복·비대칭 라우팅·conntrack 고갈. 2부: 갈 때·올 때 다른 FW로 갈리는 ECMP, 대칭 해시 vs conntrackd | 완료 |
 | 15 | [EVPN 패브릭 위의 5G 코어](_planned/15-5g-core-evpn/README.md) | Open5GS CP/UP 분리, GTP-U in VXLAN의 MTU 두 겹, 구간별 VRF, N2·N4 차단·UPF 정지, AMF 파드 삭제 | 기획 |
-| 16 | [ECMP + 방화벽 두 대](_planned/16-ecmp-fw-sync/README.md) | 갈 때·올 때 다른 FW로 갈리는 ECMP. 해시 5종 비교, 대칭 해시 vs conntrackd(+RTT별 경주) | 완료 |
 
 ## 실행 준비
 

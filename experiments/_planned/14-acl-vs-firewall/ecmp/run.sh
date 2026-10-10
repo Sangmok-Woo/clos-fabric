@@ -1,5 +1,5 @@
 #!/bin/bash
-# 실험 16 — ECMP + 방화벽 두 대. ./run.sh [0..4|all]   all 이면 capture/run-output.txt 에도 남는다.
+# 실험 14 2부 — ECMP + 방화벽 두 대. ./run.sh [0..4|all]   all 이면 capture/run-output.txt 에도 남는다.
 # 회차마다 h1 -> srv curl N개(출발포트만 다름)를 보내고, 흐름마다 "갈 때 FW / 올 때 FW / 성공 여부 / 시간"을 맞춰 본다.
 HERE=$(cd "$(dirname "$0")" && pwd); cd "$HERE"; mkdir -p capture
 d()  { docker exec "clab-fwecmp-$1" "${@:2}"; }

@@ -1,4 +1,4 @@
-# 실험 16 노트 (1회차 2026-10-10, 원본 [capture/run-output.txt](capture/run-output.txt))
+# 실험 14 2부 노트 (1회차 2026-10-10, 원본 [capture/run-output.txt](capture/run-output.txt))
 
 > 형식: 시나리오명 / 주입 / 증상 / 추적 과정(틀린 가설 포함) / 원인·복구 / 한 줄 교훈
 

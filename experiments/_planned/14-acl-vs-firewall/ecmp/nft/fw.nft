@@ -1,5 +1,5 @@
 #!/usr/sbin/nft -f
-# fw1·fw2 공통 필터 — 14장 fw.nft 와 같은 정책. eth1 = 내부(leafA), eth2 = 외부(leafB), eth3 = 동기화.
+# fw1·fw2 공통 필터 — 1부 fw.nft 와 같은 정책. eth1 = 내부(leafA), eth2 = 외부(leafB), eth3 = 동기화.
 
 table inet fw {
   chain forward {

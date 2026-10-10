@@ -4,6 +4,5 @@
 
 | # | 실험 |
 |---|---|
-| 14 | [ACL vs 방화벽](14-acl-vs-firewall/README.md) |
+| 14 | [ACL vs 방화벽 + ECMP 뒤의 방화벽 두 대](14-acl-vs-firewall/README.md) (옛 16은 2부) |
 | 15 | [EVPN 패브릭 위의 5G 코어](15-5g-core-evpn/README.md) |
-| 16 | [ECMP + 방화벽 두 대](16-ecmp-fw-sync/README.md) |
