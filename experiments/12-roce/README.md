@@ -1,7 +1,7 @@
 # 12 — RoCEv2: 깔고, 패킷을 보고, 근거를 들어 튜닝하기
 
 Soft-RoCE(rxe)를 WSL 커널에 올리고, GPU 서버 역할의 g1~g4를 leaf 네 대에 하나씩 붙여 RoCEv2 트래픽을 패브릭 위로 흘린다.
-설치(R1) → 패킷 해부(R2) → MTU(R3) → 손실(R4) → 인캐스트 튜닝(R5) → ECMP(R6) → 카운터(R7) 순서다.
+설치(R1) → 패킷 해부(R2) → MTU(R3) → 손실(R4) → 인캐스트 튜닝(R5) → ECMP(R6) → 카운터(R7) → 혼잡 제어 ECN·DCQCN·PFC(R8, 진행 중) 순서다.
 
 ```
         spine1          spine2
@@ -13,7 +13,7 @@ Soft-RoCE(rxe)를 WSL 커널에 올리고, GPU 서버 역할의 g1~g4를 leaf �
 ```
 
 진짜 RDMA NIC가 아니라 소프트웨어 RoCE라서 절대 속도(1~2 Gb/s)는 CPU가 정한다. 그래서 숫자는 바꾸기 전후 비교로만 읽는다.
-PFC는 없고, rxe는 ECN을 찍지도 반응하지도 않는다(캡처에서 DSCP/ECN = 0x00). 즉 이 랩은 손실이 나면 재전송으로 버티는 lossy RoCE다.
+R1~R7에는 PFC가 없고, rxe는 기본값으로 DSCP/ECN = 0x00을 보낸다. 즉 손실이 나면 재전송으로 버티는 lossy RoCE다. R8에서 이 위에 ECN·DCQCN·PFC를 하나씩 얹는다.
 
 ## 0단계 — 커널에 rxe 올리기
 
@@ -34,7 +34,8 @@ h서버 컨테이너 안에 rxe를 만들면 장치는 생기지만 패킷은 �
 experiments/12-roce/tools/build-rxe.sh   # 0단계, 직접 실행
 experiments/12-roce/setup.sh             # g1~g4 + rxe 장치
 experiments/12-roce/run.sh               # R1~R7 (run.sh R4 R5 처럼 일부만도 된다)
-experiments/12-roce/restore.sh           # 되돌리기 (모듈은 남긴다)
+experiments/12-roce/run-r8.sh            # R8 A~F (약 3분, h서버 iperf3 필요: ansible/run.sh prep-hosts.yml)
+experiments/12-roce/restore.sh           # 되돌리기 (모듈은 남긴다). restore.sh r8 은 R8 큐만
 ```
 
 ## R1 — 설치와 연결
@@ -181,6 +182,43 @@ R5에서 큐 드랍이 20만 개 넘게 났는데 패브릭 쪽 인터페이스 
 알람은 두 개다. `RoceRetransmitting`은 30초 동안 보낸 패킷 대비 재전송 비율이 0.2%를 넘으면 울린다. 실측으로 손실 0%에서 0.03%(Soft-RoCE의 타이머 재전송), 0.1% 손실에서 0.1%, 1% 손실에서 1%였다. `RoceQPFailed`는 재전송 한도 초과가 한 번이라도 나면 울린다.
 지표가 나오는 것(장치별 7개)과 Prometheus가 규칙을 읽은 것까지 확인했다. 인캐스트 중에 실제로 울리는지 보려던 회차는 아래 문제로 WSL이 멈춰서 확인하지 못했다.
 
+## R8 — 혼잡 제어: ECN · DCQCN · PFC (진행 중)
+
+> **상태 (2026-10-10):** A~F 1회 실행 완료, 결과는 [capture/r8/](capture/r8/). 패킷 흐름·Wireshark 화면·결론은 아직 없다.
+
+R5에서 송신 창을 손으로 묶어 해결한 인캐스트(g1·g2·g4 → g3, leaf3:eth5를 300Mbit 포트로)를, 이번에는 실제 RoCE 패브릭이 쓰는 세 장치로 푼다.
+
+| | 무엇 | 이 랩에서 |
+|---|---|---|
+| ECN | 큐가 차면 버리는 대신 IP 헤더에 CE 도장 | **진짜.** leaf3:eth5의 RED 큐(`ecn`). RoCE는 `--tclass=106`(DSCP 26 + ECT(0))로 보내고, rxe가 tclass를 IP TOS에 그대로 넣는 것을 캡처로 확인 |
+| DCQCN | 도장을 본 받는 쪽이 CNP를 보내고, 보내는 쪽이 속도를 깎았다 올린다 | **흉내.** [tools/dcqcn.py](tools/dcqcn.py). CNP는 UDP 4792로 패브릭을 실제로 건넌다. 송신자의 htb 속도를 바꾼다. 구조는 논문(Zhu et al. 2015) 그대로, 타이머만 µs → ms |
+| PFC | 큐가 XOFF를 넘으면 한 홉 앞의 같은 클래스를 멈춘다 | **흉내.** [tools/pfc.py](tools/pfc.py). PAUSE 프레임 대신 앞 장비 tc의 `plug` qdisc를 닫았다 연다. DSCP 26만 따로 줄 세우고, leaf3 → 스파인 → 리프 업링크 → 서버 3홉까지 연쇄 |
+
+흉내 쪽은 ms 단위로 반응해서 문턱을 진짜 스위치보다 크게 잡았다(인캐스트 시작 때 큐가 1ms에 약 340KB씩 찬다): ECN 100~300KB, XOFF 1MB(XON 512KB), 병목 버퍼 4MB.
+같은 시간에 같은 클래스(DSCP 26)의 UDP 50Mbit 피해자 흐름 둘을 흘린다. V1 h1 → h3은 leaf3까지 같은 길이지만 내려가는 포트가 한가하고, V2 h2 → h4는 leaf3를 지나지 않는다.
+
+| | 켠 것 | 합계 | 병목 드랍 | 병목 큐 중앙값 | PFC XOFF (leaf3) | 스파인 멈춤 | V1 손실 | V2 손실 |
+|---|---|---|---|---|---|---|---|---|
+| A | 꼬리 드랍 64KB | 15 Mbit | 51,061 | 0KB | — | — | 0% | 0% |
+| B | ECN만 | 293 | 0 | 1,517KB (41ms) | — | — | 0% | 0% |
+| C | ECN + DCQCN | 229 | 0 | 182KB (5ms) | — | — | 0% | 0% |
+| D | PFC만 | 231 | 0 | 969KB (27ms) | 138 | 276 | 14.9% | 2.7% |
+| E | ECN + DCQCN + PFC (ECN < XOFF) | 210 / 250 ⚠ | 8 / 2 | 85 / 121KB | 7 / 17 | 14 / 34 | 0.5 / 2.0% | 0.3 / 0.1% |
+| F | 같은 구성, ECN 1.5~3MB > XOFF | 247 | 0 | 998KB (27ms) | 137 | 274 | 13.2% | 2.9% |
+
+E는 두 번 돌렸다. 전체 출력은 [capture/r8/run-output.txt](capture/r8/run-output.txt), 시나리오별 원자료는 `capture/r8/<A~F>/`(처리량, DCQCN·PFC 통계와 타임라인, 20ms 간격 큐 깊이, 피해자 흐름, ping).
+
+첫 읽기:
+- **B** — 도장 74,068개, 아무도 반응하지 않는다. 드랍이 없는 건 rxe가 ACK 못 받은 패킷 128개에서 스스로 멈춰서다. 대신 큐가 1.5MB(41ms)로 계속 서 있다
+- **C** — CNP 약 2,280개가 패브릭을 건너 왔고 송신자마다 약 480번 깎았다. 큐는 1.5MB → 182KB, 합계는 293 → 229로 손해
+- **D** — 드랍 0. 멈춤이 스파인 → 리프 업링크 → 서버로 거꾸로 퍼져, 병목과 상관없는 V1·V2까지 손해(head-of-line blocking)
+- **E vs F** — ECN 문턱이 XOFF보다 낮으면 PFC는 시작 순간에만 나선다. 뒤집으면 DCQCN이 거의 안 움직이고 D와 같아진다
+
+R8에서 알게 된 함정:
+- **E에서 송신자 하나가 결과 없이 멈춘다**(3번 중 3번). QP가 끊긴 건 아니다(`retry_exceeded_err` 0). C·D에서는 안 났으니 흉내 DCQCN과 흉내 PFC가 같이 돌 때의 상호작용으로 보인다. 그래서 E의 합계는 두 대 몫이다
+- ECN 큐는 ECT가 없는 패킷을 도장 대신 버린다. ping도 `-Q 0x02`로 보내야 한다. 안 그러면 큐가 깊을 때의 ping만 사라져 지연이 낮게 보인다
+- `pfc.py`가 `join()`으로 기다리면 Python 3.13+에서 SIGTERM을 못 받는다. `stop.wait(0.2)` 루프로 고쳤고, run-r8.sh는 도구가 5초 안에 안 끝나면 강제로 끝낸다
+
 ## 결론
 
 WSL 커널에 빠진 모듈 두 개(rdma_rxe, crc32_generic)를 빌드해 올리고, rxe가 netns를 모르는 문제는 서버를 VRF로 만들어 피했다. 그러자 RoCEv2 패킷이 실제 eBGP 패브릭을 건넜다.
@@ -189,7 +227,7 @@ Wireshark에서 보면 RoCE는 UDP 4791 안에 InfiniBand 전송 헤더(BTH)를 
 그 빠른 길의 값은 손실이다. 1% 손실에 TCP는 거의 그대로였는데 RoCE는 75% 떨어졌다. 빠진 패킷 하나 때문에 그 뒤를 전부 다시 보내기 때문이다.
 인캐스트에서 큐가 얕으면 더 나빠서, 300Mbit 포트에 세 대가 19~26Mbit밖에 못 보냈다. 캡처를 보면 송신자들이 시간의 72~91%를 65ms 재전송 타이머만 기다리고 있었다.
 그렇다고 타이머를 줄이면 넘치는 큐에 더 빨리 다시 밀어 넣을 뿐이라 드랍만 4배가 됐다. 버퍼를 4MB로 키우면 드랍은 사라지지만 지연이 100배 늘었다.
-버퍼 크기에 맞춰 송신 창을 4로 묶으니 드랍 없이 포트의 76~92%를 쓰면서 지연도 0.2~0.3ms에 머물렀다. 실제 RoCE 패브릭에서 PFC와 DCQCN이 하는 일을 손으로 해 본 셈이다.
+버퍼 크기에 맞춰 송신 창을 4로 묶으니 드랍 없이 포트의 76~92%를 쓰면서 지연도 0.2~0.3ms에 머물렀다. 실제 RoCE 패브릭에서 PFC와 DCQCN이 하는 일을 손으로 해 본 셈이다. R8은 그 둘을 직접 얹어 본다(결론은 R8을 마친 뒤 다시 쓴다).
 
 다음에 RoCE가 느리면 처리량보다 먼저 NIC의 NAK·재전송 카운터와 스위치 큐 드랍을 본다. 그다음 캡처에서 PSN Sequence Error 뒤에 수십 ms씩 비는 구간이 있는지 확인한다. 그런 구간이 있으면 원인은 링크 속도가 아니라 손실과 재전송 타이머다.
 흐름이 한 스파인에 몰리면 QP마다 다른 UDP 출발 포트를 리프 해시가 보고 있는지부터 확인한다.
@@ -205,3 +243,6 @@ Wireshark에서 보면 RoCE는 UDP 4791 안에 InfiniBand 전송 헤더(BTH)를 
 - 위의 멈춤 원인 찾기. 커널 전체를 같은 설정으로 빌드해 모듈 짝을 정확히 맞추면 사라지는지부터 본다
 - `RoceRetransmitting` 알람이 인캐스트 중 실제로 울리는지 확인
 - 커널 6.6의 rxe는 netns를 모른다. 컨테이너 안에서 RoCE를 쓰려면 더 새 커널이 필요하다
+- R8 E에서 송신자가 멈추는 원인: 멈춘 송신자의 htb·plug 큐, rxe 카운터, DCQCN 속도를 시간대별로 같이 찍어 본다
+- R8 캡처 읽기: `capture/r8/C-leaf3-eth5.pcap`의 CE(tos 0x6b), `C-leaf1-eth5-cnp.pcap`의 CNP → Wireshark 화면
+- R8 DCQCN·PFC 타임라인 그림, 본문과 결론

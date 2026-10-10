@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-# 실험 13 — ECN(신호) · DCQCN(규칙) · PFC(비상 브레이크)를 RoCE 인캐스트 위에 하나씩 얹는다.
-#   g1·g2·g4 → g3 동시에 8초 (64KB 메시지). leaf3:eth5(→g3)를 300Mbit 포트로 묶은 게 병목이다 (실험 12 R5 와 같은 자리)
+# R8 — ECN(신호) · DCQCN(규칙) · PFC(비상 브레이크)를 RoCE 인캐스트 위에 하나씩 얹는다.
+#   g1·g2·g4 → g3 동시에 8초 (64KB 메시지). leaf3:eth5(→g3)를 300Mbit 포트로 묶은 게 병목이다 (R5 와 같은 자리)
 #   A 기준(꼬리 드랍 64KB)  B ECN만  C ECN+DCQCN  D PFC만  E ECN+DCQCN+PFC  F E 와 같고 문턱 순서만 반대
 # 같은 시간에 피해자 흐름 두 개를 흘린다 (RoCE 와 같은 클래스 DSCP 26, UDP 50Mbit):
 #   V1 h1 → h3  leaf3 까지 같은 길이지만 내려가는 포트(eth3)는 한가하다
 #   V2 h2 → h4  leaf3 를 아예 지나지 않는다. leaf2 업링크만 g2 와 같이 쓴다
 # 캡처: leaf3:eth5 (병목 뒤, CE 도장이 찍힌 RoCE), leaf1:eth5 (g1 으로 돌아오는 CNP)
-# 먼저: 실험 12 의 setup.sh (g1~g4 + rxe), ansible prep-hosts.yml (iperf3)
+# 먼저: setup.sh (g1~g4 + rxe), ansible prep-hosts.yml (iperf3)
 # 사용: run.sh            전부
 #       run.sh C E        일부만
 set -u
 . "$(dirname "$0")/../_tools/lab.sh"
 SNAP=128
-ST=$HERE/state; mkdir -p "$CAPDIR" "$ST"
+CAPDIR=$HERE/capture/r8   # R1~R7 의 capture/ 와 섞이지 않게
+ST=$HERE/state/r8; mkdir -p "$CAPDIR" "$ST"
 STEPS=${*:-A B C D E F}
 [ $# -eq 0 ] && rm -rf "$CAPDIR"/*
 exec > >(tee -a "$CAPDIR/run-output.txt") 2>&1
@@ -20,7 +21,7 @@ exec > >(tee -a "$CAPDIR/run-output.txt") 2>&1
 DUR=8
 T() { docker exec rtool "$@"; }
 cnt() { cat /sys/class/infiniband/rxe_$1/ports/1/hw_counters/$2; }
-TOOLS13=$HERE/tools
+RT=$HERE/tools   # R8 도구 (dcqcn·pfc·summary)
 TCQ() { local n=$1; shift; if [ "$n" = host ]; then tc "$@"; else nsx "$n" tc "$@"; fi; }
 
 # ---------- 큐 만들기 ----------
@@ -97,8 +98,8 @@ scen() {
   bottleneck "$@"
   echo "  병목 큐: $*   RoCE tclass=$tcl (ECN 비트 $((tcl & 3)))   DCQCN=$dc   PFC XOFF=$xoff"
   local pids=()
-  [ "$dc" = 1 ] && { python3 "$TOOLS13/dcqcn.py" np "$L" & pids+=($!); python3 "$TOOLS13/dcqcn.py" rp "$L" & pids+=($!); }
-  [ "$xoff" != 0 ] && { pfc_config "$xoff" $((xoff / 2)) > "$L/pfc-config.json"; python3 "$TOOLS13/pfc.py" "$L/pfc-config.json" "$L" & pids+=($!); }
+  [ "$dc" = 1 ] && { python3 "$RT/dcqcn.py" np "$L" & pids+=($!); python3 "$RT/dcqcn.py" rp "$L" & pids+=($!); }
+  [ "$xoff" != 0 ] && { pfc_config "$xoff" $((xoff / 2)) > "$L/pfc-config.json"; python3 "$RT/pfc.py" "$L/pfc-config.json" "$L" & pids+=($!); }
   cap_start $id-leaf3-eth5 leaf3 eth5 udp port 4791
   [ "$dc" = 1 ] && cap_start $id-leaf1-eth5-cnp leaf1 eth5 udp port 4792
   cap_wait 1
@@ -125,7 +126,7 @@ scen() {
   # RoCE 인캐스트: 받는 쪽 서버 셋, 보내는 쪽 셋
   local p=18530
   for n in 1 2 4; do
-    T sh -c "timeout $((DUR + 15)) ib_write_bw -d rxe_g3 -x 1 -p $((p + n)) -s 65536 -D $DUR -F --tclass=$tcl > /tmp/s13-$n.txt 2>&1" &
+    T sh -c "timeout $((DUR + 15)) ib_write_bw -d rxe_g3 -x 1 -p $((p + n)) -s 65536 -D $DUR -F --tclass=$tcl > /tmp/r8-$n.txt 2>&1" &
   done
   sleep 1.5
   for n in 1 2 4; do
@@ -157,10 +158,10 @@ scen() {
   echo "  병목 큐     드랍 $drops   CE 도장 $marked"
   echo "  RoCE 재전송  g3 NAK $(( $(cnt g3 out_of_seq_request) - b3 ))   송신측 재시도 $(for n in 1 2 4; do echo -n "$(( $(cnt g$n completer_retry_err) - ${r0[$n]} )) "; done)"
   echo "  ping g1→g3  $(awk '/rtt/{split($4,a,"/"); printf "평균 %sms 최대 %sms", a[2], a[3]} /packet loss/{for(i=1;i<=NF;i++) if($i ~ /%/) l=$i} END{printf "  손실 %s", l}' "$L/ping.txt")"
-  python3 "$TOOLS13/summary.py" "$L"
+  python3 "$RT/summary.py" "$L"
 }
 
-restore_all() { "$HERE/restore.sh" >/dev/null 2>&1; }
+restore_all() { "$HERE/restore.sh" r8 >/dev/null 2>&1; }
 
 A() { scen A "기준 — 꼬리 드랍, 버퍼 64KB" 104 0 0 bfifo limit 65536; }
 # 문턱은 진짜 스위치보다 크다. 흉내 DCQCN·PFC 는 ms 단위로 반응하는데, 인캐스트가 시작되면 큐가 1ms 에 약 340KB 씩 찬다
@@ -176,6 +177,6 @@ F() { scen F "순서 반대 — ECN 문턱(1.5~3MB) > XOFF(1MB)" 106 1 $XOFF $EC
 for s in $STEPS; do $s; sleep 3; done
 restore_all
 for f in "$CAPDIR"/*.pcap; do head_pcap "$f" 3000; done
-W=$WINROOT/$(basename "$HERE")/capture
+W=$WINROOT/$(basename "$HERE")/capture/r8
 [ -d "$WINROOT" ] && { rm -rf "$W"; mkdir -p "$W"; cp -r "$CAPDIR"/. "$W/"; }
 true
