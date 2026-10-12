@@ -1,0 +1,32 @@
+
+[1m=== 2-0 OPEN 안의 Capabilities 를 캡처해서 열어 본다 ===[0m
+→ capture/s2-open.pcap : OPEN 패킷 Optional Parameters 에 Capability 목록
+   (Wireshark 에서: Multiprotocol IPv4-unicast, 4-byte AS, Route Refresh, Graceful Restart 등)
+20:16:33.095 r100 이 본 이웃의 능력:
+     Neighbor capabilities:
+       4 Byte AS: advertised and received
+       Extended Message: advertised and received
+       AddPath:
+         IPv4 Unicast: RX advertised and received
+       Paths-Limit:
+         IPv4 Unicast: advertised (0) and received (0)
+       Long-lived Graceful Restart: advertised and received
+         Address families by peer:
+       Route refresh: advertised and received
+       Enhanced Route Refresh: advertised and received
+       Address Family IPv4 Unicast: advertised and received
+       Hostname Capability: advertised (name: r100,domain name: localdomain) received (name: r200,domain name: localdomain)
+
+[1m=== 2-A Hold time 협상 — 양쪽이 다르면 작은 쪽으로 합의된다 ===[0m
+r100 은 10/30(기본), r200 쪽에서 보는 협상 결과:
+   내 제안 holdtime=15, 상대=30 → 합의 holdtime = 15 초 (작은 쪽)
+
+[1m=== 2-B 약속을 어기면 결별 — KEEPALIVE 를 끊어 Hold timer 를 만료시킨다 ===[0m
+Established 대기: ok
+20:16:36.209 r200→r100 KEEPALIVE(179) egress DROP — 30초 hold 가 만료되면 끊긴다
+   31초 만에 Idle 로 떨어짐 (Hold Timer Expired)
+→ capture/s2-holdexp.pcap 의 NOTIFICATION:
+   	Notification Message (3), length: 21, Hold Timer Expired (4)
+   연결 고리: EVPN 이 BGP 위에 올라타는 것도 이 Multiprotocol 능력 협상(2-0) 덕분.
+
+[1m=== 2단계 끝 — 세션 원복 ===[0m

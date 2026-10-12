@@ -1,0 +1,93 @@
+name: bgp
+
+# 미니 인터넷: AS 6개. 관계는 현실 인터넷 흉내.
+#   AS400 = Tier-1 트랜짓. AS200·AS300·AS500 은 400의 고객. 200↔300 은 피어.
+#   AS100 = 200·300 둘 다의 고객(듀얼홈). AS666 = 300의 고객(공격자).
+# 링크 주소: AS 번호 첫 자리(1·2·3·4·5·6) a<b 인 두 AS 사이는 10.a.b.0/30, 작은 쪽이 .1
+# AS 프리픽스: 100=198.51.100.0/24  200·300·400=100.64.{2,3,4}.0/24(관찰용 lo)
+#              500=203.0.113.0/24(피해자)  666=100.66.6.0/24
+# rtr = RPKI 캐시(StayRTR). 라우터는 관리망(eth0)으로 붙는다. 6단계에서만 쓴다.
+
+mgmt:
+  network: clab
+  ipv4-subnet: 172.20.20.0/24
+
+topology:
+  kinds:
+    linux:
+      image: quay.io/frrouting/frr:10.2.1
+
+  nodes:
+    r100:
+      kind: linux
+      binds:
+        - configs/daemons:/etc/frr/daemons:ro
+        - configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - configs/r100/frr.conf:/etc/frr/frr.conf:ro
+    r200:
+      kind: linux
+      binds:
+        - configs/daemons:/etc/frr/daemons:ro
+        - configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - configs/r200/frr.conf:/etc/frr/frr.conf:ro
+    r300:
+      kind: linux
+      binds:
+        - configs/daemons:/etc/frr/daemons:ro
+        - configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - configs/r300/frr.conf:/etc/frr/frr.conf:ro
+    r400:
+      kind: linux
+      binds:
+        - configs/daemons:/etc/frr/daemons:ro
+        - configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - configs/r400/frr.conf:/etc/frr/frr.conf:ro
+    r500:
+      kind: linux
+      binds:
+        - configs/daemons:/etc/frr/daemons:ro
+        - configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - configs/r500/frr.conf:/etc/frr/frr.conf:ro
+    r666:
+      kind: linux
+      binds:
+        - configs/daemons:/etc/frr/daemons:ro
+        - configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - configs/r666/frr.conf:/etc/frr/frr.conf:ro
+    h100:
+      kind: linux
+      image: alpine:3
+      exec:
+        - ip addr add 198.51.100.10/24 dev eth1
+        - ip route replace default via 198.51.100.1 dev eth1
+    h500:
+      kind: linux
+      image: alpine:3
+      exec:
+        - ip addr add 203.0.113.10/24 dev eth1
+        - ip route replace default via 203.0.113.1 dev eth1
+    h666:
+      kind: linux
+      image: alpine:3
+      exec:
+        - ip addr add 100.66.6.10/24 dev eth1
+        - ip route replace default via 100.66.6.1 dev eth1
+    rtr:
+      kind: linux
+      image: rpki/stayrtr:v0.6.4
+      mgmt-ipv4: 172.20.20.240
+      binds:
+        - rpki:/rpki
+      cmd: -bind :8282 -cache /rpki/roas.json -checktime=false -refresh 5
+
+  links:
+    - endpoints: ["r100:eth1", "r200:eth1"]
+    - endpoints: ["r100:eth2", "r300:eth1"]
+    - endpoints: ["r100:eth3", "h100:eth1"]
+    - endpoints: ["r200:eth2", "r300:eth2"]
+    - endpoints: ["r200:eth3", "r400:eth1"]
+    - endpoints: ["r300:eth3", "r400:eth2"]
+    - endpoints: ["r300:eth4", "r666:eth1"]
+    - endpoints: ["r400:eth3", "r500:eth1"]
+    - endpoints: ["r500:eth2", "h500:eth1"]
+    - endpoints: ["r666:eth2", "h666:eth1"]

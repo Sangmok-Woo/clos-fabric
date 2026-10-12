@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "counts": 6,
+    "generated": 1760000000
+  },
+  "roas": [
+    {
+      "prefix": "203.0.113.0/24",
+      "maxLength": 24,
+      "asn": "AS500"
+    },
+    {
+      "prefix": "198.51.100.0/24",
+      "maxLength": 24,
+      "asn": "AS100"
+    },
+    {
+      "prefix": "100.66.6.0/24",
+      "maxLength": 24,
+      "asn": "AS666"
+    },
+    {
+      "prefix": "100.64.2.0/24",
+      "maxLength": 24,
+      "asn": "AS200"
+    },
+    {
+      "prefix": "100.64.3.0/24",
+      "maxLength": 24,
+      "asn": "AS300"
+    },
+    {
+      "prefix": "100.64.4.0/24",
+      "maxLength": 24,
+      "asn": "AS400"
+    }
+  ]
+}

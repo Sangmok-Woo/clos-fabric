@@ -1,0 +1,35 @@
+
+[1m=== 1-0 정상 세션의 탄생 — TCP 3-way → OPEN → KEEPALIVE → Established ===[0m
+20:15:59.820 FSM 관찰(최대 12초): Idle Idle Established 
+→ capture/s1-birth.pcap : SYN, SYN-ACK, ACK, OPEN×2, KEEPALIVE×2 가 순서대로 보인다
+   20:15:59.811693 IP 10.1.2.1.179 > 10.1.2.2.43460: Flags [P.], seq 4290781645:4290781668, ack 1767072042, win 441, options [nop,nop,TS val 2005434430 ecr 1452632003], length 23: BGP
+   20:15:59.811730 IP 10.1.2.2.43460 > 10.1.2.1.179: Flags [.], ack 23, win 444, options [nop,nop,TS val 1452636234 ecr 2005434430], length 0
+   20:15:59.812488 IP 10.1.2.1.179 > 10.1.2.2.43460: Flags [F.], seq 23, ack 1, win 441, options [nop,nop,TS val 2005434431 ecr 1452636234], length 0
+   20:15:59.822903 IP 10.1.2.2.43460 > 10.1.2.1.179: Flags [F.], seq 1, ack 24, win 444, options [nop,nop,TS val 1452636245 ecr 2005434431], length 0
+   20:15:59.822929 IP 10.1.2.1.179 > 10.1.2.2.43460: Flags [.], ack 2, win 441, options [nop,nop,TS val 2005434441 ecr 1452636245], length 0
+   20:16:01.823192 IP 10.1.2.2.53106 > 10.1.2.1.179: Flags [S], seq 3318753095, win 56760, options [mss 9460,sackOK,TS val 1452638245 ecr 0,nop,wscale 7], length 0
+   20:16:01.823225 IP 10.1.2.1.179 > 10.1.2.2.53106: Flags [S.], seq 346691556, ack 3318753096, win 56688, options [mss 9460,sackOK,TS val 2005436441 ecr 1452638245,nop,wscale 7], length 0
+   20:16:01.823246 IP 10.1.2.2.53106 > 10.1.2.1.179: Flags [.], ack 1, win 444, options [nop,nop,TS val 1452638245 ecr 2005436441], length 0
+   20:16:01.823277 IP 10.1.2.1.37080 > 10.1.2.2.179: Flags [S], seq 3010086446, win 56760, options [mss 9460,sackOK,TS val 2005436441 ecr 0,nop,wscale 7], length 0
+   20:16:01.823300 IP 10.1.2.2.179 > 10.1.2.1.37080: Flags [S.], seq 2003731053, ack 3010086447, win 56688, options [mss 9460,sackOK,TS val 1452638246 ecr 2005436441,nop,wscale 7], length 0
+   20:16:01.823311 IP 10.1.2.1.37080 > 10.1.2.2.179: Flags [.], ack 1, win 444, options [nop,nop,TS val 2005436442 ecr 1452638246], length 0
+   20:16:01.823577 IP 10.1.2.1.179 > 10.1.2.2.53106: Flags [P.], seq 1:113, ack 1, win 443, options [nop,nop,TS val 2005436442 ecr 1452638245], length 112: BGP
+
+[1m=== 1-A 전화선 끊기 — TCP 179 를 DROP 하면 Connect/Active 에서 맴돈다 ===[0m
+20:16:12.616 r100 가 본 세션 상태:
+   state = Connect  (Established 아님 = 전화가 안 걸림)
+   필터 제거 → 복구
+
+[1m=== 1-B 잘못 건 전화 — 한쪽 remote-as 를 틀리면 OPEN 받자마자 NOTIFICATION(Bad Peer AS) ===[0m
+20:16:22.249 r100 이 본 마지막 리셋 사유:
+       Notifications:          7          0
+     Last reset 00:00:06,  Waiting for peer OPEN (n/a)
+     Message received that caused BGP to send a NOTIFICATION:
+→ capture/s1-badas.pcap : OPEN 교환 직후 NOTIFICATION(OPEN Message Error / Bad Peer AS)
+       10.1.2.2.179 > 10.1.2.1.54054: Flags [P.], cksum 0x6ab2 (correct), seq 1:113, ack 113, win 442, options [nop,nop,TS val 1452656132 ecr 2005454328], length 112: BGP
+       10.1.2.1.54054 > 10.1.2.2.179: Flags [P.], cksum 0x3839 (correct), seq 113:136, ack 113, win 444, options [nop,nop,TS val 2005454328 ecr 1452656132], length 23: BGP
+   	Notification Message (3), length: 23, OPEN Message Error (2), subcode Bad Peer AS (2)
+       10.1.2.2.179 > 10.1.2.1.54054: Flags [P.], cksum 0x012f (correct), seq 113:132, ack 136, win 442, options [nop,nop,TS val 1452656132 ecr 2005454328], length 19: BGP
+
+[1m=== 1단계 끝 — 세션 원복 ===[0m
+OK

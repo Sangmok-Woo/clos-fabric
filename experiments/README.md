@@ -23,7 +23,9 @@
 01~04와 10은 장애를 넣고 패킷으로 읽는 장, 08은 오버레이가 하는 일을 패킷으로 따라간 장, 05~07은 패브릭의 기본 동작(분산·수렴·BFD)을 패킷으로 다시 잰 장이다.
 05~07은 원래 [docs/EXPERIMENTS.md](../docs/EXPERIMENTS.md) §1·§2에 있던 측정을 캡처와 함께 다시 한 것이다.
 
-[_archive/](_archive/)에는 이전 실험(옛 01번 HTTP 전송 + MTU 장애)을 보관한다.
+[_archive/](_archive/)에는 베이스와 떨어진 실험을 둔다: 옛 01번 HTTP 전송 + MTU 장애,
+그리고 [bgp-anatomy](_archive/bgp-anatomy/README.md) — clos 패브릭 대신 AS 6개짜리 미니 인터넷을 세워
+BGP 의 연결·능력협상·AS_PATH·정책·하이재킹/경로유출·RPKI 를 패킷으로 해부한 별도 소형 랩(본체와 배타적으로 실행).
 
 ## 계획 중 ([_planned/](_planned/))
 
