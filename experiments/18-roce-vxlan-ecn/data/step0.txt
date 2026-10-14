@@ -1,0 +1,33 @@
+
+[1m=== 1) 환경 ===[0m
+  커널 6.6.114.1-microsoft-standard-WSL2
+  모듈 tcp_dctcp
+  모듈 rdma_rxe
+  모듈 crc32_generic
+  모듈 ib_uverbs
+  모듈 ib_core
+  link rxe_x1/1 state ACTIVE physical_state LINK_UP netdev vr1 
+  link rxe_x2/1 state ACTIVE physical_state LINK_UP netdev vr2 
+  link rxe_x3/1 state ACTIVE physical_state LINK_UP netdev vr3 
+  link rxe_x4/1 state ACTIVE physical_state LINK_UP netdev vr4 
+  MTU  xg1 9000 / leaf1 eth6 9000 / leaf1 vni10010 9000 / 언더레이 leaf1 eth1 9500 spine1 eth3 9500
+  RoCE active_mtu 4096 (5)  (RoCE 4096 + BTH·UDP·IP·Eth ≈ 4170B < 9000, VXLAN 50B 더해도 < 9500)
+  rxe hw_counters: ack_deferred completer_retry_err duplicate_request lifespan link_downed out_of_seq_request rcvd_pkts rcvd_rnr_err rcvd_seq_err rdma_recvs rdma_sends retry_exceeded_err retry_rnr_exceeded_err send_err send_rnr_err sent_pkts 
+  (실제 NIC mlx5 의 np_cnp_sent · rp_cnp_handled · np_ecn_marked_roce_packets 같은 혼잡 제어 계수기가 없다)
+
+[1m=== 2) rxe 소스 (drivers/infiniband/sw/rxe) ===[0m
+  'cnp|ecn|congest' 를 쓰는 줄 (.c): 0개 파일
+  IB_OPCODE_CNP 를 쓰는 곳: 0개 파일
+  FECN/BECN: rxe_hdr.h 에 비트 읽기·쓰기 함수만 있고 호출하는 곳 0개
+  송신 IP TOS: rxe_net.c 가 tclass 를 그대로 iph->tos 에 → 248:	iph->tos	=	tos;
+
+[1m=== 3) 실측 — CE 를 받은 rxe 가 CNP 를 보내는가 ===[0m
+  처리량 0.22 Gb/s
+  spine1:eth3 RED  표시(CE) 67035  드랍 18
+  leaf3:eth1 바깥 CE 패킷 61939   xg3 안쪽 CE 패킷 62031
+  xg3 캡처: g1→g3 RoCE 67164, 그중 CE 67035
+  xg3 캡처: g3→g1 전체 4203, 그중 BTH opcode 0x81(CNP) 0, ACK(0x11) 4203
+  xg1 캡처: g1 이 받은 CNP 0
+  g3→g1 패킷의 BTH opcode 분포:
+        4203 0x11
+  rxe_x1 sent_pkts 72183  completer_retry_err 39   rxe_x3 rcvd_pkts 67082 out_of_seq_request 0

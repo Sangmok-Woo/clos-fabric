@@ -1,0 +1,60 @@
+
+[1m=== a) 캡슐화 — 안쪽 ECN 이 바깥으로 복사되는가 (leaf1:eth1) ===[0m
+  -- vxlan tos 0 (tos 기본)
+     안쪽 0x00 로 보냄 → outer=0x00(Not-ECT) inner=0x00(Not-ECT)  5개
+     안쪽 0x01 로 보냄 → outer=0x01(ECT(1)) inner=0x01(ECT(1))  5개
+     안쪽 0x02 로 보냄 → outer=0x02(ECT(0)) inner=0x02(ECT(0))  5개
+     안쪽 0x03 로 보냄 → outer=0x02(ECT(0)) inner=0x03(CE)  5개
+     안쪽 0x6a 로 보냄 → outer=0x02(ECT(0)) inner=0x6a(ECT(0))  5개
+     안쪽 0x6b 로 보냄 → outer=0x02(ECT(0)) inner=0x6b(CE)  5개
+  -- vxlan tos inherit (tos inherit)
+     안쪽 0x00 로 보냄 → outer=0x00(Not-ECT) inner=0x00(Not-ECT)  5개
+     안쪽 0x01 로 보냄 → outer=0x01(ECT(1)) inner=0x01(ECT(1))  5개
+     안쪽 0x02 로 보냄 → outer=0x02(ECT(0)) inner=0x02(ECT(0))  5개
+     안쪽 0x03 로 보냄 → outer=0x02(ECT(0)) inner=0x03(CE)  5개
+     안쪽 0x6a 로 보냄 → outer=0x6a(ECT(0)) inner=0x6a(ECT(0))  5개
+     안쪽 0x6b 로 보냄 → outer=0x6a(ECT(0)) inner=0x6b(CE)  5개
+  -- vxlan tos 0x68 (tos 0x68)
+     안쪽 0x00 로 보냄 → outer=0x68(Not-ECT) inner=0x00(Not-ECT)  5개
+     안쪽 0x01 로 보냄 → outer=0x69(ECT(1)) inner=0x01(ECT(1))  5개
+     안쪽 0x02 로 보냄 → outer=0x6a(ECT(0)) inner=0x02(ECT(0))  5개
+     안쪽 0x03 로 보냄 → outer=0x6a(ECT(0)) inner=0x03(CE)  5개
+     안쪽 0x6a 로 보냄 → outer=0x6a(ECT(0)) inner=0x6a(ECT(0))  5개
+     안쪽 0x6b 로 보냄 → outer=0x6a(ECT(0)) inner=0x6b(CE)  5개
+
+[1m=== b) 디캡 — 바깥 ECN 이 안쪽으로 옮겨지는가 (spine1:eth3 에서 바깥을 강제로 바꾸고 xg3 에서 본다) ===[0m
+  -- vxlan tos 0
+     바깥\안쪽0x00              0x01              0x02              0x03              
+     0x00        5/5 0x00(Not-ECT) 5/5 0x01(ECT(1))  5/5 0x02(ECT(0))  5/5 0x03(CE)         (바깥 확인: outer=0x00(Not-ECT) )
+     0x01        5/5 0x00(Not-ECT) 5/5 0x01(ECT(1))  5/5 0x01(ECT(1))  5/5 0x03(CE)         (바깥 확인: outer=0x01(ECT(1)) )
+     0x02        5/5 0x00(Not-ECT) 5/5 0x01(ECT(1))  5/5 0x02(ECT(0))  5/5 0x03(CE)         (바깥 확인: outer=0x02(ECT(0)) )
+     0x03        0/5 (드랍)      5/5 0x03(CE)      5/5 0x03(CE)      5/5 0x03(CE)         (바깥 확인: outer=0x03(CE) )
+  -- vxlan tos inherit
+     바깥\안쪽0x00              0x01              0x02              0x03              
+     0x00        5/5 0x00(Not-ECT) 5/5 0x01(ECT(1))  5/5 0x02(ECT(0))  5/5 0x03(CE)         (바깥 확인: outer=0x00(Not-ECT) )
+     0x01        5/5 0x00(Not-ECT) 5/5 0x01(ECT(1))  5/5 0x01(ECT(1))  5/5 0x03(CE)         (바깥 확인: outer=0x01(ECT(1)) )
+     0x02        5/5 0x00(Not-ECT) 5/5 0x01(ECT(1))  5/5 0x02(ECT(0))  5/5 0x03(CE)         (바깥 확인: outer=0x02(ECT(0)) )
+     0x03        0/5 (드랍)      5/5 0x03(CE)      5/5 0x03(CE)      5/5 0x03(CE)         (바깥 확인: outer=0x03(CE) )
+  커널 로그 'non-ECT' (바깥 CE + 안쪽 Not-ECT 를 버릴 때 vxlan 이 남긴다): 37줄 새로
+     [  768.715217] vxlan: non-ECT from 10.255.1.1 with TOS=0x3
+     [  775.199300] vxlan: non-ECT from 10.255.1.1 with TOS=0x3
+
+[1m=== c) 실제 병목 — spine1:eth3 RED(ecn) 가 바깥에 찍은 CE 가 안쪽까지 가는가 ===[0m
+  tos 0       tcp  스파인 표시  42491 드랍     4 │ leaf3:eth1 바깥 VXLAN 121223 중 CE  42491 │ xg3 안쪽 CE  42491 ECT0  78732 Not-ECT     0 │ leaf1 업링크 바깥 ECT0 2000/2000
+     spine1:eth3 캡처 (바깥, 안쪽) TOS:
+       outer=0x02(ECT(0))     inner=0x02(ECT(0))  2384
+       outer=0x03(CE)         inner=0x02(ECT(0))  616
+     xg3 캡처 (디캡 후) TOS:
+       outer=-                inner=0x02(ECT(0))  2168
+       outer=-                inner=0x03(CE)  832
+  tos 0       roce 스파인 표시  46578 드랍    12 │ leaf3:eth1 바깥 VXLAN  46644 중 CE  46578 │ xg3 안쪽 CE  46578 ECT0     65 Not-ECT     0 │ leaf1 업링크 바깥 ECT0 1999/1999
+     spine1:eth3 캡처 (바깥, 안쪽) TOS:
+       outer=0x02(ECT(0))     inner=0x6a(ECT(0))  241
+       outer=0x03(CE)         inner=0x6a(ECT(0))  2758
+     xg3 캡처 (디캡 후) TOS:
+       outer=-                inner=0x6a(ECT(0))  65
+       outer=-                inner=0x6b(CE)  2935
+  tos inherit tcp  스파인 표시  42639 드랍     0 │ leaf3:eth1 바깥 VXLAN 121162 중 CE  42639 │ xg3 안쪽 CE  42639 ECT0  78523 Not-ECT     0 │ leaf1 업링크 바깥 ECT0 2000/2000
+  tos inherit roce 스파인 표시  46801 드랍    14 │ leaf3:eth1 바깥 VXLAN  46867 중 CE  46801 │ xg3 안쪽 CE  46801 ECT0     66 Not-ECT     0 │ leaf1 업링크 바깥 ECT0 2000/2000
+  tos 0x68    tcp  스파인 표시  42337 드랍     4 │ leaf3:eth1 바깥 VXLAN 121039 중 CE  42337 │ xg3 안쪽 CE  42337 ECT0  78702 Not-ECT     0 │ leaf1 업링크 바깥 ECT0 2000/2000
+  tos 0x68    roce 스파인 표시  46466 드랍    11 │ leaf3:eth1 바깥 VXLAN  46531 중 CE  46466 │ xg3 안쪽 CE  46466 ECT0     65 Not-ECT     0 │ leaf1 업링크 바깥 ECT0 2000/2000
