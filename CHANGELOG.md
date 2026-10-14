@@ -36,6 +36,11 @@
 - `experiments/_planned/` → `experiments/_wip/`. 진행 중인 실험을 두는 곳으로, `_archive/`는 끝나고 안 쓰는 실험 보관용으로 용도를 나눔
 - 01~08·10을 `experiments/_completed/`로, 12를 `experiments/_wip/`로 옮김. 스크립트의 `lab.sh` 경로는 `../../_tools/lab.sh`, `lab.sh`의 윈도우 사본 경로는 `experiments/` 기준 상대 경로로 계산
 - `_template`은 `_wip/NN-이름`으로 복사해 쓰도록 바꿈
+- 08을 다시 `_wip/`로 옮김
+- 제목 정리: 08 패킷의 일생 → EVPN-VXLAN 패킷 추적, 12 RoCEv2: 깔고, 보고, 튜닝하기 → RoCEv2 성능 튜닝, 14 ACL vs 방화벽 + ECMP 뒤의 방화벽 두 대 → ACL과 방화벽 이중화
+
+### 추가
+- `CLAUDE.md`: 실험을 바꿀 때 실험 README, `experiments/README.md`, 루트 README를 함께 고치는 규칙
 
 ### 삭제
 - `experiments/_archive/01-http-mtu/` (옛 실험 01, HTTP 전송 + MTU). git 기록에는 남아 있다

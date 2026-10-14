@@ -1,4 +1,4 @@
-# 실험 14 — ACL vs 방화벽, 그리고 ECMP 뒤의 방화벽 두 대
+# 실험 14 — ACL과 방화벽 이중화
 
 > [실험 목록](../../README.md) · 실험 노트 [NOTES.md](NOTES.md) · 실행 기록 [capture/run-output.txt](capture/run-output.txt) · 2부 [ECMP + 방화벽 두 대](ecmp/README.md)
 
