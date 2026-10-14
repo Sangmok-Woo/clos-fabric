@@ -24,7 +24,7 @@ BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
 </tr>
 <tr>
 <td><a href="docs/DESIGN.md"><img src="assets/topology.svg" alt="spine-leaf 토폴로지 — h1→h4 트래픽이 ECMP로 두 스파인에 갈라지고, v1↔v3은 VXLAN으로 랙을 넘는다"></a></td>
-<td><a href="experiments/01-hidden-mtu-meets-spine-failure/README.md"><img src="experiments/01-hidden-mtu-meets-spine-failure/img/01-p1-sent-toward-spine2.png" alt="leaf3가 spine2로 보낸 큰 세그먼트가 재전송만 반복하는 Wireshark 화면"></a></td>
+<td><a href="experiments/_completed/01-hidden-mtu-meets-spine-failure/README.md"><img src="experiments/_completed/01-hidden-mtu-meets-spine-failure/img/01-p1-sent-toward-spine2.png" alt="leaf3가 spine2로 보낸 큰 세그먼트가 재전송만 반복하는 Wireshark 화면"></a></td>
 </tr>
 <tr>
 <td align="left">
@@ -37,16 +37,16 @@ BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
 </td>
 <td align="left">
 
-- [01 숨은 MTU 결함 + 스파인 장애](experiments/01-hidden-mtu-meets-spine-failure/README.md) — 61% → **0%**, ping은 내내 정상
-- [02 물리 계층 불량](experiments/02-physical-corruption/README.md) — 비트 하나가 `172.16` → `172.0`
-- [03 L2 루프](experiments/03-broadcast-storm/README.md) — ARP 하나가 3초에 **136만 개**
-- [04 DNS 장애](experiments/04-dns-failure/README.md) — 같은 고장, 실패까지 0.2초 / **10.8초**
-- [05 ECMP 분산](experiments/05-ecmp-hash/README.md) — 같은 흐름이 **다른 스파인으로**
-- [06 링크 다운](experiments/06-link-down-convergence/README.md) — 0.20초, 스파인의 valley path
-- [07 스파인 먹통 + BFD](experiments/07-spine-freeze-bfd/README.md) — **7.61초 → 1.15초**
-- [08 패킷의 일생](experiments/08-packet-life-evpn/README.md) — 주소록 한 줄이 50바이트 상자가 되기까지
-- [10 마이크로버스트](experiments/10-microburst/README.md) — 70% 손실인데 **드랍 0, 알람 0**
-- [12 RoCEv2](experiments/12-roce/README.md) — 손실 1%에 TCP는 그대로, RoCE는 **-75%**
+- [01 숨은 MTU 결함 + 스파인 장애](experiments/_completed/01-hidden-mtu-meets-spine-failure/README.md) — 61% → **0%**, ping은 내내 정상
+- [02 물리 계층 불량](experiments/_completed/02-physical-corruption/README.md) — 비트 하나가 `172.16` → `172.0`
+- [03 L2 루프](experiments/_completed/03-broadcast-storm/README.md) — ARP 하나가 3초에 **136만 개**
+- [04 DNS 장애](experiments/_completed/04-dns-failure/README.md) — 같은 고장, 실패까지 0.2초 / **10.8초**
+- [05 ECMP 분산](experiments/_completed/05-ecmp-hash/README.md) — 같은 흐름이 **다른 스파인으로**
+- [06 링크 다운](experiments/_completed/06-link-down-convergence/README.md) — 0.20초, 스파인의 valley path
+- [07 스파인 먹통 + BFD](experiments/_completed/07-spine-freeze-bfd/README.md) — **7.61초 → 1.15초**
+- [08 패킷의 일생](experiments/_completed/08-packet-life-evpn/README.md) — 주소록 한 줄이 50바이트 상자가 되기까지
+- [10 마이크로버스트](experiments/_completed/10-microburst/README.md) — 70% 손실인데 **드랍 0, 알람 0**
+- [12 RoCEv2](experiments/_wip/12-roce/README.md) — 손실 1%에 TCP는 그대로, RoCE는 **-75%**
 
 </td>
 </tr>
@@ -63,7 +63,7 @@ RFC 7938 방식의 eBGP 언더레이 위에 ECMP, BFD, VXLAN/EVPN 오버레이�
 | 패킷 캡처 — 장애 지점의 흐름을 Wireshark로 | 모니터링 — 같은 장애를 Grafana로 |
 |---|---|
 | <img src="assets/readme-wireshark.png" alt="DNS가 없어진 서버 주소를 돌려줘 SYN 재전송 끝에 Host unreachable이 오는 Wireshark 화면"> | <img src="assets/readme-grafana.png" alt="세션은 16/16 정상인데 링크 드랍과 MTU 불일치 알람이 울리는 Grafana 대시보드"> |
-| 잘못된 DNS 레코드: 이름 해석은 성공하고, 없는 주소로 보낸 SYN이 재전송 끝에 Host unreachable로 끝난다 — [실험 04](experiments/04-dns-failure/README.md) | MTU 장애: BGP 세션은 16/16으로 멀쩡한데 링크 드랍과 MTU 불일치 알람이 울린다 — [실험 01](experiments/01-hidden-mtu-meets-spine-failure/README.md) |
+| 잘못된 DNS 레코드: 이름 해석은 성공하고, 없는 주소로 보낸 SYN이 재전송 끝에 Host unreachable로 끝난다 — [실험 04](experiments/_completed/04-dns-failure/README.md) | MTU 장애: BGP 세션은 16/16으로 멀쩡한데 링크 드랍과 MTU 불일치 알람이 울린다 — [실험 01](experiments/_completed/01-hidden-mtu-meets-spine-failure/README.md) |
 
 <details>
 <summary><b>English summary</b></summary>
@@ -81,19 +81,19 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 
 | # | 실험 | 주입하는 장애 | 본 것 |
 |---|---|---|---|
-| 01 | [숨은 MTU 결함 + 스파인 장애](experiments/01-hidden-mtu-meets-spine-failure/README.md) | spine2 포트 MTU 1500인 채로 spine1이 조용히 죽음 | 평소엔 HTTP 61%만 성공하던 회색 장애가 spine1이 죽자 **0%**. 작은 ping은 내내 정상. 리프는 hold timer 8.8초 뒤에야 spine1을 뺐고, 알람은 결함 +9초, 먹통 +9초. 같은 장애로 모니터링 1차(세션만, **알람 0**) → 2차(데이터플레인, 알람 2) → 3차(블랙박스 프로브)를 비교 |
-| 02 | [물리 계층 불량](experiments/02-physical-corruption/README.md) | leaf3→h3 구간에 비트 깨짐 4% / 몰려오는 손실 | 받는 쪽에서 체크섬 오류 프레임(주소 비트가 뒤집혀 `172.0.13.10`), 보내는 쪽에서 Dup ACK와 재전송. 몰린 손실은 ping 9개 연속 소실 |
-| 03 | [L2 루프·브로드캐스트 스톰](experiments/03-broadcast-storm/README.md) | VXLAN 브리지에 veth 양 끝을 꽂음 | ARP 하나가 3초에 **136만 개**. MAC 표 오염으로 유니캐스트 100% 손실, EVPN이 남의 MAC을 광고해 MAC Mobility 순번 폭주 |
-| 04 | [DNS 장애](experiments/04-dns-failure/README.md) | 잘못된 레코드 / 프로세스 중지 / 53번 DROP | 셋 다 IP 접속은 정상. 실패까지 3.3초 / **0.2초** / **10.8초** — 고장 방식마다 패킷 모양이 다르다 |
-| 05 | [ECMP 분산](experiments/05-ecmp-hash/README.md) | 해시 정책 0 / 1 / 3에서 UDP 흐름 40개를 두 번씩 | 정책 0은 **40:0**. 정책 1은 갈리지만 같은 5-tuple을 다시 보내면 **18개가 다른 스파인으로** — 서버 소켓의 해시값을 그대로 쓴다. 헤더만 보는 정책 3은 0개 |
-| 06 | [링크 다운 수렴](experiments/06-link-down-convergence/README.md) | 지금 쓰는 스파인 링크를 leaf1에서 내림 | 끊김 **0.20초**. leaf1은 0.011초에 남은 링크로 돌렸고, 끊김은 반대편 leaf4가 BGP로 듣기까지의 시간. spine1은 철회 대신 **valley path**(AS 4개)를 광고 |
-| 07 | [스파인 무응답과 BFD](experiments/07-spine-freeze-bfd/README.md) | 링크는 up인 채 spine1을 얼림, BFD 전후 | **7.61초 → 1.15초**. 마지막 KEEPALIVE에서 정확히 9.003초 뒤 Hold Timer Expired, 마지막 BFD에서 0.900초 뒤 BFD Down. 얼린 스파인의 커널은 TCP ACK를 계속 보냈다 |
-| 08 | [패킷의 일생](experiments/08-packet-life-evpn/README.md) | v1 → v3(EVPN-VXLAN)와 h1 → h3(순수 L3)를 같은 리프·스파인 위에서 | Type-2 하나가 leaf1의 fdb에 `dst 10.255.1.3`으로 내려앉고, 98바이트 프레임이 148바이트 상자로 스파인을 지난다(바깥 TTL만 −1). 같은 서브넷 확장·0.35초 이사·같은 IP의 두 테넌트를 얻는 대신 50바이트, MTU 함정(기본값에서 TCP 0 Mbit/s), 언더레이가 멀쩡해도 죽는 오버레이를 낸다 |
-| 10 | [마이크로버스트](experiments/10-microburst/README.md) | 평균 90Mbit/s를 고르게 / 300개씩 몰아서 100Mbit·버퍼 64KB 포트로 | 고르게 보내면 손실 0, 몰아서 보내면 **70% 넘게 손실**. 버퍼 드랍은 큐 통계에만 쌓여 모니터링은 드랍 0·알람 0, 5초 평균 송신 속도는 오히려 90 → 25Mbit/s로 낮아 보였다. 1ms로 세면 순간 2,330Mbit/s |
-| 12 | [RoCEv2: 깔고, 보고, 튜닝하기](experiments/12-roce/README.md) | Soft-RoCE를 커널에 올려 g1~g4(VRF)를 leaf에 붙임. 손실 주입, 3:1 인캐스트, QP 수, R8 ECN·DCQCN·PFC(진행 중) | 손실 1%에 RoCE **−75%**(TCP는 거의 그대로) — NAK 뒤 빠진 PSN부터 전부 다시 보내는 go-back-N. 얕은 큐 인캐스트는 포트의 6~9%로 붕괴(송신자가 65ms 타이머만 기다림). 타이머를 줄이면 드랍만 4배, 버퍼를 키우면 지연 100배, **송신 창 4**로 드랍 0·포트의 76~92%·ping 0.2ms |
+| 01 | [숨은 MTU 결함 + 스파인 장애](experiments/_completed/01-hidden-mtu-meets-spine-failure/README.md) | spine2 포트 MTU 1500인 채로 spine1이 조용히 죽음 | 평소엔 HTTP 61%만 성공하던 회색 장애가 spine1이 죽자 **0%**. 작은 ping은 내내 정상. 리프는 hold timer 8.8초 뒤에야 spine1을 뺐고, 알람은 결함 +9초, 먹통 +9초. 같은 장애로 모니터링 1차(세션만, **알람 0**) → 2차(데이터플레인, 알람 2) → 3차(블랙박스 프로브)를 비교 |
+| 02 | [물리 계층 불량](experiments/_completed/02-physical-corruption/README.md) | leaf3→h3 구간에 비트 깨짐 4% / 몰려오는 손실 | 받는 쪽에서 체크섬 오류 프레임(주소 비트가 뒤집혀 `172.0.13.10`), 보내는 쪽에서 Dup ACK와 재전송. 몰린 손실은 ping 9개 연속 소실 |
+| 03 | [L2 루프·브로드캐스트 스톰](experiments/_completed/03-broadcast-storm/README.md) | VXLAN 브리지에 veth 양 끝을 꽂음 | ARP 하나가 3초에 **136만 개**. MAC 표 오염으로 유니캐스트 100% 손실, EVPN이 남의 MAC을 광고해 MAC Mobility 순번 폭주 |
+| 04 | [DNS 장애](experiments/_completed/04-dns-failure/README.md) | 잘못된 레코드 / 프로세스 중지 / 53번 DROP | 셋 다 IP 접속은 정상. 실패까지 3.3초 / **0.2초** / **10.8초** — 고장 방식마다 패킷 모양이 다르다 |
+| 05 | [ECMP 분산](experiments/_completed/05-ecmp-hash/README.md) | 해시 정책 0 / 1 / 3에서 UDP 흐름 40개를 두 번씩 | 정책 0은 **40:0**. 정책 1은 갈리지만 같은 5-tuple을 다시 보내면 **18개가 다른 스파인으로** — 서버 소켓의 해시값을 그대로 쓴다. 헤더만 보는 정책 3은 0개 |
+| 06 | [링크 다운 수렴](experiments/_completed/06-link-down-convergence/README.md) | 지금 쓰는 스파인 링크를 leaf1에서 내림 | 끊김 **0.20초**. leaf1은 0.011초에 남은 링크로 돌렸고, 끊김은 반대편 leaf4가 BGP로 듣기까지의 시간. spine1은 철회 대신 **valley path**(AS 4개)를 광고 |
+| 07 | [스파인 무응답과 BFD](experiments/_completed/07-spine-freeze-bfd/README.md) | 링크는 up인 채 spine1을 얼림, BFD 전후 | **7.61초 → 1.15초**. 마지막 KEEPALIVE에서 정확히 9.003초 뒤 Hold Timer Expired, 마지막 BFD에서 0.900초 뒤 BFD Down. 얼린 스파인의 커널은 TCP ACK를 계속 보냈다 |
+| 08 | [패킷의 일생](experiments/_completed/08-packet-life-evpn/README.md) | v1 → v3(EVPN-VXLAN)와 h1 → h3(순수 L3)를 같은 리프·스파인 위에서 | Type-2 하나가 leaf1의 fdb에 `dst 10.255.1.3`으로 내려앉고, 98바이트 프레임이 148바이트 상자로 스파인을 지난다(바깥 TTL만 −1). 같은 서브넷 확장·0.35초 이사·같은 IP의 두 테넌트를 얻는 대신 50바이트, MTU 함정(기본값에서 TCP 0 Mbit/s), 언더레이가 멀쩡해도 죽는 오버레이를 낸다 |
+| 10 | [마이크로버스트](experiments/_completed/10-microburst/README.md) | 평균 90Mbit/s를 고르게 / 300개씩 몰아서 100Mbit·버퍼 64KB 포트로 | 고르게 보내면 손실 0, 몰아서 보내면 **70% 넘게 손실**. 버퍼 드랍은 큐 통계에만 쌓여 모니터링은 드랍 0·알람 0, 5초 평균 송신 속도는 오히려 90 → 25Mbit/s로 낮아 보였다. 1ms로 세면 순간 2,330Mbit/s |
+| 12 | [RoCEv2: 깔고, 보고, 튜닝하기](experiments/_wip/12-roce/README.md) | Soft-RoCE를 커널에 올려 g1~g4(VRF)를 leaf에 붙임. 손실 주입, 3:1 인캐스트, QP 수, R8 ECN·DCQCN·PFC(진행 중) | 손실 1%에 RoCE **−75%**(TCP는 거의 그대로) — NAK 뒤 빠진 PSN부터 전부 다시 보내는 go-back-N. 얕은 큐 인캐스트는 포트의 6~9%로 붕괴(송신자가 65ms 타이머만 기다림). 타이머를 줄이면 드랍만 4배, 버퍼를 키우면 지연 100배, **송신 창 4**로 드랍 0·포트의 76~92%·ping 0.2ms |
 
 예정: 09 세션 테이블 고갈, 11 비대칭 라우팅 + 상태 기반 방화벽.
-계획 중([experiments/_planned/](experiments/_planned/README.md)): 14 ACL vs 방화벽 + ECMP 뒤의 방화벽 두 대, 15 EVPN 패브릭 위의 5G 코어 — 전체 목록은 [experiments/](experiments/README.md).
+진행 중([experiments/_wip/](experiments/_wip/README.md)): 14 ACL vs 방화벽 + ECMP 뒤의 방화벽 두 대, 15 EVPN 패브릭 위의 5G 코어 — 전체 목록은 [experiments/](experiments/README.md).
 
 ## 빠른 시작
 
@@ -124,8 +124,8 @@ git clone https://github.com/Sangmok-Woo/clos-fabric && cd clos-fabric
 
 - [ ] **설정 생성기** — `fabric.yml`의 숫자(스파인 수·리프 수)만 바꾸면 토폴로지와 FRR 설정 전체가 재생성되게. 주소·AS·포트가 전부 계산식이라([DESIGN §3~4](docs/DESIGN.md)) 코드로 옮기기만 하면 된다
 - [ ] **BGP unnumbered 전면 전환** — 검증은 끝났고([EXPERIMENTS §4](docs/EXPERIMENTS.md)), 재배포 때 링크 IP를 걷어낸다
-- [x] **모니터링** ✅ — Prometheus + Grafana. 자작 수집기가 세션·경로·BFD를 긁고, 기대값을 토폴로지에서 계산해 알람. 감지 시간 실측(BFD 없음 14.1초 → 있음 6.2초). 2차로 인터페이스 드랍·MTU·TCP 재전송, 3차로 블랙박스 링크 프로브 추가([실험 01](experiments/01-hidden-mtu-meets-spine-failure/README.md)). → [monitoring/](monitoring/README.md)
-- [x] **MTU** ✅ — 스파인 한 포트의 MTU 결함이 다른 스파인 장애 때 드러나는 과정을 재현·측정. → [실험 01](experiments/01-hidden-mtu-meets-spine-failure/README.md)
+- [x] **모니터링** ✅ — Prometheus + Grafana. 자작 수집기가 세션·경로·BFD를 긁고, 기대값을 토폴로지에서 계산해 알람. 감지 시간 실측(BFD 없음 14.1초 → 있음 6.2초). 2차로 인터페이스 드랍·MTU·TCP 재전송, 3차로 블랙박스 링크 프로브 추가([실험 01](experiments/_completed/01-hidden-mtu-meets-spine-failure/README.md)). → [monitoring/](monitoring/README.md)
+- [x] **MTU** ✅ — 스파인 한 포트의 MTU 결함이 다른 스파인 장애 때 드러나는 과정을 재현·측정. → [실험 01](experiments/_completed/01-hidden-mtu-meets-spine-failure/README.md)
 - [ ] **쿠버네티스 연동** — Calico/Cilium이 리프와 BGP 피어링해 파드 네트워크를 패브릭에 직접 태우기
 
 ## 문서

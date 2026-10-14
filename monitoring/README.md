@@ -86,11 +86,11 @@ Established 16/16, 알람 0이었다. 세션은 장애와 무관하게 살아 �
 
 그래서 같은 수집기에 인터페이스 바이트·드랍·에러·MTU와 서버별 TCP 재전송, 이웃별 세션 끊김 누적을 더했다.
 대시보드 아래쪽에 데이터플레인 줄이 생겼고, 같은 장애에서 알람 2개(`FabricMTUMismatch`, `InterfaceDropping`)가 울렸다.
-수집은 노드별 병렬이라 scrape 시간은 그대로다(평균 0.8초). 과정과 숫자는 [실험 01](../experiments/01-hidden-mtu-meets-spine-failure/README.md).
+수집은 노드별 병렬이라 scrape 시간은 그대로다(평균 0.8초). 과정과 숫자는 [실험 01](../experiments/_completed/01-hidden-mtu-meets-spine-failure/README.md).
 
 | 1차 아래 MTU 장애 | 2차 아래 같은 장애 |
 |---|---|
-| ![1차](../experiments/01-hidden-mtu-meets-spine-failure/img/gen1-dashboard.png) | ![2차](../experiments/01-hidden-mtu-meets-spine-failure/img/gen2-dashboard.png) |
+| ![1차](../experiments/_completed/01-hidden-mtu-meets-spine-failure/img/gen1-dashboard.png) | ![2차](../experiments/_completed/01-hidden-mtu-meets-spine-failure/img/gen2-dashboard.png) |
 
 ## 3차 — 블랙박스 링크 프로브 (2026-10-02)
 
@@ -98,12 +98,12 @@ Established 16/16, 알람 0이었다. 세션은 장애와 무관하게 살아 �
 그래서 수집기가 직접 패킷을 보낸다. 리프마다 업링크 상대 스파인에게 작은 ping(56B)과 인터페이스 MTU를 꽉 채운 ping을 보내고,
 작은 건 되는데 큰 게 안 되면 `LinkLargeFrameLoss`, 작은 것도 안 되면 `LinkProbeDown`이 울린다.
 
-[실험 01](../experiments/01-hidden-mtu-meets-spine-failure/README.md)에서 MTU 결함 링크를 결함이 있는 동안 정확히 가리켰다.
+[실험 01](../experiments/_completed/01-hidden-mtu-meets-spine-failure/README.md)에서 MTU 결함 링크를 결함이 있는 동안 정확히 가리켰다.
 반대로 포워딩만 멈춘 스파인(커널은 살아 ping에 대답)은 잡지 못했다. 장비 자신이 아니라 장비 너머로 보내는 프로브가 다음 과제다.
 
 ## 4차 — RoCE NIC 카운터 (2026-10-09)
 
-[실험 12](../experiments/12-roce/README.md)에서 인캐스트로 스위치 큐 드랍이 20만 개 넘게 났는데 인터페이스 카운터는 0이었다(tc qdisc 드랍은 `tx_dropped`에 안 잡힌다).
+[실험 12](../experiments/_wip/12-roce/README.md)에서 인캐스트로 스위치 큐 드랍이 20만 개 넘게 났는데 인터페이스 카운터는 0이었다(tc qdisc 드랍은 `tx_dropped`에 안 잡힌다).
 RoCE는 그 손실을 NIC가 재전송으로 메우므로 서버 NIC(rxe)의 카운터를 읽는다. 수집기 컨테이너에서는 카운터 파일이 안 보여서, 기본 네임스페이스에서 도는 실험 12의 도구 상자(rtool)에 docker exec로 들어가 읽는다.
 `clos_rdma_{sent_pkts,rcvd_pkts,out_of_seq_request,duplicate_request,completer_retry_err,rcvd_seq_err,retry_exceeded_err}_total`(장치별). rtool이 없으면 비어 있다.
 

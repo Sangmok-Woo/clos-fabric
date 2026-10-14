@@ -1,5 +1,5 @@
 # 챕터 공통 도구. 각 챕터 스크립트가 source 한다.
-#   . "$(dirname "$0")/../_tools/lab.sh"
+#   . "$(dirname "$0")/../../_tools/lab.sh"
 # 랩 노드는 clab-clos-*. 호스트(WSL)의 iptables·nft·tcpdump 를 nsenter 로 노드 netns 안에서 쓴다
 # (FRR·alpine 컨테이너에는 이 도구들이 없다).
 TOOLS=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -40,7 +40,7 @@ cap_stop() {
   rm -f "$CAPDIR/.pids"; sleep 0.5
   for f in "$CAPDIR"/*.pcap; do printf "  %-28s %6s 패킷\n" "$(basename "$f")" "$(tcpdump -nn -r "$f" 2>/dev/null | wc -l)"; done
   # 윈도우 쪽 저장소로 사본 (Wireshark 스크린샷용)
-  local win=$WINROOT/${CAPDIR#"$(dirname "$HERE")"/}   # experiments/ 아래 같은 상대 경로
+  local win=$WINROOT/${CAPDIR#"$(dirname "$TOOLS")"/}   # experiments/ 아래 같은 상대 경로
   [ -d "$WINROOT" ] && mkdir -p "$win" && rm -f "$win"/*.pcap && cp "$CAPDIR"/*.pcap "$win/"
 }
 cap_wait() { sleep "${1:-1}"; }   # tcpdump 가 붙을 시간

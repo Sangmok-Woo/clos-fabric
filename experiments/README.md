@@ -3,38 +3,38 @@
 베이스 패브릭(스파인 2 + 리프 4, eBGP 언더레이 + VXLAN/EVPN)은 고정해 두고, 그 위에서 장애를 하나씩 재현한다.
 실험 하나가 디렉터리 하나다. 장마다 장애 지점 앞뒤를 동시에 캡처하고, Wireshark 화면·원본 pcap·결론을 함께 둔다.
 
-## 목록
+## 완료 ([_completed/](_completed/))
 
 | # | 실험 | 주입하는 장애 | 상태 |
 |---|---|---|---|
-| 01 | [숨은 MTU 결함 + 스파인 장애](01-hidden-mtu-meets-spine-failure/README.md) | spine2 포트 MTU 1500인 채로 spine1이 조용히 죽음. 같은 장애로 모니터링 1차→3차 비교 | 완료 |
-| 02 | [물리 계층 불량](02-physical-corruption/README.md) | tc netem으로 비트 깨짐 4%, 몰려오는 손실 | 완료 |
-| 03 | [L2 루프·브로드캐스트 스톰](03-broadcast-storm/README.md) | VXLAN 브리지에 veth 양 끝을 꽂아 고리 | 완료 |
-| 04 | [DNS 장애](04-dns-failure/README.md) | 잘못된 레코드 / DNS 프로세스 중지 / 53번 DROP | 완료 |
-| 05 | [ECMP 분산](05-ecmp-hash/README.md) | 해시 정책 0/1/3에서 흐름 40개의 링크별 분산, 같은 흐름을 다시 보내기 | 완료 |
-| 06 | [링크 다운 수렴](06-link-down-convergence/README.md) | 지금 쓰는 스파인 링크를 내림, 인터페이스 다운 감지 | 완료 |
-| 07 | [스파인 무응답과 BFD](07-spine-freeze-bfd/README.md) | 스파인 freeze, BGP 타이머 vs BFD 300ms×3 | 완료 |
-| 08 | [패킷의 일생: EVPN-VXLAN vs 순수 L3](08-packet-life-evpn/README.md) | 주소록(Type-2/3) → 캡슐화 → 스파인 통과 → 도착을 따라가고, L2 확장·이사·멀티테넌시·ARP 억제와 그 비용을 순수 L3와 비교 | 완료 |
-| 09 | 세션 테이블 고갈 | NAT 포트 범위를 좁히고 연결 폭주 → 새 연결만 실패 | 예정 |
-| 10 | [마이크로버스트](10-microburst/README.md) | 평균 90Mbit/s를 고르게 / 300개씩 몰아서 100Mbit·버퍼 64KB 포트로 | 완료 |
-| 11 | 비대칭 라우팅 + 상태 기반 방화벽 | 리턴 경로만 다르게 → 방화벽이 응답을 버림 | 예정 |
-| 12 | [RoCEv2: 깔고, 보고, 튜닝하기](12-roce/README.md) | Soft-RoCE 를 커널에 올려 패브릭 위로. 손실 1%, 3:1 인캐스트(버퍼·속도 제한·송신 창), QP 수와 ECMP 해시. R8 ECN·DCQCN·PFC | R1~R7 완료, R8 진행 중 |
+| 01 | [숨은 MTU 결함 + 스파인 장애](_completed/01-hidden-mtu-meets-spine-failure/README.md) | spine2 포트 MTU 1500인 채로 spine1이 조용히 죽음. 같은 장애로 모니터링 1차→3차 비교 | 완료 |
+| 02 | [물리 계층 불량](_completed/02-physical-corruption/README.md) | tc netem으로 비트 깨짐 4%, 몰려오는 손실 | 완료 |
+| 03 | [L2 루프·브로드캐스트 스톰](_completed/03-broadcast-storm/README.md) | VXLAN 브리지에 veth 양 끝을 꽂아 고리 | 완료 |
+| 04 | [DNS 장애](_completed/04-dns-failure/README.md) | 잘못된 레코드 / DNS 프로세스 중지 / 53번 DROP | 완료 |
+| 05 | [ECMP 분산](_completed/05-ecmp-hash/README.md) | 해시 정책 0/1/3에서 흐름 40개의 링크별 분산, 같은 흐름을 다시 보내기 | 완료 |
+| 06 | [링크 다운 수렴](_completed/06-link-down-convergence/README.md) | 지금 쓰는 스파인 링크를 내림, 인터페이스 다운 감지 | 완료 |
+| 07 | [스파인 무응답과 BFD](_completed/07-spine-freeze-bfd/README.md) | 스파인 freeze, BGP 타이머 vs BFD 300ms×3 | 완료 |
+| 08 | [패킷의 일생: EVPN-VXLAN vs 순수 L3](_completed/08-packet-life-evpn/README.md) | 주소록(Type-2/3) → 캡슐화 → 스파인 통과 → 도착을 따라가고, L2 확장·이사·멀티테넌시·ARP 억제와 그 비용을 순수 L3와 비교 | 완료 |
+| 10 | [마이크로버스트](_completed/10-microburst/README.md) | 평균 90Mbit/s를 고르게 / 300개씩 몰아서 100Mbit·버퍼 64KB 포트로 | 완료 |
 
 01~04와 10은 장애를 넣고 패킷으로 읽는 장, 08은 오버레이가 하는 일을 패킷으로 따라간 장, 05~07은 패브릭의 기본 동작(분산·수렴·BFD)을 패킷으로 다시 잰 장이다.
+예정(디렉터리 없음): 09 세션 테이블 고갈, 11 비대칭 라우팅 + 상태 기반 방화벽.
+
 05~07은 원래 [docs/EXPERIMENTS.md](../docs/EXPERIMENTS.md) §1·§2에 있던 측정을 캡처와 함께 다시 한 것이다.
 
-[_archive/](_archive/)에는 베이스와 떨어진 실험을 둔다: 옛 01번 HTTP 전송 + MTU 장애,
-그리고 [bgp-anatomy](_archive/bgp-anatomy/README.md) — clos 패브릭 대신 AS 6개짜리 미니 인터넷을 세워
+[_archive/](_archive/)에는 다 끝났고 지금은 쓰지 않는 실험을 보관한다.
+[bgp-anatomy](_archive/bgp-anatomy/README.md) — clos 패브릭 대신 AS 6개짜리 미니 인터넷을 세워
 BGP 의 연결·능력협상·AS_PATH·정책·하이재킹/경로유출·RPKI 를 패킷으로 해부한 별도 소형 랩(본체와 배타적으로 실행).
 
-## 계획 중 ([_planned/](_planned/))
+## 진행 중 ([_wip/](_wip/))
 
-본 목록에 올리기 전에 다듬는 실험이다. 정리가 끝나면 `experiments/` 바로 아래로 옮기고 위 표로 올린다.
+지금 돌리고 있거나 다듬는 실험이다. 정리가 끝나면 `_completed/`로 옮기고 위 표로 올린다. 새 실험은 `cp -r _template _wip/NN-이름`으로 시작한다.
 
 | # | 실험 | 주입하는 장애 | 상태 |
 |---|---|---|---|
-| 14 | [ACL vs 방화벽 + ECMP 뒤의 방화벽 두 대](_planned/14-acl-vs-firewall/README.md) | 1부: 같은 정책을 stateless/stateful에. 위조 ACK·UDP 왕복·비대칭 라우팅·conntrack 고갈. 2부: 갈 때·올 때 다른 FW로 갈리는 ECMP, 대칭 해시 vs conntrackd | 완료 |
-| 15 | [EVPN 패브릭 위의 5G 코어](_planned/15-5g-core-evpn/README.md) | Open5GS CP/UP 분리, GTP-U in VXLAN의 MTU 두 겹, 구간별 VRF, N2·N4 차단·UPF 정지, AMF 파드 삭제 | 기획 |
+| 12 | [RoCEv2: 깔고, 보고, 튜닝하기](_wip/12-roce/README.md) | Soft-RoCE 를 커널에 올려 패브릭 위로. 손실 1%, 3:1 인캐스트(버퍼·속도 제한·송신 창), QP 수와 ECMP 해시. R8 ECN·DCQCN·PFC | R1~R7 완료, R8 진행 중 |
+| 14 | [ACL vs 방화벽 + ECMP 뒤의 방화벽 두 대](_wip/14-acl-vs-firewall/README.md) | 1부: 같은 정책을 stateless/stateful에. 위조 ACK·UDP 왕복·비대칭 라우팅·conntrack 고갈. 2부: 갈 때·올 때 다른 FW로 갈리는 ECMP, 대칭 해시 vs conntrackd | 완료 |
+| 15 | [EVPN 패브릭 위의 5G 코어](_wip/15-5g-core-evpn/README.md) | Open5GS CP/UP 분리, GTP-U in VXLAN의 MTU 두 겹, 구간별 VRF, N2·N4 차단·UPF 정지, AMF 파드 삭제 | 기획 |
 
 ## 실행 준비
 
@@ -42,7 +42,7 @@ BGP 의 연결·능력협상·AS_PATH·정책·하이재킹/경로유출·RPKI �
 cd /root/labs/clos-fabric/monitoring && ./up.sh        # 패브릭 + 관측 스택
 cd .. && sleep 20 && ./scripts/evpn-apply.sh           # VXLAN/EVPN
 experiments/_tools/prep-hosts.sh                       # 서버에 curl·httpd·iperf3·dnsmasq
-experiments/NN-이름/run.sh                             # 장마다 주입 → 캡처 → 트래픽 → 원복
+experiments/_completed/NN-이름/run.sh                  # 장마다 주입 → 캡처 → 트래픽 → 원복
 ```
 
 WSL에서는 랩을 쓰는 동안 배포판에 살아 있는 프로세스를 하나 붙잡아 둬야 한다. 배포판이 꺼지면 dockerd가 재시작되면서 랩의 veth가 전부 사라진다.
