@@ -117,57 +117,55 @@ def style(ax):
 
 def figs(S, T):
     plt.rcParams.update({"font.size": 10, "text.color": INK, "axes.labelcolor": INK2, "axes.titlesize": 11})
-    # 1) 처리량 시계열 — 반복 3회 평균, 트랙별 패널
-    fig, axs = plt.subplots(len(TRACKS), 1, figsize=(10, 9), sharex=True)
-    for ax, tr in zip(axs, TRACKS):
+    tracks = [t for t in TRACKS if (S.track == t).any() and len(S[S.track == t].scenario.unique()) == 4]
+    # 1) 처리량 시계열 — 회차별 가는 선(평균은 장애1 의 주기적 정지를 뭉갠다)
+    fig, axs = plt.subplots(len(tracks), 1, figsize=(10, 3.2 * len(tracks)), sharex=True, squeeze=False)
+    for ax, tr in zip(axs[:, 0], tracks):
         for sc in SCEN:
-            d = T[(T.track == tr) & (T.scenario == sc)].groupby("sec")["rx_mbit"].mean()
-            if len(d) < 10:
-                continue
-            ax.plot(d.index, d.values, color=COL[sc], lw=2, label=SNAME[sc])
-            ax.annotate(sc, (d.index[-8], d.values[-8]), color=INK2, fontsize=8, xytext=(0, 4), textcoords="offset points")
+            for k, rep in enumerate(sorted(T[(T.track == tr) & (T.scenario == sc)].rep.unique())):
+                d = T[(T.track == tr) & (T.scenario == sc) & (T.rep == rep)]
+                ax.plot(d.sec, d.rx_mbit, color=COL[sc], lw=1.6 if sc == "decap" else 1.2,
+                        alpha=0.95 if sc == "decap" else 0.7, label=SNAME[sc] if k == 0 else None)
         ax.axhline(300, color=INK2, lw=0.8, ls=":")
-        ax.set_title(TNAME[tr], loc="left"); ax.set_ylabel("Mbit/s at g3"); ax.set_ylim(0, 340); style(ax)
-    axs[-1].set_xlabel("seconds (mean of 3 runs; dotted = 300 Mbit bottleneck)")
-    axs[0].legend(loc="lower center", ncol=2, fontsize=8, frameon=False)
+        ax.set_title(TNAME[tr] + " — each line is one 60 s run", loc="left"); ax.set_ylabel("Mbit/s at g3"); ax.set_ylim(0, 340); style(ax)
+    axs[-1, 0].set_xlabel("seconds (dotted = 300 Mbit bottleneck)")
+    axs[0, 0].legend(loc="lower center", ncol=2, fontsize=8, frameon=True, facecolor="white", edgecolor=GRID)
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "1-throughput.png"), dpi=130); plt.close(fig)
 
     # 2) 바깥 CE vs 안쪽 CE (정상 / 장애1 / 대조군), 반복 평균
-    fig, axs = plt.subplots(1, len(TRACKS), figsize=(12, 4))
-    for ax, tr in zip(axs, TRACKS):
+    fig, axs = plt.subplots(1, len(tracks), figsize=(5.5 * len(tracks), 4), squeeze=False)
+    for ax, tr in zip(axs[0], tracks):
         sc3 = ["base", "decap", "control"]
-        m = S[S.track == tr].groupby("scenario")[["sp_mark", "lf_mark", "outer_ce", "in_ce"]].mean().reindex(["base", "decap", "control"]).fillna(0)
+        m = S[S.track == tr].groupby("scenario")[["outer_ce", "in_ce"]].mean().reindex(sc3).fillna(0)
         x = range(len(sc3)); w = 0.38
-        oc = [m.loc[s, "outer_ce"] for s in sc3]; ic = [m.loc[s, "in_ce"] for s in sc3]
-        b1 = ax.bar([i - w / 2 - 0.01 for i in x], oc, w, color="#2a78d6", label="outer CE (leaf3 uplink)")
-        b2 = ax.bar([i + w / 2 + 0.01 for i in x], ic, w, color="#eb6834", label="inner CE (after decap, at g3)")
+        b1 = ax.bar([i - w / 2 - 0.01 for i in x], m.outer_ce, w, color="#2a78d6", label="outer CE (leaf3 uplink, before decap)")
+        b2 = ax.bar([i + w / 2 + 0.01 for i in x], m.in_ce, w, color="#eb6834", label="inner CE (after decap, at g3)")
         for b in list(b1) + list(b2):
             ax.annotate(f"{b.get_height()/1000:.0f}k", (b.get_x() + b.get_width() / 2, b.get_height()), ha="center",
                         va="bottom", fontsize=8, color=INK2)
-        ax.set_xticks(list(x)); ax.set_xticklabels(["normal", "fault 1", "control"]); ax.set_title(TNAME[tr], loc="left")
+        ax.set_xticks(list(x)); ax.set_xticklabels(["normal", "fault 1", "control*"]); ax.set_title(TNAME[tr], loc="left")
         style(ax)
-    axs[0].set_ylabel("CE-marked packets per run"); axs[0].legend(fontsize=8, frameon=False, loc="upper left")
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "2-ce-outer-inner.png"), dpi=130); plt.close(fig)
+    axs[0, 0].set_ylabel("CE-marked packets per 60 s run (mean of 3)"); axs[0, 0].legend(fontsize=8, frameon=False, loc="upper left")
+    fig.text(0.01, 0.01, "* control: bottleneck is after decap, so marks are inner-only (and counted per GRO segment)", fontsize=8, color=INK2)
+    fig.tight_layout(rect=(0, 0.04, 1, 1)); fig.savefig(os.path.join(FIG, "2-ce-outer-inner.png"), dpi=130); plt.close(fig)
 
-    # 3) 재전송·알림 — 트랙별 두 칸: 손실 쪽(재전송/NAK, 병목 드랍)과 신호 쪽(ECE/CNP)
-    fig, axs = plt.subplots(2, len(TRACKS), figsize=(12, 6.5))
-    for j, tr in enumerate(TRACKS):
+    # 3) 세 줄: 수신측 알림(ECE/CNP) · 재전송(NAK) · 병목 드랍 — 각자 자기 축
+    fig, axs = plt.subplots(3, len(tracks), figsize=(5.5 * len(tracks), 8.5), squeeze=False)
+    for j, tr in enumerate(tracks):
         m = S[S.track == tr].groupby("scenario")[["tcp_retrans", "nak_g3", "sp_drop", "lf_drop", "ece", "cnp"]].mean().reindex(SCEN)
         if tr == "tcp":
-            loss, lname, sig, sname = m["tcp_retrans"], "TCP retransmitted segments", m["ece"], "ECE ACKs from receiver"
+            rows = [(m["ece"], "receiver signal: ECE ACKs"), (m["tcp_retrans"], "TCP retransmitted segments"),
+                    (m["sp_drop"] + m["lf_drop"], "bottleneck drops")]
         else:
-            loss, lname, sig, sname = m["nak_g3"], "NAKs sent by g3 (go-back-N)", m["cnp"], "CNPs sent by g3"
-        drops = m["sp_drop"] + m["lf_drop"]
-        for i, (ax, vals, name) in enumerate([(axs[0][j], loss, lname), (axs[1][j], sig, sname)]):
+            rows = [(m["cnp"], "receiver signal: CNPs sent by g3"), (m["nak_g3"], "NAKs sent by g3 (go-back-N)"),
+                    (m["sp_drop"] + m["lf_drop"], "bottleneck drops")]
+        for i, (vals, name) in enumerate(rows):
+            ax = axs[i][j]
             bars = ax.bar(range(4), vals.values, 0.7, color=[COL[s] for s in SCEN])
             for b, v in zip(bars, vals.values):
                 ax.annotate(f"{v:,.0f}", (b.get_x() + b.get_width() / 2, v), ha="center", va="bottom", fontsize=8, color=INK2)
             ax.set_xticks(range(4)); ax.set_xticklabels(["normal", "fault 1", "fault 2", "control"], fontsize=8)
-            ax.set_title(f"{TNAME[tr]}\n{name}" if i == 0 else name, loc="left", fontsize=9); style(ax)
-            if i == 0:
-                ax.plot(range(4), drops.values, "o", color=INK, ms=6, label="bottleneck drops")
-                if j == 0:
-                    ax.legend(fontsize=8, frameon=False)
+            ax.set_title((TNAME[tr] + "\n" if i == 0 else "") + name, loc="left", fontsize=9); style(ax)
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-retrans-signal.png"), dpi=130); plt.close(fig)
 
 
