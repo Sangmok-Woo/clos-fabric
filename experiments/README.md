@@ -35,6 +35,7 @@ BGP 의 연결·능력협상·AS_PATH·정책·하이재킹/경로유출·RPKI �
 | 12 | [RoCEv2 성능 튜닝](_wip/12-roce/README.md) | Soft-RoCE 를 커널에 올려 패브릭 위로. 손실 1%, 3:1 인캐스트(버퍼·속도 제한·송신 창), QP 수와 ECMP 해시. R8 ECN·DCQCN·PFC | R1~R7 완료, R8 진행 중 |
 | 14 | [ACL과 방화벽 이중화](_wip/14-acl-vs-firewall/README.md) | 1부: 같은 정책을 stateless/stateful에. 위조 ACK·UDP 왕복·비대칭 라우팅·conntrack 고갈. 2부: 갈 때·올 때 다른 FW로 갈리는 ECMP, 대칭 해시 vs conntrackd | 완료 |
 | 15 | [EVPN 패브릭 위의 5G 코어](_wip/15-5g-core-evpn/README.md) | Open5GS CP/UP 분리, GTP-U in VXLAN의 MTU 두 겹, 구간별 VRF, N2·N4 차단·UPF 정지, AMF 파드 삭제 | 기획 |
+| 16 | [RoCE over VXLAN: ECN 전달 누락](_wip/16-roce-vxlan-ecn/README.md) | 스파인 RED/ECN 병목 + VTEP에서 바깥 CE를 안쪽으로 안 옮김(tc pedit 재현), 캡슐화 때 ECT 지움. 대조군은 병목을 디캡 뒤로 | 30초×2회 완료, 60초×3회 남음 |
 
 ## 실행 준비
 
