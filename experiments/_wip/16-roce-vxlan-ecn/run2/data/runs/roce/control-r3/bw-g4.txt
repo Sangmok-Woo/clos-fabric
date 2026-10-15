@@ -15,11 +15,11 @@
  rdma_cm QPs	 : OFF
  Data ex. method : Ethernet
 ---------------------------------------------------------------------------------------
- local address: LID 0000 QPN 0x001c PSN 0x6c5424 RKey 0x000dbc VAddr 0x007faef1aa0000
+ local address: LID 0000 QPN 0x001c PSN 0xde93d2 RKey 0x000d5b VAddr 0x0075155d891000
  GID: 00:00:00:00:00:00:00:00:00:00:255:255:10:10:10:104
- remote address: LID 0000 QPN 0x0034 PSN 0xa897b3 RKey 0x00256f VAddr 0x00703859955000
+ remote address: LID 0000 QPN 0x0032 PSN 0xc672c6 RKey 0x0023c2 VAddr 0x0075a71f3ff000
  GID: 00:00:00:00:00:00:00:00:00:00:255:255:10:10:10:103
 ---------------------------------------------------------------------------------------
  #bytes     #iterations    BW peak[Gb/sec]    BW average[Gb/sec]   MsgRate[Mpps]
- 65536      397           0.000000            0.006939            0.000013
+ 65536      7968             0.00               0.14   		   0.000266
 ---------------------------------------------------------------------------------------

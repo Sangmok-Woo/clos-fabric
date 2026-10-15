@@ -1,0 +1,38 @@
+Thu Oct 15 23:24:19 KST 2026
+
+[1m=== roce / base / r1 ===[0m
+  수신 205Mbit  스파인 표시 470607 드랍 78481  리프병목 표시 0 드랍 0  바깥CE 392314 안쪽CE 392314  ECE 0 CNP 0  perftest 9+180+10=199Mbit  NAK 941  retry 2604
+
+[1m=== roce / decap / r1 ===[0m
+  수신 194Mbit  스파인 표시 388440 드랍 18335  리프병목 표시 0 드랍 0  바깥CE 370247 안쪽CE 0  ECE 0 CNP 0  perftest 120+0+72=192Mbit  NAK 317  retry 1386
+
+[1m=== roce / encap / r1 ===[0m
+  수신 128Mbit  스파인 표시 0 드랍 351338  리프병목 표시 0 드랍 0  바깥CE 0 안쪽CE 0  ECE 0 CNP 0  perftest 11+11+11=34Mbit  NAK 2944  retry 4284
+
+[1m=== roce / control / r1 ===[0m
+  수신 259Mbit  스파인 표시 0 드랍 0  리프병목 표시 586910 드랍 102414  바깥CE 0 안쪽CE 484652  ECE 0 CNP 0  perftest 54+48+15=117Mbit  NAK 1373  retry 2913
+
+[1m=== roce / base / r2 ===[0m
+  수신 194Mbit  스파인 표시 463727 드랍 94837  리프병목 표시 0 드랍 0  바깥CE 369057 안쪽CE 369057  ECE 0 CNP 0  perftest 56+18+84=158Mbit  NAK 1176  retry 2865
+
+[1m=== roce / decap / r2 ===[0m
+  수신 193Mbit  스파인 표시 459896 드랍 91323  리프병목 표시 0 드랍 0  바깥CE 368749 안쪽CE 0  ECE 0 CNP 0  perftest 38+94+15=147Mbit  NAK 1166  retry 2846
+
+[1m=== roce / encap / r2 ===[0m
+  수신 115Mbit  스파인 표시 0 드랍 349193  리프병목 표시 0 드랍 0  바깥CE 0 안쪽CE 0  ECE 0 CNP 0  perftest 9+9+9=27Mbit  NAK 2793  retry 4117
+
+[1m=== roce / control / r2 ===[0m
+  수신 258Mbit  스파인 표시 0 드랍 0  리프병목 표시 706155 드랍 222592  바깥CE 0 안쪽CE 483647  ECE 0 CNP 0  perftest 28+57+60=145Mbit  NAK 2793  retry 3756
+
+[1m=== roce / base / r3 ===[0m
+  수신 206Mbit  스파인 표시 431802 드랍 39363  리프병목 표시 0 드랍 0  바깥CE 392602 안쪽CE 392602  ECE 0 CNP 0  perftest 84+0+77=161Mbit  NAK 851  retry 1819
+
+[1m=== roce / decap / r3 ===[0m
+  수신 201Mbit  스파인 표시 455332 드랍 79907  리프병목 표시 0 드랍 0  바깥CE 375563 안쪽CE 0  ECE 0 CNP 0  perftest 0+72+51=123Mbit  NAK 1357  retry 2161
+
+[1m=== roce / encap / r3 ===[0m
+  수신 88Mbit  스파인 표시 0 드랍 240336  리프병목 표시 0 드랍 0  바깥CE 0 안쪽CE 0  ECE 0 CNP 0  perftest 0+11+12=24Mbit  NAK 1987  retry 2918
+
+[1m=== roce / control / r3 ===[0m
+  수신 271Mbit  스파인 표시 0 드랍 0  리프병목 표시 696081 드랍 182540  바깥CE 0 안쪽CE 513679  ECE 0 CNP 0  perftest 29+0+140=169Mbit  NAK 2109  retry 3363
+Thu Oct 15 23:39:39 KST 2026

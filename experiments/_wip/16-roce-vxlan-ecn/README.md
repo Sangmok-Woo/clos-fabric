@@ -137,7 +137,7 @@ Q1 결과 ([data/q1-signal.csv](data/q1-signal.csv), 8초씩, 캡처 앞 200개�
 
 ## 2회차 — 데스크톱, 60초 × 3회
 
-[run2/](run2/README.md). 서버를 rxe 가 붙는 VRF(g1·g2·g4 → g3)로, 병목을 300Mbit 로 바꿔 같은 질문을 다시 쟀다. 트랙 B(TCP+DCTCP)와 트랙 A′(rxe + 실험 13 의 흉내 DCQCN)는 60초 × 3회를 다 채웠고, rxe 그대로(트랙 A)는 WSL 이 두 번 멈춰 정상 1회만 남았다.
+[run2/](run2/README.md). 서버를 rxe 가 붙는 VRF(g1·g2·g4 → g3)로, 병목을 300Mbit 로 바꿔 같은 질문을 다시 쟀다. 세 트랙 모두 60초 × 3회: 트랙 B(TCP+DCTCP), 트랙 A′(rxe + 실험 13 의 흉내 DCQCN), 트랙 A(rxe 그대로 — 장애1 은 차이 없음, 장애2 −84% 와 go-back-N NAK 2.6배).
 
 | TCP + DCTCP, 3회 평균 | 정상 | 장애1 | 장애2 | 대조군 + 장애1 |
 |---|---|---|---|---|

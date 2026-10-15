@@ -1,3 +1,6 @@
+ethernet_read_keys: Couldn't read remote address
+ Unable to read from socket/rdma_cm
+ Failed to exchange data between server and clients
  WARNING: BW peak won't be measured in this run.
 ---------------------------------------------------------------------------------------
                     RDMA_Write BW Test
@@ -15,11 +18,5 @@
  rdma_cm QPs	 : OFF
  Data ex. method : Ethernet
 ---------------------------------------------------------------------------------------
- local address: LID 0000 QPN 0x0012 PSN 0xe426d9 RKey 0x00032c VAddr 0x007c1aa3983000
+ local address: LID 0000 QPN 0x0012 PSN 0x2af78a RKey 0x000317 VAddr 0x0077951911b000
  GID: 00:00:00:00:00:00:00:00:00:00:255:255:10:10:10:102
- remote address: LID 0000 QPN 0x0016 PSN 0xa5558c RKey 0x00073d VAddr 0x007bf3764b0000
- GID: 00:00:00:00:00:00:00:00:00:00:255:255:10:10:10:103
----------------------------------------------------------------------------------------
- #bytes     #iterations    BW peak[Gb/sec]    BW average[Gb/sec]   MsgRate[Mpps]
- 65536      10263            0.00               0.18   		   0.000342
----------------------------------------------------------------------------------------
