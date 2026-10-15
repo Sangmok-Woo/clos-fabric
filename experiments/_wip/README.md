@@ -12,4 +12,4 @@
 | 16 | [RoCE over VXLAN: ECN 전달 누락](16-roce-vxlan-ecn/README.md) (1회차 30초×2, 2회차 [run2/](16-roce-vxlan-ecn/run2/README.md) 60초×3) |
 | 18 | [VXLAN 바깥 DSCP 소실: 언더레이 QoS가 RoCE를 못 알아본다](18-vxlan-dscp-qos/README.md) (완료) |
 | 19 | [VXLAN의 ECMP 엔트로피: 바깥 헤더는 VTEP 쌍 하나](19-vxlan-ecmp-entropy/README.md) (완료) |
-| 20 | [EVPN MAC 이동과 중복 MAC 감지](20-evpn-mac-mobility/README.md) (준비) |
+| 20 | [EVPN MAC 이동과 중복 MAC 감지](20-evpn-mac-mobility/README.md) (완료) |

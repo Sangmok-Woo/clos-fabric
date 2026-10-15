@@ -1,0 +1,73 @@
+Fri Oct 16 00:20:01 KST 2026
+FRR 중복 감지 기본값 (leaf1 show evpn):
+  L2 VNIs: 1
+  L3 VNIs: 0
+  Advertise gateway mac-ip: No
+  Advertise svi mac-ip: No
+  Advertise svi mac: No
+  Duplicate address detection: Enable
+    Detection max-moves 5, time 180
+  EVPN MH:
+    mac-holdtime: 1080s, neigh-holdtime: 1080s
+    startup-delay: 180s, start-delay-timer: --:--:--
+    uplink-cfg-cnt: 0, uplink-active-cnt: 0
+
+[1m=== A  기준 — VM 은 leaf1(vmA) ===[0m
+  ping: sent 311 recv 311 lost 0 longest_gap_ms 0 gaps []
+  leaf3 이 아는 VM: remote VTEP=10.255.1.1 순번(local/remote)=0/0 중복=False
+  leaf1: MAC: 02:21:00:00:00:01 Intf: eth7(6) VLAN: 0 Sync-info: neigh#: 0 Local Seq: 0 Remote Seq: 0 
+
+[1m=== B  이사 leaf1 → leaf2 + GARP ===[0m
+  이사 시각 T0 = 1792077617.987902604
+  leaf3 주소록이 leaf2 를 가리킨 시각: T0 + 0.48s
+  ping: sent 464 recv 457 lost 7 longest_gap_ms 70 gaps [3.05s:70ms]
+  leaf3 이 아는 VM: remote VTEP=10.255.1.2 순번(local/remote)=0/1 중복=False
+  leaf2: MAC: 02:21:00:00:00:01 Intf: eth7(6) VLAN: 0 Sync-info: neigh#: 0 Local Seq: 1 Remote Seq: 0 Duplicate detection started at Thu Oct 15 15:20:17 2026 
+  스파인1 이 받은 EVPN 메시지 +21
+
+[1m=== C  조용한 이사 leaf2 → leaf1 (GARP 없음) ===[0m
+  이사 시각 T0 = 1792077629.168554928  (VM 은 아무것도 보내지 않는다)
+  leaf3 주소록이 leaf1 을 가리킨 시각: T0 + 0.32s
+  ping: sent 456 recv 450 lost 6 longest_gap_ms 60 gaps [3.06s:60ms]
+  leaf3 이 아는 VM: remote VTEP=10.255.1.1 순번(local/remote)=0/2 중복=False
+  leaf1: MAC: 02:21:00:00:00:01 Intf: eth7(6) VLAN: 0 Sync-info: neigh#: 0 Local Seq: 2 Remote Seq: 1 Duplicate detection started at Thu Oct 15 15:20:28 2026 
+
+[1m=== D  중복 MAC — vmA(leaf1)·vmB(leaf2) 동시에, FRR 기본 감지값 ===[0m
+  중복 감지: +1초1
+  ping: sent 6546 recv 6544 lost 2 longest_gap_ms 10 gaps []
+  스파인1 이 받은 EVPN 메시지 +2307  (60초)
+  leaf1 duplicate 목록:
+     Number of MACs (local and remote) known for this VNI: 1
+     MAC               Type   Flags Intf/Remote ES/VTEP            VLAN 
+     02:21:00:00:00:01 remote       10.255.1.2                           242/243
+  leaf2 duplicate 목록:
+     Number of MACs (local and remote) known for this VNI: 1
+     MAC               Type   Flags Intf/Remote ES/VTEP            VLAN 
+     02:21:00:00:00:01 local        eth7                                 243/242
+  leaf1: MAC: 02:21:00:00:00:01 Remote VTEP: 10.255.1.2 Sync-info: neigh#: 0 Local Seq: 242 Remote Seq: 243 Duplicate, detected at Thu Oct 15 15:20:35 2026 
+  leaf2: MAC: 02:21:00:00:00:01 Intf: eth7(6) VLAN: 0 Sync-info: neigh#: 0 Local Seq: 243 Remote Seq: 242 Duplicate, detected at Thu Oct 15 15:20:34 2026 
+  leaf3 이 아는 VM: remote VTEP=10.255.1.2 순번(local/remote)=0/243 중복=False
+  + 1s  leaf3: remote VTEP=10.255.1.1 순번(local/remote)=0/8 중복=False
+  +15s  leaf3: remote VTEP=10.255.1.2 순번(local/remote)=0/55 중복=False
+  +31s  leaf3: remote VTEP=10.255.1.1 순번(local/remote)=0/106 중복=False
+  +46s  leaf3: remote VTEP=10.255.1.1 순번(local/remote)=0/158 중복=False
+  +70s  leaf3: remote VTEP=10.255.1.1 순번(local/remote)=0/236 중복=False
+  +93s  leaf3: remote VTEP=10.255.1.2 순번(local/remote)=0/243 중복=False
+
+[1m=== F  중복 MAC + dup-addr-detection freeze 30 ===[0m
+  중복 감지: +2초2
+  ping: sent 6539 recv 6537 lost 2 longest_gap_ms 20 gaps [0.97s:20ms]
+  스파인1 이 받은 EVPN 메시지 +251  (60초)
+  leaf1 duplicate 목록:
+  leaf2 duplicate 목록:
+  leaf1: MAC: 02:21:00:00:00:01 Intf: eth7(6) VLAN: 0 Sync-info: neigh#: 0 Local Seq: 252 Remote Seq: 251 
+  leaf2: MAC: 02:21:00:00:00:01 Remote VTEP: 10.255.1.1 Sync-info: neigh#: 0 Local Seq: 251 Remote Seq: 252 Duplicate detection started at Thu Oct 15 15:23:28 2026 
+  leaf3 이 아는 VM: remote VTEP=10.255.1.1 순번(local/remote)=0/252 중복=False
+  + 2s  leaf3: remote VTEP=10.255.1.2 순번(local/remote)=0/245 중복=False
+  +16s  leaf3: remote VTEP=10.255.1.2 순번(local/remote)=0/245 중복=False
+  +31s  leaf3: remote VTEP=10.255.1.2 순번(local/remote)=0/245 중복=False
+  +47s  leaf3: remote VTEP=10.255.1.1 순번(local/remote)=0/246 중복=False
+  +70s  leaf3: remote VTEP=10.255.1.2 순번(local/remote)=0/251 중복=False
+  +94s  leaf3: remote VTEP=10.255.1.2 순번(local/remote)=0/251 중복=False
+남은 netns: 0  leaf1 eth7: 없음  leaf2 dup-addr 설정: 0
+Fri Oct 16 00:24:19 KST 2026

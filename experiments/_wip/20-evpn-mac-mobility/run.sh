@@ -7,6 +7,7 @@
 #   A 기준: vmA(leaf1)에 있음
 #   B 이사 + GARP:  leaf1 → leaf2, 도착하자마자 GARP 3개
 #   C 조용한 이사:   leaf2 → leaf1, GARP 없음 (누가 먼저 말을 걸 때까지 VM 은 가만히 있다)
+#   C2 진짜 조용한 이사: C 에서 VM 이 IPv6 DAD/MLD 로 사실상 말을 해 버려서, IPv6 를 끄고 다시 (leaf1 → leaf2)
 #   D 중복 MAC:      vmA·vmB 둘 다 켜고 각자 0.5초마다 GARP (MAC 을 복제한 VM 두 대) 60초 — FRR 기본 감지(180초에 5번)
 #   F 중복 + freeze: dup-addr-detection freeze 30 을 켜고 D 를 다시
 # 먼저: experiments/_wip/16-roce-vxlan-ecn/run2/scripts/setup.sh (VNI 10010 을 leaf2 에도, g3 = vr3)
@@ -15,7 +16,7 @@ set -u
 . "$(dirname "$0")/../16-roce-vxlan-ecn/run2/scripts/common.sh"
 H=$(cd "$(dirname "$0")" && pwd)
 OUT=$H/capture; mkdir -p "$OUT" "$H/state"
-STEPS=${*:-A B C D F}
+STEPS=${*:-A B C C2 D F}
 [ $# -eq 0 ] && rm -rf "$OUT"/*
 exec > >(tee -a "$OUT/run-output.txt") 2>&1
 MAC=02:21:00:00:00:01; VIP=10.10.10.121
@@ -88,6 +89,24 @@ C() {
   echo "  leaf1: $(macline leaf1)"
 }
 
+C2() {
+  say "C2 진짜 조용한 이사 leaf1 → leaf2 — VM 의 IPv6 를 꺼서 링크가 올라와도 아무것도 안 보내게"
+  for v in A B; do ip netns exec vm$v sysctl -qw net.ipv6.conf.all.disable_ipv6=1 net.ipv6.conf.default.disable_ipv6=1 net.ipv6.conf.m$v.disable_ipv6=1; done
+  down B; up A; garp A 1; sleep 3
+  nsenter -t "$(pid leaf2)" -n tcpdump -i eth7 -s 128 -U -nn -w "$OUT/C2-leaf2-eth7.pcap" >/dev/null 2>&1 & local cp=$!
+  probe_start C2; sleep 3
+  local t0; t0=$(date +%s.%N)
+  down A; up B
+  echo "  이사 시각 T0 = $t0  (GARP 없음, IPv6 꺼짐)"
+  local hit=""
+  for i in $(seq 300); do sleep 0.05; w=$(where3); echo "$w" | grep -q 10.255.1.2 && { hit=$(awk -v a=$(date +%s.%N) -v b=$t0 'BEGIN{printf "%.2f", a-b}'); break; }; done
+  echo "  leaf3 주소록이 leaf2 를 가리킨 시각: T0 + ${hit:-15초 안에 안 바뀜}s"
+  sleep 4; echo "  ping: $(probe_stop C2)"
+  kill $cp 2>/dev/null; sleep 0.3
+  echo "  leaf2:eth7 (VM 쪽) 첫 패킷들:"; tcpdump -nn -e -r "$OUT/C2-leaf2-eth7.pcap" 2>/dev/null | head -6 | cut -c1-150 | sed 's/^/     /'
+  for v in A B; do ip netns exec vm$v sysctl -qw net.ipv6.conf.all.disable_ipv6=0 net.ipv6.conf.default.disable_ipv6=0 net.ipv6.conf.m$v.disable_ipv6=0; done
+}
+
 dup_run() {   # dup_run <id> <제목>
   say "$1  $2"
   up A; up B
@@ -106,7 +125,7 @@ dup_run() {   # dup_run <id> <제목>
     [ -z "$det" ] && ev leaf2 "show evpn mac vni $VNI duplicate" 2>/dev/null | grep -q -i "$MAC" && det=$(( $(date +%s) - t0 ))
   done
   kill $gp 2>/dev/null; wait $gp 2>/dev/null
-  echo "  중복 감지: ${det:++${det}초}${det:-60초 안에 감지 안 됨}"
+  if [ -n "$det" ]; then echo "  중복 감지: +${det}초"; else echo "  중복 감지: 60초 안에 감지 안 됨"; fi
   echo "  ping: $(probe_stop $1)"
   echo "  스파인1 이 받은 EVPN 메시지 +$(( $(updates) - u0 ))  (60초)"
   for n in leaf1 leaf2; do echo "  $n duplicate 목록:"; ev $n "show evpn mac vni $VNI duplicate" | sed 's/^/     /'; done
