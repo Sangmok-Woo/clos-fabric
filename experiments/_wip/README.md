@@ -13,3 +13,4 @@
 | 18 | [VXLAN 바깥 DSCP 소실: 언더레이 QoS가 RoCE를 못 알아본다](18-vxlan-dscp-qos/README.md) (완료) |
 | 19 | [VXLAN의 ECMP 엔트로피: 바깥 헤더는 VTEP 쌍 하나](19-vxlan-ecmp-entropy/README.md) (완료) |
 | 20 | [EVPN MAC 이동과 중복 MAC 감지](20-evpn-mac-mobility/README.md) (완료) |
+| 21 | [BGP Graceful Restart: 컨트롤 플레인이 재시작하는 동안 데이터 플레인](21-bgp-graceful-restart/README.md) (완료) |

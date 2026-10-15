@@ -1,0 +1,8 @@
+[2026-10-16T01:01:43.630155] Deleted 10.255.1.1 nhid 18 via 10.1.1.1 dev eth1 proto bgp metric 20 
+[2026-10-16T01:01:43.630215] Deleted 10.255.1.2 nhid 17 via 10.1.1.3 dev eth2 proto bgp metric 20 
+[2026-10-16T01:01:43.630222] Deleted 172.16.11.0/24 nhid 18 via 10.1.1.1 dev eth1 proto bgp metric 20 
+[2026-10-16T01:01:43.630228] Deleted 172.16.12.0/24 nhid 17 via 10.1.1.3 dev eth2 proto bgp metric 20 
+[2026-10-16T01:01:50.996633] 10.255.1.1 nhid 18 via 10.1.1.1 dev eth1 proto bgp metric 20 
+[2026-10-16T01:01:50.996678] 172.16.11.0/24 nhid 18 via 10.1.1.1 dev eth1 proto bgp metric 20 
+[2026-10-16T01:01:50.996685] 10.255.1.2 nhid 17 via 10.1.1.3 dev eth2 proto bgp metric 20 
+[2026-10-16T01:01:50.996690] 172.16.12.0/24 nhid 17 via 10.1.1.3 dev eth2 proto bgp metric 20 

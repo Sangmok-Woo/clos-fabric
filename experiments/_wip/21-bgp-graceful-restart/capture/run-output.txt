@@ -1,0 +1,1658 @@
+
+[1m=== 기준값 ===[0m
+FRRouting 10.2.1_git (spine1) on Linux(6.6.114.1-microsoft-standard-WSL2).
+172.16.12.0/24 nhid 26 proto bgp metric 20 
+	nexthop via 10.1.1.0 dev eth1 weight 1 
+	nexthop via 10.1.2.0 dev eth2 weight 1 
+
+[1m=== 랩 새로 띄우기 (down.sh → up.sh) ===[0m
+  6 노드 기동
+
+[1m=== 설정: GR off / BFD off / 단일경로 on ===[0m
+  bgpd_options: bgpd_options="  -A 127.0.0.1"
+  리프 bgpd 기동 후 130초가 되도록 109초 대기
+  leaf1 Established 1/1, leaf2 1/1
+
+[1m=== Phase A — GR 없음, 단일 경로, spine1 bgpd kill -9 ===[0m
+  leaf1 → spine1 GR 상태:
+    Local GR Mode: Helper*; Remote GR Mode: Helper; R bit: True; N bit: True; Received Restart Time(sec): 120; F bit: False
+
+[1m=== T0 spine1 bgpd kill -9 (pid 264878) ===[0m
+  --- [T0+1.5] leaf1 BGP 172.16.12.0/24 ---
+    % Network not in table
+  --- [T0+1.5] leaf1 커널: 
+  --- [T0+1.5] spine1 커널:  / 
+  새 bgpd 확인: T0+5.3 (pid 266560)
+  --- [새 bgpd 직후] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 21
+    Paths: (1 available, best #1, table default)
+      spine1(10.1.1.0)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (10.255.0.1)
+          Origin IGP, valid, external, bestpath-from-AS 65001, best (First path received)
+          Last update: Thu Oct 15 16:01:51 2026
+  --- [새 bgpd 직후] leaf1 커널: 172.16.12.0/24 nhid 20 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  --- [새 bgpd 직후] spine1 커널: 172.16.12.0/24 nhid 17 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 18 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  A-h1-eth1.pcap                 5822 패킷
+  A-h2-eth1.pcap                 5084 패킷
+  A-leaf1-ctl.pcap                 57 패킷
+  A-leaf2-ctl.pcap                 55 패킷
+
+[1m=== Phase A 결과 ===[0m
+  응답 없는 요청: 738 개 (0.01초 간격)
+  응답 공백 7.43초 (T0+0.01 ~ T0+7.43)
+  h2 에 닿은 요청이 끊긴 구간: 7.43초 (T0+0.01 ~ T0+7.43)
+  -- leaf1 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+30) --
+  T0 +6.169  10.1.1.0.38208 > 10.1.1.1.179 Open Message (1)
+  T0 +6.170  10.1.1.1.179 > 10.1.1.0.38208 Open Message (1)
+  T0 +7.270  10.1.1.0.38208 > 10.1.1.1.179 Update Message (2)
+  T0 +7.270  10.1.1.0.38208 > 10.1.1.1.179 Update Message (2)
+  T0 +7.320  10.1.1.1.179 > 10.1.1.0.38208 Update Message (2)
+  T0 +7.320  10.1.1.1.179 > 10.1.1.0.38208 Update Message (2)
+  T0 +7.320  10.1.1.1.179 > 10.1.1.0.38208 Update Message (2)
+  T0 +7.370  10.1.1.0.38208 > 10.1.1.1.179 Update Message (2)
+  T0 +7.370  10.1.1.0.38208 > 10.1.1.1.179 Update Message (2)
+  T0 +7.421  10.1.1.1.179 > 10.1.1.0.38208 Update Message (2)
+  -- leaf1 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +0.002  10.1.1.0.179 > 10.1.1.1.57804: [F.],
+  T0 +0.012  10.1.1.1.57804 > 10.1.1.0.179: [F.],
+  T0 +1.013  10.1.1.1.45562 > 10.1.1.0.179: [S],
+  T0 +1.013  10.1.1.0.179 > 10.1.1.1.45562: [R.],
+  T0 +6.169  10.1.1.0.38208 > 10.1.1.1.179: [S],
+  T0 +6.169  10.1.1.1.179 > 10.1.1.0.38208: [S.],
+  -- leaf1 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +6.169  10.1.1.0.38208 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.169  10.1.1.0.38208 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.169  10.1.1.0.38208 > 10.1.1.1.179 Restart Flags: [R], Restart Time 120s
+  T0 +6.170  10.1.1.1.179 > 10.1.1.0.38208 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.170  10.1.1.1.179 > 10.1.1.0.38208 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.170  10.1.1.1.179 > 10.1.1.0.38208 Restart Flags: [none], Restart Time 120s
+  T0 +7.270  10.1.1.0.38208 > 10.1.1.1.179 End-of-Rib Marker (empty NLRI)
+  T0 +7.320  10.1.1.1.179 > 10.1.1.0.38208 End-of-Rib Marker (empty NLRI)
+  -- leaf2 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+30) --
+  T0 +6.169  10.1.1.2.34698 > 10.1.1.3.179 Open Message (1)
+  T0 +6.170  10.1.1.3.179 > 10.1.1.2.34698 Open Message (1)
+  T0 +7.270  10.1.1.2.34698 > 10.1.1.3.179 Update Message (2)
+  T0 +7.270  10.1.1.2.34698 > 10.1.1.3.179 Update Message (2)
+  T0 +7.320  10.1.1.3.179 > 10.1.1.2.34698 Update Message (2)
+  T0 +7.320  10.1.1.3.179 > 10.1.1.2.34698 Update Message (2)
+  T0 +7.320  10.1.1.3.179 > 10.1.1.2.34698 Update Message (2)
+  T0 +7.370  10.1.1.2.34698 > 10.1.1.3.179 Update Message (2)
+  T0 +7.370  10.1.1.2.34698 > 10.1.1.3.179 Update Message (2)
+  T0 +7.421  10.1.1.3.179 > 10.1.1.2.34698 Update Message (2)
+  -- leaf2 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +0.002  10.1.1.2.179 > 10.1.1.3.40756: [F.],
+  T0 +0.012  10.1.1.3.40756 > 10.1.1.2.179: [F.],
+  T0 +1.014  10.1.1.3.58990 > 10.1.1.2.179: [S],
+  T0 +1.014  10.1.1.2.179 > 10.1.1.3.58990: [R.],
+  T0 +6.169  10.1.1.2.34698 > 10.1.1.3.179: [S],
+  T0 +6.169  10.1.1.3.179 > 10.1.1.2.34698: [S.],
+  -- leaf2 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +6.169  10.1.1.2.34698 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.169  10.1.1.2.34698 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.169  10.1.1.2.34698 > 10.1.1.3.179 Restart Flags: [R], Restart Time 120s
+  T0 +6.170  10.1.1.3.179 > 10.1.1.2.34698 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.170  10.1.1.3.179 > 10.1.1.2.34698 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.170  10.1.1.3.179 > 10.1.1.2.34698 Restart Flags: [none], Restart Time 120s
+  T0 +7.270  10.1.1.2.34698 > 10.1.1.3.179 End-of-Rib Marker (empty NLRI)
+  T0 +7.320  10.1.1.3.179 > 10.1.1.2.34698 End-of-Rib Marker (empty NLRI)
+  -- leaf1 커널 경로 변화 (172.16.11/12.0/24) --
+  T0 +0.073  Deleted 172.16.12.0/24 nhid 20 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  T0 +7.431  172.16.12.0/24 nhid 20 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  -- spine1 커널 경로 변화 (172.16.11/12.0/24) --
+  T0 +0.014  Deleted 172.16.11.0/24 nhid 18 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  T0 +0.014  Deleted 172.16.12.0/24 nhid 17 via 10.1.1.3 dev eth2 proto bgp metric 20 
+  T0 +7.381  172.16.11.0/24 nhid 18 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  T0 +7.381  172.16.12.0/24 nhid 17 via 10.1.1.3 dev eth2 proto bgp metric 20 
+  -- leaf1 frr.log --
+  T0 +0.002  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Down Peer closed the session
+  T0 +6.169  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x5 peer flags 0x3002810020
+  T0 +6.169  BGP: 10.1.1.0: Sending GR Capability, Restart time 120 R-bit NOT-SET, N-bit SET
+  T0 +6.169  BGP: 10.1.1.0 OPEN has Graceful Restart capability (64), length 2
+  T0 +6.169  BGP: 10.1.1.0(spine1) OPEN has GR capability, Restart time 120 R-bit SET N-bit SET
+  T0 +6.169  BGP: 10.1.1.0 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.169  BGP: 10.1.1.0 Addr-family IPv4/unicast(afi/safi) not enabled. Ignore the Long-lived Graceful Restart capability
+  T0 +6.169  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Up
+  T0 +7.270  BGP: EOR REQ 0, EOR RCV 0
+  T0 +7.270  BGP: bgp_update_receive: rcvd End-of-RIB for IPv4 Unicast from 10.1.1.0 in vrf default
+  T0 +7.320  BGP: send End-of-RIB for IPv4 Unicast to 10.1.1.0
+  -- spine1 frr.log --
+  T0 +5.154  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x5 peer flags 0x2002800000
+  T0 +5.154  BGP: VRF default: Global GR state is GLOBAL_HELPER
+  T0 +5.166  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x5 peer flags 0x3002810020
+  T0 +5.167  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x5 peer flags 0x3002810020
+  T0 +5.167  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x5 peer flags 0x3002810020
+  T0 +6.169  BGP: 10.1.1.1: Sending GR Capability, Restart time 120 R-bit SET, N-bit SET
+  T0 +6.169  BGP: 10.1.1.3: Sending GR Capability, Restart time 120 R-bit SET, N-bit SET
+  T0 +6.169  BGP: 10.1.1.1 OPEN has Graceful Restart capability (64), length 2
+  T0 +6.169  BGP: 10.1.1.1(leaf1) OPEN has GR capability, Restart time 120 R-bit NOT-SET N-bit SET
+  T0 +6.169  BGP: 10.1.1.1 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.169  BGP: 10.1.1.1 Addr-family IPv4/unicast(afi/safi) not enabled. Ignore the Long-lived Graceful Restart capability
+  T0 +6.169  BGP: %ADJCHANGE: neighbor 10.1.1.1(leaf1) in vrf default Up
+  T0 +6.169  BGP: 10.1.1.3 OPEN has Graceful Restart capability (64), length 2
+  T0 +6.169  BGP: 10.1.1.3(leaf2) OPEN has GR capability, Restart time 120 R-bit NOT-SET N-bit SET
+  T0 +6.169  BGP: 10.1.1.3 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.169  BGP: 10.1.1.3 Addr-family IPv4/unicast(afi/safi) not enabled. Ignore the Long-lived Graceful Restart capability
+  T0 +6.170  BGP: %ADJCHANGE: neighbor 10.1.1.3(leaf2) in vrf default Up
+  T0 +7.269  BGP: send End-of-RIB for IPv4 Unicast to 10.1.1.3
+  T0 +7.270  BGP: send End-of-RIB for IPv4 Unicast to 10.1.1.1
+  T0 +7.320  BGP: EOR REQ 0, EOR RCV 0
+  T0 +7.320  BGP: bgp_update_receive: rcvd End-of-RIB for IPv4 Unicast from 10.1.1.1 in vrf default
+  T0 +7.320  BGP: EOR REQ 0, EOR RCV 0
+  T0 +7.320  BGP: bgp_update_receive: rcvd End-of-RIB for IPv4 Unicast from 10.1.1.3 in vrf default
+
+[1m=== 세션 재수립 대기 ===[0m
+  leaf1 Established 1/1
+
+[1m=== 랩 새로 띄우기 (down.sh → up.sh) ===[0m
+  6 노드 기동
+
+[1m=== 설정: GR on / BFD off / 단일경로 on ===[0m
+  bgpd_options: bgpd_options="  -A 127.0.0.1"
+  리프 bgpd 기동 후 130초가 되도록 108초 대기
+  leaf1 Established 1/1, leaf2 1/1
+
+[1m=== Phase B1 — GR (F 비트 0), 단일 경로, spine1 bgpd kill -9 ===[0m
+  leaf1 → spine1 GR 상태:
+    Local GR Mode: Restart*; Remote GR Mode: Restart; R bit: True; N bit: True; Received Restart Time(sec): 30; F bit: False
+
+[1m=== T0 spine1 bgpd kill -9 (pid 268770) ===[0m
+  --- [T0+1.5] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 15
+    Paths: (1 available, best #1, table default)
+      Not advertised to any peer
+      65001 65012, (stale)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (0.0.0.0)
+          Origin IGP, valid, external, bestpath-from-AS 65001, best (First path received)
+          Last update: Thu Oct 15 16:02:45 2026
+          Time until Graceful Restart stale route deleted: 28
+  --- [T0+1.5] leaf1 커널: 172.16.12.0/24 nhid 25 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  --- [T0+1.5] spine1 커널: 172.16.12.0/24 nhid 18 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 20 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  새 bgpd 확인: T0+5.1 (pid 270424)
+  --- [새 bgpd 직후] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 21
+    Paths: (1 available, best #1, table default)
+      spine1(10.1.1.0)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (10.255.0.1)
+          Origin IGP, valid, external, bestpath-from-AS 65001, best (First path received)
+          Last update: Thu Oct 15 16:04:50 2026
+  --- [새 bgpd 직후] leaf1 커널: 172.16.12.0/24 nhid 25 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  --- [새 bgpd 직후] spine1 커널: 172.16.12.0/24 nhid 18 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 20 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  A-h1-eth1.pcap                 5822 패킷
+  A-h2-eth1.pcap                 5084 패킷
+  A-leaf1-ctl.pcap                 57 패킷
+  A-leaf2-ctl.pcap                 55 패킷
+  B1-h1-eth1.pcap                6432 패킷
+  B1-h2-eth1.pcap                6312 패킷
+  B1-leaf1-ctl.pcap                57 패킷
+  B1-leaf2-ctl.pcap                57 패킷
+
+[1m=== Phase B1 결과 ===[0m
+  응답 없는 요청: 120 개 (0.01초 간격)
+  응답 공백 1.22초 (T0+6.17 ~ T0+7.39)
+  h2 에 닿은 요청이 끊긴 구간: 1.22초 (T0+6.17 ~ T0+7.39)
+  -- leaf1 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+30) --
+  T0 +6.117  10.1.1.0.48332 > 10.1.1.1.179 Open Message (1)
+  T0 +6.117  10.1.1.1.179 > 10.1.1.0.48332 Open Message (1)
+  T0 +7.218  10.1.1.0.48332 > 10.1.1.1.179 Update Message (2)
+  T0 +7.218  10.1.1.0.48332 > 10.1.1.1.179 Update Message (2)
+  T0 +7.268  10.1.1.1.179 > 10.1.1.0.48332 Update Message (2)
+  T0 +7.268  10.1.1.1.179 > 10.1.1.0.48332 Update Message (2)
+  T0 +7.310  10.1.1.1.179 > 10.1.1.0.48332 Update Message (2)
+  T0 +7.318  10.1.1.0.48332 > 10.1.1.1.179 Update Message (2)
+  T0 +7.318  10.1.1.0.48332 > 10.1.1.1.179 Update Message (2)
+  T0 +7.369  10.1.1.1.179 > 10.1.1.0.48332 Update Message (2)
+  -- leaf1 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +0.002  10.1.1.0.179 > 10.1.1.1.58624: [F.],
+  T0 +0.012  10.1.1.1.58624 > 10.1.1.0.179: [F.],
+  T0 +1.013  10.1.1.1.59894 > 10.1.1.0.179: [S],
+  T0 +1.013  10.1.1.0.179 > 10.1.1.1.59894: [R.],
+  T0 +6.117  10.1.1.0.48332 > 10.1.1.1.179: [S],
+  T0 +6.117  10.1.1.1.179 > 10.1.1.0.48332: [S.],
+  -- leaf1 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +6.117  10.1.1.0.48332 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.117  10.1.1.0.48332 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.117  10.1.1.0.48332 > 10.1.1.1.179 Restart Flags: [R], Restart Time 30s
+  T0 +6.117  10.1.1.0.48332 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: no
+  T0 +6.117  10.1.1.1.179 > 10.1.1.0.48332 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.117  10.1.1.1.179 > 10.1.1.0.48332 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.117  10.1.1.1.179 > 10.1.1.0.48332 Restart Flags: [none], Restart Time 30s
+  T0 +6.117  10.1.1.1.179 > 10.1.1.0.48332 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: no
+  T0 +7.218  10.1.1.0.48332 > 10.1.1.1.179 End-of-Rib Marker (empty NLRI)
+  T0 +7.268  10.1.1.1.179 > 10.1.1.0.48332 End-of-Rib Marker (empty NLRI)
+  -- leaf2 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+30) --
+  T0 +6.117  10.1.1.2.56260 > 10.1.1.3.179 Open Message (1)
+  T0 +6.117  10.1.1.3.179 > 10.1.1.2.56260 Open Message (1)
+  T0 +7.218  10.1.1.2.56260 > 10.1.1.3.179 Update Message (2)
+  T0 +7.218  10.1.1.2.56260 > 10.1.1.3.179 Update Message (2)
+  T0 +7.268  10.1.1.3.179 > 10.1.1.2.56260 Update Message (2)
+  T0 +7.268  10.1.1.3.179 > 10.1.1.2.56260 Update Message (2)
+  T0 +7.310  10.1.1.3.179 > 10.1.1.2.56260 Update Message (2)
+  T0 +7.318  10.1.1.2.56260 > 10.1.1.3.179 Update Message (2)
+  T0 +7.318  10.1.1.2.56260 > 10.1.1.3.179 Update Message (2)
+  T0 +7.369  10.1.1.3.179 > 10.1.1.2.56260 Update Message (2)
+  -- leaf2 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +0.002  10.1.1.2.179 > 10.1.1.3.50870: [F.],
+  T0 +0.012  10.1.1.3.50870 > 10.1.1.2.179: [F.],
+  T0 +1.013  10.1.1.3.35408 > 10.1.1.2.179: [S],
+  T0 +1.013  10.1.1.2.179 > 10.1.1.3.35408: [R.],
+  T0 +6.117  10.1.1.2.56260 > 10.1.1.3.179: [S],
+  T0 +6.117  10.1.1.3.179 > 10.1.1.2.56260: [S.],
+  -- leaf2 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +6.117  10.1.1.2.56260 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.117  10.1.1.2.56260 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.117  10.1.1.2.56260 > 10.1.1.3.179 Restart Flags: [R], Restart Time 30s
+  T0 +6.117  10.1.1.2.56260 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: no
+  T0 +6.117  10.1.1.3.179 > 10.1.1.2.56260 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.117  10.1.1.3.179 > 10.1.1.2.56260 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.117  10.1.1.3.179 > 10.1.1.2.56260 Restart Flags: [none], Restart Time 30s
+  T0 +6.117  10.1.1.3.179 > 10.1.1.2.56260 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: no
+  T0 +7.218  10.1.1.2.56260 > 10.1.1.3.179 End-of-Rib Marker (empty NLRI)
+  T0 +7.268  10.1.1.3.179 > 10.1.1.2.56260 End-of-Rib Marker (empty NLRI)
+  -- leaf1 커널 경로 변화 (172.16.11/12.0/24) --
+  T0 +6.178  Deleted 172.16.12.0/24 nhid 25 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  T0 +7.379  172.16.12.0/24 nhid 25 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  -- spine1 커널 경로 변화 (172.16.11/12.0/24) --
+  -- leaf1 frr.log --
+  T0 +0.001  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Down NSF peer closed the session
+  T0 +0.001  BGP: 10.1.1.0(spine1) graceful restart timer started for 30 sec
+  T0 +0.001  BGP: 10.1.1.0(spine1) graceful restart stalepath timer started for 360 sec
+  T0 +6.116  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +6.116  BGP: 10.1.1.0: Sending GR Capability, Restart time 30 R-bit NOT-SET, N-bit SET
+  T0 +6.116  BGP: 10.1.1.0 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.116  BGP: 10.1.1.0(spine1) OPEN has GR capability, Restart time 30 R-bit SET N-bit SET
+  T0 +6.116  BGP: 10.1.1.0 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.116  BGP: 10.1.1.0 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +6.117  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Up
+  T0 +7.217  BGP: EOR REQ 0, EOR RCV 0
+  T0 +7.217  BGP: bgp_update_receive: rcvd End-of-RIB for IPv4 Unicast from 10.1.1.0 in vrf default
+  T0 +7.267  BGP: send End-of-RIB for IPv4 Unicast to 10.1.1.0
+  -- spine1 frr.log --
+  T0 +5.102  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x5 peer flags 0x2002800000
+  T0 +5.102  BGP: VRF default: Global GR state is GLOBAL_HELPER
+  T0 +5.113  BGP: VRF default: Handle GR command GLOBAL_GR_CMD, current GR state GLOBAL_HELPER, new GR state GLOBAL_GR
+  T0 +5.113  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +5.114  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +5.114  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +6.116  BGP: 10.1.1.1: Sending GR Capability, Restart time 30 R-bit SET, N-bit SET
+  T0 +6.116  BGP: 10.1.1.3: Sending GR Capability, Restart time 30 R-bit SET, N-bit SET
+  T0 +6.116  BGP: 10.1.1.1 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.116  BGP: 10.1.1.1(leaf1) OPEN has GR capability, Restart time 30 R-bit NOT-SET N-bit SET
+  T0 +6.116  BGP: 10.1.1.1 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.116  BGP: 10.1.1.1 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +6.117  BGP: 10.1.1.3 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.117  BGP: 10.1.1.3(leaf2) OPEN has GR capability, Restart time 30 R-bit NOT-SET N-bit SET
+  T0 +6.117  BGP: 10.1.1.3 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.117  BGP: 10.1.1.3 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +6.117  BGP: %ADJCHANGE: neighbor 10.1.1.3(leaf2) in vrf default Up
+  T0 +6.117  BGP: %ADJCHANGE: neighbor 10.1.1.1(leaf1) in vrf default Up
+  T0 +7.217  BGP: send End-of-RIB for IPv4 Unicast to 10.1.1.1
+  T0 +7.217  BGP: send End-of-RIB for IPv4 Unicast to 10.1.1.3
+  T0 +7.267  BGP: bgp_update_receive: rcvd End-of-RIB for IPv4 Unicast from 10.1.1.1 in vrf default
+  T0 +7.267  BGP: bgp_update_receive: rcvd End-of-RIB for IPv4 Unicast from 10.1.1.3 in vrf default
+
+[1m=== 세션 재수립 대기 ===[0m
+  leaf1 Established 1/1
+
+[1m=== 랩 새로 띄우기 (down.sh → up.sh) ===[0m
+  6 노드 기동
+
+[1m=== 설정: GR fw / BFD off / 단일경로 on ===[0m
+  bgpd_options: bgpd_options="  -A 127.0.0.1"
+  리프 bgpd 기동 후 130초가 되도록 108초 대기
+  leaf1 Established 1/1, leaf2 1/1
+
+[1m=== Phase B2 — GR + preserve-fw-state (F 비트 1), 단일 경로, spine1 bgpd kill -9 ===[0m
+  leaf1 → spine1 GR 상태:
+    Local GR Mode: Restart*; Remote GR Mode: Restart; R bit: True; N bit: True; Received Restart Time(sec): 30; F bit: True
+
+[1m=== T0 spine1 bgpd kill -9 (pid 272909) ===[0m
+  --- [T0+1.5] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 15
+    Paths: (1 available, best #1, table default)
+      Not advertised to any peer
+      65001 65012, (stale)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (0.0.0.0)
+          Origin IGP, valid, external, bestpath-from-AS 65001, best (First path received)
+          Last update: Thu Oct 15 16:05:44 2026
+          Time until Graceful Restart stale route deleted: 28
+  --- [T0+1.5] leaf1 커널: 172.16.12.0/24 nhid 21 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  --- [T0+1.5] spine1 커널: 172.16.12.0/24 nhid 21 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 16 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  새 bgpd 확인: T0+5.1 (pid 274579)
+  --- [새 bgpd 직후] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 15
+    Paths: (1 available, best #1, table default)
+      spine1(10.1.1.0)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (10.255.0.1)
+          Origin IGP, valid, external, bestpath-from-AS 65001, best (First path received)
+          Last update: Thu Oct 15 16:07:50 2026
+  --- [새 bgpd 직후] leaf1 커널: 172.16.12.0/24 nhid 21 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  --- [새 bgpd 직후] spine1 커널: 172.16.12.0/24 nhid 21 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 16 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  A-h1-eth1.pcap                 5822 패킷
+  A-h2-eth1.pcap                 5084 패킷
+  A-leaf1-ctl.pcap                 57 패킷
+  A-leaf2-ctl.pcap                 55 패킷
+  B1-h1-eth1.pcap                6432 패킷
+  B1-h2-eth1.pcap                6312 패킷
+  B1-leaf1-ctl.pcap                57 패킷
+  B1-leaf2-ctl.pcap                57 패킷
+  B2-h1-eth1.pcap                6564 패킷
+  B2-h2-eth1.pcap                6564 패킷
+  B2-leaf1-ctl.pcap                52 패킷
+  B2-leaf2-ctl.pcap                52 패킷
+
+[1m=== Phase B2 결과 ===[0m
+  응답 없는 요청: 0 개 (0.01초 간격)
+  응답 공백 0.01초 (T0-0.13 ~ T0-0.12)
+  h2 에 닿은 요청이 끊긴 구간: 0.01초 (T0-0.13 ~ T0-0.12)
+  -- leaf1 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+30) --
+  T0 +6.098  10.1.1.0.40274 > 10.1.1.1.179 Open Message (1)
+  T0 +6.099  10.1.1.1.179 > 10.1.1.0.40274 Open Message (1)
+  T0 +7.199  10.1.1.0.40274 > 10.1.1.1.179 Update Message (2)
+  T0 +7.249  10.1.1.1.179 > 10.1.1.0.40274 Update Message (2)
+  T0 +7.249  10.1.1.1.179 > 10.1.1.0.40274 Update Message (2)
+  T0 +7.249  10.1.1.1.179 > 10.1.1.0.40274 Update Message (2)
+  T0 +7.249  10.1.1.1.179 > 10.1.1.0.40274 Update Message (2)
+  T0 +7.249  10.1.1.0.40274 > 10.1.1.1.179 Update Message (2)
+  T0 +7.249  10.1.1.0.40274 > 10.1.1.1.179 Update Message (2)
+  T0 +7.249  10.1.1.0.40274 > 10.1.1.1.179 Update Message (2)
+  -- leaf1 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +0.002  10.1.1.0.179 > 10.1.1.1.39102: [F.],
+  T0 +0.012  10.1.1.1.39102 > 10.1.1.0.179: [F.],
+  T0 +1.013  10.1.1.1.44894 > 10.1.1.0.179: [S],
+  T0 +1.013  10.1.1.0.179 > 10.1.1.1.44894: [R.],
+  T0 +6.098  10.1.1.0.40274 > 10.1.1.1.179: [S],
+  T0 +6.098  10.1.1.1.179 > 10.1.1.0.40274: [S.],
+  -- leaf1 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +6.098  10.1.1.0.40274 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.098  10.1.1.0.40274 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.098  10.1.1.0.40274 > 10.1.1.1.179 Restart Flags: [R], Restart Time 30s
+  T0 +6.098  10.1.1.0.40274 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.099  10.1.1.1.179 > 10.1.1.0.40274 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.099  10.1.1.1.179 > 10.1.1.0.40274 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.099  10.1.1.1.179 > 10.1.1.0.40274 Restart Flags: [none], Restart Time 30s
+  T0 +6.099  10.1.1.1.179 > 10.1.1.0.40274 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +7.249  10.1.1.1.179 > 10.1.1.0.40274 End-of-Rib Marker (empty NLRI)
+  T0 +7.249  10.1.1.0.40274 > 10.1.1.1.179 End-of-Rib Marker (empty NLRI)
+  -- leaf2 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+30) --
+  T0 +6.098  10.1.1.2.40750 > 10.1.1.3.179 Open Message (1)
+  T0 +6.099  10.1.1.3.179 > 10.1.1.2.40750 Open Message (1)
+  T0 +7.199  10.1.1.2.40750 > 10.1.1.3.179 Update Message (2)
+  T0 +7.249  10.1.1.3.179 > 10.1.1.2.40750 Update Message (2)
+  T0 +7.249  10.1.1.3.179 > 10.1.1.2.40750 Update Message (2)
+  T0 +7.249  10.1.1.3.179 > 10.1.1.2.40750 Update Message (2)
+  T0 +7.249  10.1.1.3.179 > 10.1.1.2.40750 Update Message (2)
+  T0 +7.249  10.1.1.2.40750 > 10.1.1.3.179 Update Message (2)
+  T0 +7.249  10.1.1.2.40750 > 10.1.1.3.179 Update Message (2)
+  T0 +7.249  10.1.1.2.40750 > 10.1.1.3.179 Update Message (2)
+  -- leaf2 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +0.002  10.1.1.2.179 > 10.1.1.3.52720: [F.],
+  T0 +0.012  10.1.1.3.52720 > 10.1.1.2.179: [F.],
+  T0 +1.013  10.1.1.3.41788 > 10.1.1.2.179: [S],
+  T0 +1.013  10.1.1.2.179 > 10.1.1.3.41788: [R.],
+  T0 +6.098  10.1.1.2.40750 > 10.1.1.3.179: [S],
+  T0 +6.098  10.1.1.3.179 > 10.1.1.2.40750: [S.],
+  -- leaf2 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +6.098  10.1.1.2.40750 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.098  10.1.1.2.40750 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.098  10.1.1.2.40750 > 10.1.1.3.179 Restart Flags: [R], Restart Time 30s
+  T0 +6.098  10.1.1.2.40750 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.099  10.1.1.3.179 > 10.1.1.2.40750 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.099  10.1.1.3.179 > 10.1.1.2.40750 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.099  10.1.1.3.179 > 10.1.1.2.40750 Restart Flags: [none], Restart Time 30s
+  T0 +6.099  10.1.1.3.179 > 10.1.1.2.40750 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +7.249  10.1.1.3.179 > 10.1.1.2.40750 End-of-Rib Marker (empty NLRI)
+  T0 +7.249  10.1.1.2.40750 > 10.1.1.3.179 End-of-Rib Marker (empty NLRI)
+  -- leaf1 커널 경로 변화 (172.16.11/12.0/24) --
+  -- spine1 커널 경로 변화 (172.16.11/12.0/24) --
+  -- leaf1 frr.log --
+  T0 +0.002  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Down NSF peer closed the session
+  T0 +0.002  BGP: 10.1.1.0(spine1) graceful restart timer started for 30 sec
+  T0 +0.002  BGP: 10.1.1.0(spine1) graceful restart stalepath timer started for 360 sec
+  T0 +6.098  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +6.098  BGP: 10.1.1.0: Sending GR Capability, Restart time 30 R-bit NOT-SET, N-bit SET
+  T0 +6.098  BGP: 10.1.1.0 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.098  BGP: 10.1.1.0(spine1) OPEN has GR capability, Restart time 30 R-bit SET N-bit SET
+  T0 +6.098  BGP: 10.1.1.0 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.098  BGP: 10.1.1.0 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +6.099  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Up
+  T0 +7.249  BGP: send End-of-RIB for IPv4 Unicast to 10.1.1.0
+  T0 +7.249  BGP: EOR REQ 0, EOR RCV 0
+  T0 +7.249  BGP: bgp_update_receive: rcvd End-of-RIB for IPv4 Unicast from 10.1.1.0 in vrf default
+  -- spine1 frr.log --
+  T0 +5.083  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x5 peer flags 0x2002800000
+  T0 +5.084  BGP: VRF default: Global GR state is GLOBAL_HELPER
+  T0 +5.095  BGP: VRF default: Handle GR command GLOBAL_GR_CMD, current GR state GLOBAL_HELPER, new GR state GLOBAL_GR
+  T0 +5.095  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +5.096  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +5.096  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +6.098  BGP: 10.1.1.1: Sending GR Capability, Restart time 30 R-bit SET, N-bit SET
+  T0 +6.098  BGP: 10.1.1.3: Sending GR Capability, Restart time 30 R-bit SET, N-bit SET
+  T0 +6.098  BGP: 10.1.1.1 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.098  BGP: 10.1.1.1(leaf1) OPEN has GR capability, Restart time 30 R-bit NOT-SET N-bit SET
+  T0 +6.098  BGP: 10.1.1.1 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.098  BGP: 10.1.1.1 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +6.098  BGP: 10.1.1.3 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.098  BGP: 10.1.1.3(leaf2) OPEN has GR capability, Restart time 30 R-bit NOT-SET N-bit SET
+  T0 +6.098  BGP: 10.1.1.3 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.098  BGP: 10.1.1.3 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +6.099  BGP: %ADJCHANGE: neighbor 10.1.1.3(leaf2) in vrf default Up
+  T0 +6.099  BGP: %ADJCHANGE: neighbor 10.1.1.1(leaf1) in vrf default Up
+  T0 +7.249  BGP: bgp_update_receive: rcvd End-of-RIB for IPv4 Unicast from 10.1.1.1 in vrf default
+  T0 +7.249  BGP: EOR REQ 2, EOR RCV 2
+  T0 +7.249  BGP: bgp_update_receive: rcvd End-of-RIB for IPv4 Unicast from 10.1.1.3 in vrf default
+  T0 +7.249  BGP: send End-of-RIB for IPv4 Unicast to 10.1.1.1
+  T0 +7.249  BGP: send End-of-RIB for IPv4 Unicast to 10.1.1.3
+
+[1m=== 세션 재수립 대기 ===[0m
+  leaf1 Established 1/1
+
+[1m=== 랩 새로 띄우기 (down.sh → up.sh) ===[0m
+  6 노드 기동
+
+[1m=== 설정: GR fwk / BFD off / 단일경로 on ===[0m
+  bgpd_options: bgpd_options="  -A 127.0.0.1 -K"
+  리프 bgpd 기동 후 130초가 되도록 108초 대기
+  leaf1 Established 1/1, leaf2 1/1
+
+[1m=== Phase B3 — GR + preserve-fw-state + bgpd -K, 단일 경로, spine1 bgpd kill -9 ===[0m
+  leaf1 → spine1 GR 상태:
+    Local GR Mode: Restart*; Remote GR Mode: Restart; R bit: True; N bit: True; Received Restart Time(sec): 30; F bit: True
+
+[1m=== T0 spine1 bgpd kill -9 (pid 277096) ===[0m
+  --- [T0+1.5] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 15
+    Paths: (1 available, best #1, table default)
+      Not advertised to any peer
+      65001 65012, (stale)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (0.0.0.0)
+          Origin IGP, valid, external, bestpath-from-AS 65001, best (First path received)
+          Last update: Thu Oct 15 16:08:44 2026
+          Time until Graceful Restart stale route deleted: 28
+  --- [T0+1.5] leaf1 커널: 172.16.12.0/24 nhid 25 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  --- [T0+1.5] spine1 커널: 172.16.12.0/24 nhid 18 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 19 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  새 bgpd 확인: T0+5.2 (pid 278771)
+  --- [새 bgpd 직후] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 15
+    Paths: (1 available, best #1, table default)
+      spine1(10.1.1.0)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (10.255.0.1)
+          Origin IGP, valid, external, bestpath-from-AS 65001, best (First path received)
+          Last update: Thu Oct 15 16:10:49 2026
+  --- [새 bgpd 직후] leaf1 커널: 172.16.12.0/24 nhid 25 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  --- [새 bgpd 직후] spine1 커널: 172.16.12.0/24 nhid 18 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 19 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  A-h1-eth1.pcap                 5822 패킷
+  A-h2-eth1.pcap                 5084 패킷
+  A-leaf1-ctl.pcap                 57 패킷
+  A-leaf2-ctl.pcap                 55 패킷
+  B1-h1-eth1.pcap                6432 패킷
+  B1-h2-eth1.pcap                6312 패킷
+  B1-leaf1-ctl.pcap                57 패킷
+  B1-leaf2-ctl.pcap                57 패킷
+  B2-h1-eth1.pcap                6564 패킷
+  B2-h2-eth1.pcap                6564 패킷
+  B2-leaf1-ctl.pcap                52 패킷
+  B2-leaf2-ctl.pcap                52 패킷
+  B3-h1-eth1.pcap                6554 패킷
+  B3-h2-eth1.pcap                6554 패킷
+  B3-leaf1-ctl.pcap                52 패킷
+  B3-leaf2-ctl.pcap                52 패킷
+
+[1m=== Phase B3 결과 ===[0m
+  응답 없는 요청: 0 개 (0.01초 간격)
+  응답 공백 0.01초 (T0+18.37 ~ T0+18.38)
+  h2 에 닿은 요청이 끊긴 구간: 0.01초 (T0+18.37 ~ T0+18.38)
+  -- leaf1 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+30) --
+  T0 +6.061  10.1.1.0.32772 > 10.1.1.1.179 Open Message (1)
+  T0 +6.061  10.1.1.1.179 > 10.1.1.0.32772 Open Message (1)
+  T0 +7.162  10.1.1.0.32772 > 10.1.1.1.179 Update Message (2)
+  T0 +7.212  10.1.1.1.179 > 10.1.1.0.32772 Update Message (2)
+  T0 +7.212  10.1.1.1.179 > 10.1.1.0.32772 Update Message (2)
+  T0 +7.212  10.1.1.1.179 > 10.1.1.0.32772 Update Message (2)
+  T0 +7.212  10.1.1.1.179 > 10.1.1.0.32772 Update Message (2)
+  T0 +7.212  10.1.1.0.32772 > 10.1.1.1.179 Update Message (2)
+  T0 +7.212  10.1.1.0.32772 > 10.1.1.1.179 Update Message (2)
+  T0 +7.212  10.1.1.0.32772 > 10.1.1.1.179 Update Message (2)
+  -- leaf1 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +0.002  10.1.1.0.179 > 10.1.1.1.38778: [F.],
+  T0 +0.002  10.1.1.1.38778 > 10.1.1.0.179: [F.],
+  T0 +1.013  10.1.1.1.55092 > 10.1.1.0.179: [S],
+  T0 +1.013  10.1.1.0.179 > 10.1.1.1.55092: [R.],
+  T0 +6.061  10.1.1.0.32772 > 10.1.1.1.179: [S],
+  T0 +6.061  10.1.1.1.179 > 10.1.1.0.32772: [S.],
+  -- leaf1 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +6.061  10.1.1.0.32772 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.061  10.1.1.0.32772 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.061  10.1.1.0.32772 > 10.1.1.1.179 Restart Flags: [R], Restart Time 30s
+  T0 +6.061  10.1.1.0.32772 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.061  10.1.1.1.179 > 10.1.1.0.32772 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.061  10.1.1.1.179 > 10.1.1.0.32772 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.061  10.1.1.1.179 > 10.1.1.0.32772 Restart Flags: [none], Restart Time 30s
+  T0 +6.061  10.1.1.1.179 > 10.1.1.0.32772 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +7.212  10.1.1.1.179 > 10.1.1.0.32772 End-of-Rib Marker (empty NLRI)
+  T0 +7.212  10.1.1.0.32772 > 10.1.1.1.179 End-of-Rib Marker (empty NLRI)
+  -- leaf2 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+30) --
+  T0 +6.061  10.1.1.2.45982 > 10.1.1.3.179 Open Message (1)
+  T0 +6.061  10.1.1.3.179 > 10.1.1.2.45982 Open Message (1)
+  T0 +7.162  10.1.1.2.45982 > 10.1.1.3.179 Update Message (2)
+  T0 +7.212  10.1.1.3.179 > 10.1.1.2.45982 Update Message (2)
+  T0 +7.212  10.1.1.3.179 > 10.1.1.2.45982 Update Message (2)
+  T0 +7.212  10.1.1.3.179 > 10.1.1.2.45982 Update Message (2)
+  T0 +7.212  10.1.1.3.179 > 10.1.1.2.45982 Update Message (2)
+  T0 +7.212  10.1.1.2.45982 > 10.1.1.3.179 Update Message (2)
+  T0 +7.212  10.1.1.2.45982 > 10.1.1.3.179 Update Message (2)
+  T0 +7.212  10.1.1.2.45982 > 10.1.1.3.179 Update Message (2)
+  -- leaf2 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +0.002  10.1.1.2.179 > 10.1.1.3.57216: [F.],
+  T0 +0.013  10.1.1.3.57216 > 10.1.1.2.179: [F.],
+  T0 +1.013  10.1.1.3.49770 > 10.1.1.2.179: [S],
+  T0 +1.013  10.1.1.2.179 > 10.1.1.3.49770: [R.],
+  T0 +6.061  10.1.1.2.45982 > 10.1.1.3.179: [S],
+  T0 +6.061  10.1.1.3.179 > 10.1.1.2.45982: [S.],
+  -- leaf2 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +6.061  10.1.1.2.45982 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.061  10.1.1.2.45982 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.061  10.1.1.2.45982 > 10.1.1.3.179 Restart Flags: [R], Restart Time 30s
+  T0 +6.061  10.1.1.2.45982 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.061  10.1.1.3.179 > 10.1.1.2.45982 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.061  10.1.1.3.179 > 10.1.1.2.45982 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.061  10.1.1.3.179 > 10.1.1.2.45982 Restart Flags: [none], Restart Time 30s
+  T0 +6.061  10.1.1.3.179 > 10.1.1.2.45982 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +7.212  10.1.1.3.179 > 10.1.1.2.45982 End-of-Rib Marker (empty NLRI)
+  T0 +7.212  10.1.1.2.45982 > 10.1.1.3.179 End-of-Rib Marker (empty NLRI)
+  -- leaf1 커널 경로 변화 (172.16.11/12.0/24) --
+  -- spine1 커널 경로 변화 (172.16.11/12.0/24) --
+  -- leaf1 frr.log --
+  T0 +0.002  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Down NSF peer closed the session
+  T0 +0.002  BGP: 10.1.1.0(spine1) graceful restart timer started for 30 sec
+  T0 +0.002  BGP: 10.1.1.0(spine1) graceful restart stalepath timer started for 360 sec
+  T0 +6.061  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +6.061  BGP: 10.1.1.0: Sending GR Capability, Restart time 30 R-bit NOT-SET, N-bit SET
+  T0 +6.061  BGP: 10.1.1.0 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.061  BGP: 10.1.1.0(spine1) OPEN has GR capability, Restart time 30 R-bit SET N-bit SET
+  T0 +6.061  BGP: 10.1.1.0 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.061  BGP: 10.1.1.0 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +6.061  BGP: 10.1.1.0: peer transfer 0x778bfdc0aa80 fd 22 -> 0x778bfde142f0 fd -1)
+  T0 +6.061  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Up
+  T0 +7.211  BGP: send End-of-RIB for IPv4 Unicast to 10.1.1.0
+  T0 +7.212  BGP: EOR REQ 0, EOR RCV 0
+  T0 +7.212  BGP: bgp_update_receive: rcvd End-of-RIB for IPv4 Unicast from 10.1.1.0 in vrf default
+  -- spine1 frr.log --
+  T0 +5.046  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x5 peer flags 0x2002800000
+  T0 +5.046  BGP: VRF default: Global GR state is GLOBAL_HELPER
+  T0 +5.058  BGP: VRF default: Handle GR command GLOBAL_GR_CMD, current GR state GLOBAL_HELPER, new GR state GLOBAL_GR
+  T0 +5.058  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +5.058  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +5.059  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +6.061  BGP: 10.1.1.1: Sending GR Capability, Restart time 30 R-bit SET, N-bit SET
+  T0 +6.061  BGP: 10.1.1.3: Sending GR Capability, Restart time 30 R-bit SET, N-bit SET
+  T0 +6.061  BGP: 10.1.1.1 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.061  BGP: 10.1.1.1(leaf1) OPEN has GR capability, Restart time 30 R-bit NOT-SET N-bit SET
+  T0 +6.061  BGP: 10.1.1.1 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.061  BGP: 10.1.1.1 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +6.061  BGP: 10.1.1.3 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.061  BGP: 10.1.1.3(leaf2) OPEN has GR capability, Restart time 30 R-bit NOT-SET N-bit SET
+  T0 +6.061  BGP: 10.1.1.3 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.061  BGP: 10.1.1.3 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +6.061  BGP: %ADJCHANGE: neighbor 10.1.1.3(leaf2) in vrf default Up
+  T0 +6.061  BGP: %ADJCHANGE: neighbor 10.1.1.1(leaf1) in vrf default Up
+  T0 +7.212  BGP: bgp_update_receive: rcvd End-of-RIB for IPv4 Unicast from 10.1.1.1 in vrf default
+  T0 +7.212  BGP: EOR REQ 2, EOR RCV 2
+  T0 +7.212  BGP: bgp_update_receive: rcvd End-of-RIB for IPv4 Unicast from 10.1.1.3 in vrf default
+  T0 +7.212  BGP: send End-of-RIB for IPv4 Unicast to 10.1.1.1
+  T0 +7.212  BGP: send End-of-RIB for IPv4 Unicast to 10.1.1.3
+
+[1m=== 세션 재수립 대기 ===[0m
+  leaf1 Established 1/1
+
+[1m=== 랩 새로 띄우기 (down.sh → up.sh) ===[0m
+  6 노드 기동
+
+[1m=== 설정: GR fwk / BFD off / 단일경로 off ===[0m
+  bgpd_options: bgpd_options="  -A 127.0.0.1 -K"
+  리프 bgpd 기동 후 130초가 되도록 108초 대기
+  leaf1 Established 2/2, leaf2 2/2
+
+[1m=== Phase C — GR, ECMP, 스파인 freeze ===[0m
+  요청 h1→h2: leaf1 → spine2   응답 h2→h1: leaf2 → spine2   얼릴 장비: spine2
+  leaf1 → spine2 GR 상태:
+    Local GR Mode: Restart*; Remote GR Mode: Restart; R bit: True; N bit: True; Received Restart Time(sec): 30; F bit: True
+
+[1m=== T0 spine2 먹통 (ip_forward=0 + docker pause, 링크는 up) ===[0m
+  --- [T0+12] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 19
+    Paths: (2 available, best #1, table default)
+      spine1(10.1.1.0)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (10.255.0.1)
+          Origin IGP, valid, external, multipath, bestpath-from-AS 65001, best (Older Path)
+          Last update: Thu Oct 15 16:11:46 2026
+      65002 65012, (stale)
+        10.1.2.0(spine2) from spine2(10.1.2.0) (0.0.0.0)
+          Origin IGP, valid, external, multipath, bestpath-from-AS 65002
+          Last update: Thu Oct 15 16:11:46 2026
+          Time until Graceful Restart stale route deleted: 25
+  --- [T0+12] leaf1 커널: 172.16.12.0/24 nhid 26 proto bgp metric 20 	nexthop via 10.1.2.0 dev eth2 weight 1 	nexthop via 10.1.1.0 dev eth1 weight 1 
+  --- [T0+12] spine2 커널: 172.16.12.0/24 nhid 17 via 10.1.2.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 18 via 10.1.2.1 dev eth1 proto bgp metric 20 
+  leaf1 → spine2:
+    BGP state = OpenSent
+    Graceful restart information:
+    The remaining time of restart timer is 25
+    The remaining time of stalepath timer is 355
+    Configured LLGR Stale Path Time(sec): 0
+    Last reset 00:00:05,  Notification sent (Hold Timer Expired)
+  --- [T0+48] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 19
+    Paths: (1 available, best #1, table default)
+      spine1(10.1.1.0)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (10.255.0.1)
+          Origin IGP, valid, external, bestpath-from-AS 65001, best (First path received)
+          Last update: Thu Oct 15 16:11:46 2026
+  --- [T0+48] leaf1 커널: 172.16.12.0/24 nhid 22 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  --- [T0+48] spine2 커널: 172.16.12.0/24 nhid 17 via 10.1.2.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 18 via 10.1.2.1 dev eth1 proto bgp metric 20 
+
+[1m=== T0+48 spine2 복구 ===[0m
+  A-h1-eth1.pcap                 5822 패킷
+  A-h2-eth1.pcap                 5084 패킷
+  A-leaf1-ctl.pcap                 57 패킷
+  A-leaf2-ctl.pcap                 55 패킷
+  B1-h1-eth1.pcap                6432 패킷
+  B1-h2-eth1.pcap                6312 패킷
+  B1-leaf1-ctl.pcap                57 패킷
+  B1-leaf2-ctl.pcap                57 패킷
+  B2-h1-eth1.pcap                6564 패킷
+  B2-h2-eth1.pcap                6564 패킷
+  B2-leaf1-ctl.pcap                52 패킷
+  B2-leaf2-ctl.pcap                52 패킷
+  B3-h1-eth1.pcap                6554 패킷
+  B3-h2-eth1.pcap                6554 패킷
+  B3-leaf1-ctl.pcap                52 패킷
+  B3-leaf2-ctl.pcap                52 패킷
+  C-h1-eth1.pcap                 7333 패킷
+  C-h2-eth1.pcap                 3522 패킷
+  C-leaf1-ctl.pcap                 83 패킷
+  C-leaf2-ctl.pcap                 83 패킷
+
+[1m=== Phase C 결과 ===[0m
+  응답 없는 요청: 3811 개 (0.01초 간격)
+  응답 공백 38.29초 (T0-0.00 ~ T0+38.28)
+  h2 에 닿은 요청이 끊긴 구간: 38.29초 (T0-0.00 ~ T0+38.28)
+  -- leaf1 ↔ spine2 BGP·BFD (keepalive 제외, T0-1 ~ T0+48) --
+  T0 +8.216  10.1.2.1.39340 > 10.1.2.0.179 Notification Message (3), Hold Timer Expired (4)
+  T0 +9.227  10.1.2.1.59958 > 10.1.2.0.179 Open Message (1)
+  T0+18.227  10.1.2.1.59958 > 10.1.2.0.179 Notification Message (3), Hold Timer Expired (4)
+  T0+19.228  10.1.2.1.51288 > 10.1.2.0.179 Open Message (1)
+  T0+28.228  10.1.2.1.51288 > 10.1.2.0.179 Notification Message (3), Hold Timer Expired (4)
+  T0+29.228  10.1.2.1.59072 > 10.1.2.0.179 Open Message (1)
+  T0+38.228  10.1.2.1.59072 > 10.1.2.0.179 Notification Message (3), Hold Timer Expired (4)
+  T0+39.229  10.1.2.1.49964 > 10.1.2.0.179 Open Message (1)
+  -- leaf1 ↔ spine2 TCP SYN/FIN/RST --
+  T0 +8.216  10.1.2.1.39340 > 10.1.2.0.179: [F.],
+  T0 +9.227  10.1.2.1.59958 > 10.1.2.0.179: [S],
+  T0 +9.227  10.1.2.0.179 > 10.1.2.1.59958: [S.],
+  T0+18.227  10.1.2.1.59958 > 10.1.2.0.179: [F.],
+  T0+19.227  10.1.2.1.51288 > 10.1.2.0.179: [S],
+  T0+19.227  10.1.2.0.179 > 10.1.2.1.51288: [S.],
+  T0+28.228  10.1.2.1.51288 > 10.1.2.0.179: [F.],
+  T0+29.228  10.1.2.1.59072 > 10.1.2.0.179: [S],
+  T0+29.228  10.1.2.0.179 > 10.1.2.1.59072: [S.],
+  T0+38.228  10.1.2.1.59072 > 10.1.2.0.179: [F.],
+  T0+39.229  10.1.2.1.49964 > 10.1.2.0.179: [S],
+  T0+39.229  10.1.2.0.179 > 10.1.2.1.49964: [S.],
+  -- leaf1 ↔ spine2 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +9.227  10.1.2.1.59958 > 10.1.2.0.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +9.227  10.1.2.1.59958 > 10.1.2.0.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +9.227  10.1.2.1.59958 > 10.1.2.0.179 Restart Flags: [none], Restart Time 30s
+  T0 +9.227  10.1.2.1.59958 > 10.1.2.0.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0+19.228  10.1.2.1.51288 > 10.1.2.0.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0+19.228  10.1.2.1.51288 > 10.1.2.0.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0+19.228  10.1.2.1.51288 > 10.1.2.0.179 Restart Flags: [none], Restart Time 30s
+  T0+19.228  10.1.2.1.51288 > 10.1.2.0.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0+29.228  10.1.2.1.59072 > 10.1.2.0.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0+29.228  10.1.2.1.59072 > 10.1.2.0.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0+29.228  10.1.2.1.59072 > 10.1.2.0.179 Restart Flags: [none], Restart Time 30s
+  T0+29.228  10.1.2.1.59072 > 10.1.2.0.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0+39.229  10.1.2.1.49964 > 10.1.2.0.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0+39.229  10.1.2.1.49964 > 10.1.2.0.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0+39.229  10.1.2.1.49964 > 10.1.2.0.179 Restart Flags: [none], Restart Time 30s
+  T0+39.229  10.1.2.1.49964 > 10.1.2.0.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  -- leaf2 ↔ spine2 BGP·BFD (keepalive 제외, T0-1 ~ T0+48) --
+  T0 +8.216  10.1.2.3.52182 > 10.1.2.2.179 Notification Message (3), Hold Timer Expired (4)
+  T0 +9.227  10.1.2.3.54602 > 10.1.2.2.179 Open Message (1)
+  T0+18.228  10.1.2.3.54602 > 10.1.2.2.179 Notification Message (3), Hold Timer Expired (4)
+  T0+19.228  10.1.2.3.33000 > 10.1.2.2.179 Open Message (1)
+  T0+28.230  10.1.2.3.33000 > 10.1.2.2.179 Notification Message (3), Hold Timer Expired (4)
+  T0+29.231  10.1.2.3.40614 > 10.1.2.2.179 Open Message (1)
+  T0+38.231  10.1.2.3.40614 > 10.1.2.2.179 Notification Message (3), Hold Timer Expired (4)
+  T0+39.231  10.1.2.3.36758 > 10.1.2.2.179 Open Message (1)
+  -- leaf2 ↔ spine2 TCP SYN/FIN/RST --
+  T0 +8.216  10.1.2.3.52182 > 10.1.2.2.179: [F.],
+  T0 +9.227  10.1.2.3.54602 > 10.1.2.2.179: [S],
+  T0 +9.227  10.1.2.2.179 > 10.1.2.3.54602: [S.],
+  T0+18.228  10.1.2.3.54602 > 10.1.2.2.179: [F.],
+  T0+19.228  10.1.2.3.33000 > 10.1.2.2.179: [S],
+  T0+19.228  10.1.2.2.179 > 10.1.2.3.33000: [S.],
+  T0+28.230  10.1.2.3.33000 > 10.1.2.2.179: [F.],
+  T0+29.230  10.1.2.3.40614 > 10.1.2.2.179: [S],
+  T0+29.230  10.1.2.2.179 > 10.1.2.3.40614: [S.],
+  T0+38.231  10.1.2.3.40614 > 10.1.2.2.179: [F.],
+  T0+39.231  10.1.2.3.36758 > 10.1.2.2.179: [S],
+  T0+39.231  10.1.2.2.179 > 10.1.2.3.36758: [S.],
+  -- leaf2 ↔ spine2 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +9.227  10.1.2.3.54602 > 10.1.2.2.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +9.227  10.1.2.3.54602 > 10.1.2.2.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +9.227  10.1.2.3.54602 > 10.1.2.2.179 Restart Flags: [none], Restart Time 30s
+  T0 +9.227  10.1.2.3.54602 > 10.1.2.2.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0+19.228  10.1.2.3.33000 > 10.1.2.2.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0+19.228  10.1.2.3.33000 > 10.1.2.2.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0+19.228  10.1.2.3.33000 > 10.1.2.2.179 Restart Flags: [none], Restart Time 30s
+  T0+19.228  10.1.2.3.33000 > 10.1.2.2.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0+29.231  10.1.2.3.40614 > 10.1.2.2.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0+29.231  10.1.2.3.40614 > 10.1.2.2.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0+29.231  10.1.2.3.40614 > 10.1.2.2.179 Restart Flags: [none], Restart Time 30s
+  T0+29.231  10.1.2.3.40614 > 10.1.2.2.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0+39.231  10.1.2.3.36758 > 10.1.2.2.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0+39.231  10.1.2.3.36758 > 10.1.2.2.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0+39.231  10.1.2.3.36758 > 10.1.2.2.179 Restart Flags: [none], Restart Time 30s
+  T0+39.231  10.1.2.3.36758 > 10.1.2.2.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  -- leaf1 커널 경로 변화 (172.16.11/12.0/24) --
+  T0+38.277  172.16.12.0/24 nhid 22 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  T0+52.205  172.16.12.0/24 nhid 26 proto bgp metric 20 
+  -- spine2 커널 경로 변화 (172.16.11/12.0/24) --
+  -- leaf1 frr.log --
+  T0 +8.216  BGP: %NOTIFICATION: sent to neighbor 10.1.2.0 4/0 (Hold Timer Expired) 0 bytes 
+  T0 +8.216  BGP: %ADJCHANGE: neighbor 10.1.2.0(spine2) in vrf default Down BGP Notification send
+  T0 +8.216  BGP: 10.1.2.0(spine2) graceful restart timer started for 30 sec
+  T0 +8.216  BGP: 10.1.2.0(spine2) graceful restart stalepath timer started for 360 sec
+  T0 +9.227  BGP: 10.1.2.0: Sending GR Capability, Restart time 30 R-bit NOT-SET, N-bit SET
+  T0+18.227  BGP: %NOTIFICATION: sent to neighbor 10.1.2.0 4/0 (Hold Timer Expired) 0 bytes 
+  T0+19.227  BGP: 10.1.2.0: Sending GR Capability, Restart time 30 R-bit NOT-SET, N-bit SET
+  T0+28.227  BGP: %NOTIFICATION: sent to neighbor 10.1.2.0 4/0 (Hold Timer Expired) 0 bytes 
+  T0+29.228  BGP: 10.1.2.0: Sending GR Capability, Restart time 30 R-bit NOT-SET, N-bit SET
+  T0+38.216  BGP: 10.1.2.0(spine2) graceful restart timer expired
+  T0+38.216  BGP: 10.1.2.0(spine2) graceful restart stalepath timer stopped
+  T0+38.228  BGP: %NOTIFICATION: sent to neighbor 10.1.2.0 4/0 (Hold Timer Expired) 0 bytes 
+  T0+39.229  BGP: 10.1.2.0: Sending GR Capability, Restart time 30 R-bit NOT-SET, N-bit SET
+  -- spine2 frr.log --
+
+[1m=== 세션 재수립 대기 ===[0m
+  leaf1 Established 2/2
+
+[1m=== 랩 새로 띄우기 (down.sh → up.sh) ===[0m
+  6 노드 기동
+
+[1m=== 설정: GR fwk / BFD on / 단일경로 off ===[0m
+  bgpd_options: bgpd_options="  -A 127.0.0.1 -K"
+  리프 bgpd 기동 후 130초가 되도록 108초 대기
+  leaf1 Established 2/2, leaf2 2/2
+
+[1m=== Phase D1 — GR + BFD, ECMP, 스파인 freeze ===[0m
+  요청 h1→h2: leaf1 → spine1   응답 h2→h1: leaf2 → spine1   얼릴 장비: spine1
+  leaf1 → spine1 GR 상태:
+    Local GR Mode: Restart*; Remote GR Mode: Restart; R bit: True; N bit: True; Received Restart Time(sec): 30; F bit: True
+  BFD 3612860560 10.1.1.1                                 10.1.1.0                                up             
+  BFD 4135213834 10.1.2.1                                 10.1.2.0                                up             
+
+[1m=== T0 spine1 먹통 (ip_forward=0 + docker pause, 링크는 up) ===[0m
+  --- [T0+12] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 23
+    Paths: (1 available, best #1, table default)
+      spine2(10.1.2.0)
+        10.1.2.0(spine2) from spine2(10.1.2.0) (10.255.0.2)
+          Origin IGP, valid, external, bestpath-from-AS 65002, best (First path received)
+          Last update: Thu Oct 15 16:15:10 2026
+  --- [T0+12] leaf1 커널: 172.16.12.0/24 nhid 22 via 10.1.2.0 dev eth2 proto bgp metric 20 
+  --- [T0+12] spine1 커널: 172.16.12.0/24 nhid 18 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 17 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  leaf1 → spine1:
+    BGP state = Idle
+    Graceful restart information:
+    Configured LLGR Stale Path Time(sec): 0
+    Last reset 00:00:12,  Notification sent (Cease/BFD Down/Hard Reset)
+  --- [T0+15] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 23
+    Paths: (1 available, best #1, table default)
+      spine2(10.1.2.0)
+        10.1.2.0(spine2) from spine2(10.1.2.0) (10.255.0.2)
+          Origin IGP, valid, external, bestpath-from-AS 65002, best (First path received)
+          Last update: Thu Oct 15 16:15:10 2026
+  --- [T0+15] leaf1 커널: 172.16.12.0/24 nhid 22 via 10.1.2.0 dev eth2 proto bgp metric 20 
+  --- [T0+15] spine1 커널: 172.16.12.0/24 nhid 18 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 17 via 10.1.1.1 dev eth1 proto bgp metric 20 
+
+[1m=== T0+15 spine1 복구 ===[0m
+  A-h1-eth1.pcap                 5822 패킷
+  A-h2-eth1.pcap                 5084 패킷
+  A-leaf1-ctl.pcap                 57 패킷
+  A-leaf2-ctl.pcap                 55 패킷
+  B1-h1-eth1.pcap                6432 패킷
+  B1-h2-eth1.pcap                6312 패킷
+  B1-leaf1-ctl.pcap                57 패킷
+  B1-leaf2-ctl.pcap                57 패킷
+  B2-h1-eth1.pcap                6564 패킷
+  B2-h2-eth1.pcap                6564 패킷
+  B2-leaf1-ctl.pcap                52 패킷
+  B2-leaf2-ctl.pcap                52 패킷
+  B3-h1-eth1.pcap                6554 패킷
+  B3-h2-eth1.pcap                6554 패킷
+  B3-leaf1-ctl.pcap                52 패킷
+  B3-leaf2-ctl.pcap                52 패킷
+  C-h1-eth1.pcap                 7333 패킷
+  C-h2-eth1.pcap                 3522 패킷
+  C-leaf1-ctl.pcap                 83 패킷
+  C-leaf2-ctl.pcap                 83 패킷
+  D1-h1-eth1.pcap                4478 패킷
+  D1-h2-eth1.pcap                4384 패킷
+  D1-leaf1-ctl.pcap               155 패킷
+  D1-leaf2-ctl.pcap               155 패킷
+
+[1m=== Phase D1 결과 ===[0m
+  응답 없는 요청: 94 개 (0.01초 간격)
+  응답 공백 0.95초 (T0-0.00 ~ T0+0.95)
+  h2 에 닿은 요청이 끊긴 구간: 0.95초 (T0-0.00 ~ T0+0.95)
+  -- leaf1 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+15) --
+  T0 +0.880  10.1.1.1.49152 > 10.1.1.0.3784 BFD State Down (Control Detection Time Expired)
+  T0 +0.880  10.1.1.1.39668 > 10.1.1.0.179 Notification Message (3), Cease (6), subcode Unknown (9)
+  -- leaf1 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +0.880  10.1.1.1.39668 > 10.1.1.0.179: [F.],
+  T0+16.995  10.1.1.1.39668 > 10.1.1.0.179: [R],
+  T0+17.274  10.1.1.0.58328 > 10.1.1.1.179: [S],
+  T0+17.274  10.1.1.1.39340 > 10.1.1.0.179: [S],
+  T0+17.274  10.1.1.1.179 > 10.1.1.0.58328: [S.],
+  T0+17.274  10.1.1.0.179 > 10.1.1.1.39340: [S.],
+  T0+17.274  10.1.1.0.58328 > 10.1.1.1.179: [F.],
+  T0+17.274  10.1.1.0.58328 > 10.1.1.1.179: [R],
+  -- leaf1 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +0.880  10.1.1.1.39668 > 10.1.1.0.179 Notification Message (3), length: 23, Cease (6), subcode Unknown (9)
+  -- leaf2 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+15) --
+  T0 +0.851  10.1.1.3.49152 > 10.1.1.2.3784 BFD State Down (Control Detection Time Expired)
+  T0 +0.851  10.1.1.3.46030 > 10.1.1.2.179 Notification Message (3), Cease (6), subcode Unknown (9)
+  -- leaf2 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +0.852  10.1.1.3.46030 > 10.1.1.2.179: [F.],
+  T0+16.994  10.1.1.3.46030 > 10.1.1.2.179: [R],
+  T0+17.254  10.1.1.3.58872 > 10.1.1.2.179: [S],
+  T0+17.254  10.1.1.2.58490 > 10.1.1.3.179: [S],
+  T0+17.254  10.1.1.3.179 > 10.1.1.2.58490: [S.],
+  T0+17.254  10.1.1.2.179 > 10.1.1.3.58872: [S.],
+  T0+17.255  10.1.1.2.58490 > 10.1.1.3.179: [F.],
+  T0+17.255  10.1.1.3.179 > 10.1.1.2.58490: [F.],
+  -- leaf2 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +0.851  10.1.1.3.46030 > 10.1.1.2.179 Notification Message (3), length: 23, Cease (6), subcode Unknown (9)
+  -- leaf1 커널 경로 변화 (172.16.11/12.0/24) --
+  T0 +0.950  172.16.12.0/24 nhid 22 via 10.1.2.0 dev eth2 proto bgp metric 20 
+  T0+18.466  172.16.12.0/24 nhid 26 proto bgp metric 20 
+  -- spine1 커널 경로 변화 (172.16.11/12.0/24) --
+  -- leaf1 frr.log --
+  T0 +0.879  BGP: zclient_bfd_session_update: 10.1.1.1/32 -> 10.1.1.0/32 (interface eth1) VRF default(0) (CPI bit no): Down
+  T0 +0.879  BGP: bfd_session_status_update: neighbor 10.1.1.0 vrf default(0) bfd state Up -> Down
+  T0 +0.879  BGP: %NOTIFICATION(Hard Reset): sent to neighbor 10.1.1.0 6/10 (Cease/BFD Down) 0 bytes 
+  T0 +0.879  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +0.879  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Down BGP Notification send
+  -- spine1 frr.log --
+
+[1m=== 세션 재수립 대기 ===[0m
+  leaf1 Established 2/2
+
+[1m=== 랩 새로 띄우기 (down.sh → up.sh) ===[0m
+  6 노드 기동
+
+[1m=== 설정: GR fwk / BFD on / 단일경로 on ===[0m
+  bgpd_options: bgpd_options="  -A 127.0.0.1 -K"
+  리프 bgpd 기동 후 130초가 되도록 109초 대기
+  leaf1 Established 1/1, leaf2 1/1
+
+[1m=== Phase D2 — GR + BFD, 단일 경로, spine1 bgpd kill -9 ===[0m
+  leaf1 → spine1 GR 상태:
+    Local GR Mode: Restart*; Remote GR Mode: Restart; R bit: True; N bit: True; Received Restart Time(sec): 30; F bit: True
+  BFD 3569459968 10.1.2.1                                 10.1.2.0                                down           
+  BFD 26419921   10.1.1.1                                 10.1.1.0                                up             
+
+[1m=== T0 spine1 bgpd kill -9 (pid 290731) ===[0m
+  --- [T0+1.5] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 15
+    Paths: (1 available, best #1, table default)
+      Not advertised to any peer
+      65001 65012, (stale)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (10.255.0.1)
+          Origin IGP, valid, external, bestpath-from-AS 65001, best (First path received)
+          Last update: Thu Oct 15 16:18:00 2026
+          Time until Graceful Restart stale route deleted: 28
+  --- [T0+1.5] leaf1 커널: 172.16.12.0/24 nhid 22 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  --- [T0+1.5] spine1 커널: 172.16.12.0/24 nhid 20 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 18 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  새 bgpd 확인: T0+5.2 (pid 292349)
+  --- [새 bgpd 직후] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 21
+    Paths: (1 available, best #1, table default)
+      spine1(10.1.1.0)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (10.255.0.1)
+          Origin IGP, valid, external, bestpath-from-AS 65001, best (First path received)
+          Last update: Thu Oct 15 16:20:07 2026
+  --- [새 bgpd 직후] leaf1 커널: 172.16.12.0/24 nhid 22 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  --- [새 bgpd 직후] spine1 커널: 172.16.12.0/24 nhid 20 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 18 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  A-h1-eth1.pcap                 5822 패킷
+  A-h2-eth1.pcap                 5084 패킷
+  A-leaf1-ctl.pcap                 57 패킷
+  A-leaf2-ctl.pcap                 55 패킷
+  B1-h1-eth1.pcap                6432 패킷
+  B1-h2-eth1.pcap                6312 패킷
+  B1-leaf1-ctl.pcap                57 패킷
+  B1-leaf2-ctl.pcap                57 패킷
+  B2-h1-eth1.pcap                6564 패킷
+  B2-h2-eth1.pcap                6564 패킷
+  B2-leaf1-ctl.pcap                52 패킷
+  B2-leaf2-ctl.pcap                52 패킷
+  B3-h1-eth1.pcap                6554 패킷
+  B3-h2-eth1.pcap                6554 패킷
+  B3-leaf1-ctl.pcap                52 패킷
+  B3-leaf2-ctl.pcap                52 패킷
+  C-h1-eth1.pcap                 7333 패킷
+  C-h2-eth1.pcap                 3522 패킷
+  C-leaf1-ctl.pcap                 83 패킷
+  C-leaf2-ctl.pcap                 83 패킷
+  D1-h1-eth1.pcap                4478 패킷
+  D1-h2-eth1.pcap                4384 패킷
+  D1-leaf1-ctl.pcap               155 패킷
+  D1-leaf2-ctl.pcap               155 패킷
+  D2-h1-eth1.pcap                6333 패킷
+  D2-h2-eth1.pcap                6122 패킷
+  D2-leaf1-ctl.pcap               366 패킷
+  D2-leaf2-ctl.pcap               355 패킷
+
+[1m=== Phase D2 결과 ===[0m
+  응답 없는 요청: 213 개 (0.01초 간격)
+  응답 공백 2.15초 (T0+6.14 ~ T0+8.30)
+  h2 에 닿은 요청이 끊긴 구간: 2.14초 (T0+6.14 ~ T0+8.29)
+  -- leaf1 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+30) --
+  T0 +0.004  10.1.1.0.49152 > 10.1.1.1.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +0.004  10.1.1.1.49152 > 10.1.1.0.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +6.073  10.1.1.0.49154 > 10.1.1.1.3784 BFD State Init (No Diagnostic)
+  T0 +6.073  10.1.1.1.49152 > 10.1.1.0.3784 BFD State Up (No Diagnostic)
+  T0 +6.073  10.1.1.0.49154 > 10.1.1.1.3784 BFD State Up (No Diagnostic)
+  T0 +6.074  10.1.1.1.34918 > 10.1.1.0.179 Open Message (1)
+  T0 +6.074  10.1.1.0.179 > 10.1.1.1.34918 Open Message (1)
+  T0 +6.074  10.1.1.1.179 > 10.1.1.0.42674 Open Message (1)
+  T0 +6.074  10.1.1.1.179 > 10.1.1.0.42674 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.074  10.1.1.0.42674 > 10.1.1.1.179 Open Message (1)
+  T0 +6.074  10.1.1.0.42674 > 10.1.1.1.179 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.075  10.1.1.1.179 > 10.1.1.0.42674 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.075  10.1.1.0.49154 > 10.1.1.1.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +6.075  10.1.1.1.49152 > 10.1.1.0.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +6.076  10.1.1.1.34918 > 10.1.1.0.179 Notification Message (3), Cease (6), subcode Unknown (9)
+  T0 +7.076  10.1.1.0.49156 > 10.1.1.1.3784 BFD State Init (No Diagnostic)
+  T0 +7.076  10.1.1.1.49152 > 10.1.1.0.3784 BFD State Up (No Diagnostic)
+  T0 +7.076  10.1.1.0.49156 > 10.1.1.1.3784 BFD State Up (No Diagnostic)
+  T0 +7.077  10.1.1.1.34922 > 10.1.1.0.179 Open Message (1)
+  T0 +7.077  10.1.1.0.42682 > 10.1.1.1.179 Open Message (1)
+  T0 +7.077  10.1.1.1.179 > 10.1.1.0.42682 Open Message (1)
+  T0 +7.077  10.1.1.0.179 > 10.1.1.1.34922 Open Message (1)
+  T0 +7.077  10.1.1.1.179 > 10.1.1.0.42682 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +7.077  10.1.1.0.42682 > 10.1.1.1.179 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +8.229  10.1.1.1.34922 > 10.1.1.0.179 Update Message (2)
+  T0 +8.229  10.1.1.1.34922 > 10.1.1.0.179 Update Message (2)
+  T0 +8.229  10.1.1.0.179 > 10.1.1.1.34922 Update Message (2)
+  T0 +8.272  10.1.1.0.179 > 10.1.1.1.34922 Update Message (2)
+  T0 +8.272  10.1.1.0.179 > 10.1.1.1.34922 Update Message (2)
+  T0 +8.272  10.1.1.0.179 > 10.1.1.1.34922 Update Message (2)
+  T0 +8.279  10.1.1.1.34922 > 10.1.1.0.179 Update Message (2)
+  T0 +8.279  10.1.1.1.34922 > 10.1.1.0.179 Update Message (2)
+  -- leaf1 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +0.002  10.1.1.0.179 > 10.1.1.1.34046: [F.],
+  T0 +0.004  10.1.1.1.34046 > 10.1.1.0.179: [F.],
+  T0 +6.073  10.1.1.1.34918 > 10.1.1.0.179: [S],
+  T0 +6.073  10.1.1.0.179 > 10.1.1.1.34918: [S.],
+  T0 +6.074  10.1.1.0.42674 > 10.1.1.1.179: [S],
+  T0 +6.074  10.1.1.1.179 > 10.1.1.0.42674: [S.],
+  T0 +6.075  10.1.1.0.42674 > 10.1.1.1.179: [F.],
+  T0 +6.075  10.1.1.1.179 > 10.1.1.0.42674: [F.],
+  T0 +6.076  10.1.1.1.34918 > 10.1.1.0.179: [F.],
+  T0 +6.076  10.1.1.0.179 > 10.1.1.1.34918: [F.],
+  T0 +7.077  10.1.1.1.34922 > 10.1.1.0.179: [S],
+  T0 +7.077  10.1.1.0.42682 > 10.1.1.1.179: [S],
+  -- leaf1 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +6.074  10.1.1.1.34918 > 10.1.1.0.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.074  10.1.1.1.34918 > 10.1.1.0.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.074  10.1.1.1.34918 > 10.1.1.0.179 Restart Flags: [none], Restart Time 30s
+  T0 +6.074  10.1.1.1.34918 > 10.1.1.0.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.074  10.1.1.0.179 > 10.1.1.1.34918 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.074  10.1.1.0.179 > 10.1.1.1.34918 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.074  10.1.1.0.179 > 10.1.1.1.34918 Restart Flags: [R], Restart Time 30s
+  T0 +6.074  10.1.1.0.179 > 10.1.1.1.34918 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.074  10.1.1.1.179 > 10.1.1.0.42674 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.074  10.1.1.1.179 > 10.1.1.0.42674 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.074  10.1.1.1.179 > 10.1.1.0.42674 Restart Flags: [none], Restart Time 30s
+  T0 +6.074  10.1.1.1.179 > 10.1.1.0.42674 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.074  10.1.1.1.179 > 10.1.1.0.42674 Notification Message (3), length: 21, Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.074  10.1.1.0.42674 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.074  10.1.1.0.42674 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.074  10.1.1.0.42674 > 10.1.1.1.179 Restart Flags: [R], Restart Time 30s
+  T0 +6.074  10.1.1.0.42674 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.074  10.1.1.0.42674 > 10.1.1.1.179 Notification Message (3), length: 21, Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.075  10.1.1.1.179 > 10.1.1.0.42674 Notification Message (3), length: 21, Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.076  10.1.1.1.34918 > 10.1.1.0.179 Notification Message (3), length: 23, Cease (6), subcode Unknown (9)
+  T0 +7.077  10.1.1.1.34922 > 10.1.1.0.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +7.077  10.1.1.1.34922 > 10.1.1.0.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +7.077  10.1.1.1.34922 > 10.1.1.0.179 Restart Flags: [none], Restart Time 30s
+  T0 +7.077  10.1.1.1.34922 > 10.1.1.0.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +7.077  10.1.1.0.42682 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +7.077  10.1.1.0.42682 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +7.077  10.1.1.0.42682 > 10.1.1.1.179 Restart Flags: [R], Restart Time 30s
+  T0 +7.077  10.1.1.0.42682 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +7.077  10.1.1.1.179 > 10.1.1.0.42682 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +7.077  10.1.1.1.179 > 10.1.1.0.42682 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  -- leaf2 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+30) --
+  T0 +0.004  10.1.1.2.49153 > 10.1.1.3.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +0.004  10.1.1.3.49152 > 10.1.1.2.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +6.083  10.1.1.2.49155 > 10.1.1.3.3784 BFD State Init (No Diagnostic)
+  T0 +6.083  10.1.1.3.49152 > 10.1.1.2.3784 BFD State Up (No Diagnostic)
+  T0 +6.083  10.1.1.2.49155 > 10.1.1.3.3784 BFD State Up (No Diagnostic)
+  T0 +6.083  10.1.1.3.49754 > 10.1.1.2.179 Open Message (1)
+  T0 +6.084  10.1.1.2.179 > 10.1.1.3.49754 Open Message (1)
+  T0 +6.084  10.1.1.3.179 > 10.1.1.2.49960 Open Message (1)
+  T0 +6.084  10.1.1.2.49960 > 10.1.1.3.179 Open Message (1)
+  T0 +6.084  10.1.1.3.179 > 10.1.1.2.49960 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.084  10.1.1.3.179 > 10.1.1.2.49960 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.084  10.1.1.2.49960 > 10.1.1.3.179 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.084  10.1.1.2.49155 > 10.1.1.3.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +6.084  10.1.1.3.49152 > 10.1.1.2.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +6.085  10.1.1.3.49754 > 10.1.1.2.179 Notification Message (3), Cease (6), subcode Unknown (9)
+  T0 +7.086  10.1.1.2.49157 > 10.1.1.3.3784 BFD State Init (No Diagnostic)
+  T0 +7.086  10.1.1.3.49152 > 10.1.1.2.3784 BFD State Up (No Diagnostic)
+  T0 +7.086  10.1.1.2.49157 > 10.1.1.3.3784 BFD State Up (No Diagnostic)
+  T0 +7.087  10.1.1.2.179 > 10.1.1.3.49756 Open Message (1)
+  T0 +7.087  10.1.1.3.179 > 10.1.1.2.49964 Open Message (1)
+  T0 +7.087  10.1.1.2.49964 > 10.1.1.3.179 Open Message (1)
+  T0 +7.087  10.1.1.3.49756 > 10.1.1.2.179 Open Message (1)
+  T0 +7.087  10.1.1.2.49964 > 10.1.1.3.179 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +7.087  10.1.1.3.179 > 10.1.1.2.49964 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +8.229  10.1.1.2.179 > 10.1.1.3.49756 Update Message (2)
+  T0 +8.238  10.1.1.3.49756 > 10.1.1.2.179 Update Message (2)
+  T0 +8.238  10.1.1.3.49756 > 10.1.1.2.179 Update Message (2)
+  T0 +8.238  10.1.1.2.179 > 10.1.1.3.49756 Update Message (2)
+  T0 +8.238  10.1.1.2.179 > 10.1.1.3.49756 Update Message (2)
+  T0 +8.238  10.1.1.2.179 > 10.1.1.3.49756 Update Message (2)
+  T0 +8.279  10.1.1.3.49756 > 10.1.1.2.179 Update Message (2)
+  T0 +8.279  10.1.1.3.49756 > 10.1.1.2.179 Update Message (2)
+  -- leaf2 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +0.002  10.1.1.2.179 > 10.1.1.3.39896: [F.],
+  T0 +0.004  10.1.1.3.39896 > 10.1.1.2.179: [F.],
+  T0 +6.083  10.1.1.3.49754 > 10.1.1.2.179: [S],
+  T0 +6.083  10.1.1.2.179 > 10.1.1.3.49754: [S.],
+  T0 +6.084  10.1.1.2.49960 > 10.1.1.3.179: [S],
+  T0 +6.084  10.1.1.3.179 > 10.1.1.2.49960: [S.],
+  T0 +6.084  10.1.1.2.49960 > 10.1.1.3.179: [R.],
+  T0 +6.085  10.1.1.3.49754 > 10.1.1.2.179: [F.],
+  T0 +6.085  10.1.1.2.179 > 10.1.1.3.49754: [F.],
+  T0 +7.087  10.1.1.2.49964 > 10.1.1.3.179: [S],
+  T0 +7.087  10.1.1.3.179 > 10.1.1.2.49964: [S.],
+  T0 +7.087  10.1.1.3.49756 > 10.1.1.2.179: [S],
+  -- leaf2 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +6.083  10.1.1.3.49754 > 10.1.1.2.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.083  10.1.1.3.49754 > 10.1.1.2.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.083  10.1.1.3.49754 > 10.1.1.2.179 Restart Flags: [none], Restart Time 30s
+  T0 +6.083  10.1.1.3.49754 > 10.1.1.2.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.084  10.1.1.2.179 > 10.1.1.3.49754 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.084  10.1.1.2.179 > 10.1.1.3.49754 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.084  10.1.1.2.179 > 10.1.1.3.49754 Restart Flags: [R], Restart Time 30s
+  T0 +6.084  10.1.1.2.179 > 10.1.1.3.49754 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.084  10.1.1.3.179 > 10.1.1.2.49960 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.084  10.1.1.3.179 > 10.1.1.2.49960 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.084  10.1.1.3.179 > 10.1.1.2.49960 Restart Flags: [none], Restart Time 30s
+  T0 +6.084  10.1.1.3.179 > 10.1.1.2.49960 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.084  10.1.1.2.49960 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.084  10.1.1.2.49960 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.084  10.1.1.2.49960 > 10.1.1.3.179 Restart Flags: [R], Restart Time 30s
+  T0 +6.084  10.1.1.2.49960 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.084  10.1.1.3.179 > 10.1.1.2.49960 Notification Message (3), length: 21, Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.084  10.1.1.2.49960 > 10.1.1.3.179 Notification Message (3), length: 21, Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.085  10.1.1.3.49754 > 10.1.1.2.179 Notification Message (3), length: 23, Cease (6), subcode Unknown (9)
+  T0 +7.087  10.1.1.2.179 > 10.1.1.3.49756 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +7.087  10.1.1.2.179 > 10.1.1.3.49756 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +7.087  10.1.1.2.179 > 10.1.1.3.49756 Restart Flags: [R], Restart Time 30s
+  T0 +7.087  10.1.1.2.179 > 10.1.1.3.49756 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +7.087  10.1.1.3.179 > 10.1.1.2.49964 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +7.087  10.1.1.3.179 > 10.1.1.2.49964 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +7.087  10.1.1.3.179 > 10.1.1.2.49964 Restart Flags: [none], Restart Time 30s
+  T0 +7.087  10.1.1.3.179 > 10.1.1.2.49964 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +7.087  10.1.1.2.49964 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +7.087  10.1.1.2.49964 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +7.087  10.1.1.2.49964 > 10.1.1.3.179 Restart Flags: [R], Restart Time 30s
+  -- leaf1 커널 경로 변화 (172.16.11/12.0/24) --
+  T0 +6.146  Deleted 172.16.12.0/24 nhid 22 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  T0 +8.282  172.16.12.0/24 nhid 22 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  -- spine1 커널 경로 변화 (172.16.11/12.0/24) --
+  -- leaf1 frr.log --
+  T0 +0.002  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Down NSF peer closed the session
+  T0 +0.002  BGP: 10.1.1.0(spine1) graceful restart timer started for 30 sec
+  T0 +0.002  BGP: 10.1.1.0(spine1) graceful restart stalepath timer started for 360 sec
+  T0 +0.004  BGP: zclient_bfd_session_update: 10.1.1.1/32 -> 10.1.1.0/32 (interface eth1) VRF default(0) (CPI bit no): Down
+  T0 +0.004  BGP: bfd_session_status_update: neighbor 10.1.1.0 vrf default(0) bfd state Up -> Down
+  T0 +0.004  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +6.072  BGP: zclient_bfd_session_update: 10.1.1.1/32 -> 10.1.1.0/32 (interface eth1) VRF default(0) (CPI bit no): Up
+  T0 +6.073  BGP: bfd_session_status_update: neighbor 10.1.1.0 vrf default(0) bfd state Down -> Up
+  T0 +6.073  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +6.073  BGP: 10.1.1.0: Sending GR Capability, Restart time 30 R-bit NOT-SET, N-bit SET
+  T0 +6.073  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +6.074  BGP: 10.1.1.0: Sending GR Capability, Restart time 30 R-bit NOT-SET, N-bit SET
+  T0 +6.074  BGP: %NOTIFICATION: sent to neighbor 10.1.1.0 6/7 (Cease/Connection Collision Resolution) 0 bytes 
+  T0 +6.074  BGP: 10.1.1.0 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.074  BGP: 10.1.1.0(spine1) OPEN has GR capability, Restart time 30 R-bit SET N-bit SET
+  T0 +6.074  BGP: 10.1.1.0 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.074  BGP: 10.1.1.0 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +6.074  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Up
+  T0 +6.074  BGP: 10.1.1.0(spine1) graceful restart timer stopped
+  T0 +6.074  BGP: %NOTIFICATION: sent to neighbor 10.1.1.0 6/7 (Cease/Connection Collision Resolution) 0 bytes 
+  T0 +6.075  BGP: zclient_bfd_session_update: 10.1.1.1/32 -> 10.1.1.0/32 (interface eth1) VRF default(0) (CPI bit no): Down
+  T0 +6.075  BGP: bfd_session_status_update: neighbor 10.1.1.0 vrf default(0) bfd state Up -> Down
+  T0 +6.075  BGP: %NOTIFICATION(Hard Reset): sent to neighbor 10.1.1.0 6/10 (Cease/BFD Down) 0 bytes 
+  T0 +6.075  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +6.075  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Down BGP Notification send
+  T0 +6.075  BGP: 10.1.1.0(spine1) graceful restart stalepath timer stopped
+  T0 +7.076  BGP: zclient_bfd_session_update: 10.1.1.1/32 -> 10.1.1.0/32 (interface eth1) VRF default(0) (CPI bit no): Up
+  T0 +7.076  BGP: bfd_session_status_update: neighbor 10.1.1.0 vrf default(0) bfd state Down -> Up
+  T0 +7.076  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +7.076  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +7.076  BGP: 10.1.1.0: Sending GR Capability, Restart time 30 R-bit NOT-SET, N-bit SET
+  T0 +7.076  BGP: 10.1.1.0: Sending GR Capability, Restart time 30 R-bit NOT-SET, N-bit SET
+  T0 +7.076  BGP: %NOTIFICATION: sent to neighbor 10.1.1.0 6/7 (Cease/Connection Collision Resolution) 0 bytes 
+  T0 +7.077  BGP: 10.1.1.0 OPEN has Graceful Restart capability (64), length 6
+  T0 +7.077  BGP: 10.1.1.0(spine1) OPEN has GR capability, Restart time 30 R-bit SET N-bit SET
+  T0 +7.077  BGP: 10.1.1.0 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +7.077  BGP: 10.1.1.0 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +7.077  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Up
+  T0 +8.228  BGP: send End-of-RIB for IPv4 Unicast to 10.1.1.0
+  T0 +8.271  BGP: EOR REQ 0, EOR RCV 0
+  -- spine1 frr.log --
+  T0 +5.051  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x5 peer flags 0x2002800000
+  T0 +5.051  BGP: VRF default: Global GR state is GLOBAL_HELPER
+  T0 +5.062  BGP: VRF default: Handle GR command GLOBAL_GR_CMD, current GR state GLOBAL_HELPER, new GR state GLOBAL_GR
+  T0 +5.063  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +5.063  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +5.064  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +5.072  BGP: zclient_bfd_session_update: 0.0.0.0/32 -> 10.1.1.1/32 VRF default(0) (CPI bit no): Down
+  T0 +5.072  BGP: bfd_session_status_update: neighbor 10.1.1.1 vrf default(0) bfd state Unknown -> Down
+  T0 +5.072  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +5.082  BGP: zclient_bfd_session_update: 0.0.0.0/32 -> 10.1.1.3/32 VRF default(0) (CPI bit no): Down
+  T0 +5.082  BGP: bfd_session_status_update: neighbor 10.1.1.3 vrf default(0) bfd state Unknown -> Down
+  T0 +5.082  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +6.072  BGP: zclient_bfd_session_update: 0.0.0.0/32 -> 10.1.1.1/32 (interface eth1) VRF default(0) (CPI bit no): Up
+  T0 +6.072  BGP: bfd_session_status_update: neighbor 10.1.1.1 vrf default(0) bfd state Down -> Up
+  T0 +6.072  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +6.073  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +6.073  BGP: 10.1.1.1: Sending GR Capability, Restart time 30 R-bit SET, N-bit SET
+  T0 +6.073  BGP: 10.1.1.1 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.073  BGP: 10.1.1.1(leaf1) OPEN has GR capability, Restart time 30 R-bit NOT-SET N-bit SET
+  T0 +6.073  BGP: 10.1.1.1 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.074  BGP: 10.1.1.1 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +6.074  BGP: 10.1.1.1: Sending GR Capability, Restart time 30 R-bit SET, N-bit SET
+  T0 +6.074  BGP: %NOTIFICATION: sent to neighbor 10.1.1.1 6/7 (Cease/Connection Collision Resolution) 0 bytes 
+  T0 +6.074  BGP: %ADJCHANGE: neighbor 10.1.1.1(leaf1) in vrf default Up
+  T0 +6.074  BGP: bgp_peer_bfd_update_source: address [0.0.0.0->10.1.1.1] to [10.1.1.0->10.1.1.1]
+  T0 +6.074  BGP: bgp_peer_bfd_update_source: interface none to eth1
+  T0 +6.075  BGP: %NOTIFICATION(Hard Reset): received from neighbor 10.1.1.1 6/10 (Cease/BFD Down) 0 bytes 
+  T0 +6.075  BGP: 10.1.1.1 [FSM] Receive_NOTIFICATION_message (Established->Clearing), fd 27
+  T0 +6.075  BGP: %ADJCHANGE: neighbor 10.1.1.1(leaf1) in vrf default Down BGP Notification received
+  T0 +6.076  BGP: zclient_bfd_session_update: 10.1.1.0/32 -> 10.1.1.1/32 (interface eth1) VRF default(0) (CPI bit no): Down
+  T0 +6.076  BGP: bfd_session_status_update: neighbor 10.1.1.1 vrf default(0) bfd state Up -> Down
+  T0 +6.076  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +6.082  BGP: zclient_bfd_session_update: 0.0.0.0/32 -> 10.1.1.3/32 (interface eth2) VRF default(0) (CPI bit no): Up
+  T0 +6.083  BGP: bfd_session_status_update: neighbor 10.1.1.3 vrf default(0) bfd state Down -> Up
+  T0 +6.083  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +6.083  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +6.083  BGP: 10.1.1.3: Sending GR Capability, Restart time 30 R-bit SET, N-bit SET
+  T0 +6.083  BGP: 10.1.1.3 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.083  BGP: 10.1.1.3(leaf2) OPEN has GR capability, Restart time 30 R-bit NOT-SET N-bit SET
+  T0 +6.083  BGP: 10.1.1.3 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+
+[1m=== 세션 재수립 대기 ===[0m
+  leaf1 Established 1/1
+
+[1m=== 랩 새로 띄우기 (down.sh → up.sh) ===[0m
+  6 노드 기동
+
+[1m=== 설정: GR fwk / BFD cpf / 단일경로 on ===[0m
+  bgpd_options: bgpd_options="  -A 127.0.0.1 -K"
+  리프 bgpd 기동 후 130초가 되도록 108초 대기
+  leaf1 Established 1/1, leaf2 1/1
+
+[1m=== Phase D3 — GR + BFD + check-control-plane-failure, 단일 경로, kill -9 ===[0m
+  leaf1 → spine1 GR 상태:
+    Local GR Mode: Restart*; Remote GR Mode: Restart; R bit: True; N bit: True; Received Restart Time(sec): 30; F bit: True
+  BFD 3339337800 10.1.2.1                                 10.1.2.0                                down           
+  BFD 233391231  10.1.1.1                                 10.1.1.0                                up             
+
+[1m=== T0 spine1 bgpd kill -9 (pid 295809) ===[0m
+  --- [T0+1.5] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 15
+    Paths: (1 available, best #1, table default)
+      Not advertised to any peer
+      65001 65012, (stale)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (10.255.0.1)
+          Origin IGP, valid, external, bestpath-from-AS 65001, best (First path received)
+          Last update: Thu Oct 15 16:21:03 2026
+          Time until Graceful Restart stale route deleted: 28
+  --- [T0+1.5] leaf1 커널: 172.16.12.0/24 nhid 21 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  --- [T0+1.5] spine1 커널: 172.16.12.0/24 nhid 19 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 18 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  새 bgpd 확인: T0+5.2 (pid 297455)
+  --- [새 bgpd 직후] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 21
+    Paths: (1 available, best #1, table default)
+      spine1(10.1.1.0)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (10.255.0.1)
+          Origin IGP, valid, external, bestpath-from-AS 65001, best (First path received)
+          Last update: Thu Oct 15 16:23:09 2026
+  --- [새 bgpd 직후] leaf1 커널: 172.16.12.0/24 nhid 21 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  --- [새 bgpd 직후] spine1 커널: 172.16.12.0/24 nhid 19 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 18 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  A-h1-eth1.pcap                 5822 패킷
+  A-h2-eth1.pcap                 5084 패킷
+  A-leaf1-ctl.pcap                 57 패킷
+  A-leaf2-ctl.pcap                 55 패킷
+  B1-h1-eth1.pcap                6432 패킷
+  B1-h2-eth1.pcap                6312 패킷
+  B1-leaf1-ctl.pcap                57 패킷
+  B1-leaf2-ctl.pcap                57 패킷
+  B2-h1-eth1.pcap                6564 패킷
+  B2-h2-eth1.pcap                6564 패킷
+  B2-leaf1-ctl.pcap                52 패킷
+  B2-leaf2-ctl.pcap                52 패킷
+  B3-h1-eth1.pcap                6554 패킷
+  B3-h2-eth1.pcap                6554 패킷
+  B3-leaf1-ctl.pcap                52 패킷
+  B3-leaf2-ctl.pcap                52 패킷
+  C-h1-eth1.pcap                 7333 패킷
+  C-h2-eth1.pcap                 3522 패킷
+  C-leaf1-ctl.pcap                 83 패킷
+  C-leaf2-ctl.pcap                 83 패킷
+  D1-h1-eth1.pcap                4478 패킷
+  D1-h2-eth1.pcap                4384 패킷
+  D1-leaf1-ctl.pcap               155 패킷
+  D1-leaf2-ctl.pcap               155 패킷
+  D2-h1-eth1.pcap                6333 패킷
+  D2-h2-eth1.pcap                6122 패킷
+  D2-leaf1-ctl.pcap               366 패킷
+  D2-leaf2-ctl.pcap               355 패킷
+  D3-h1-eth1.pcap                6335 패킷
+  D3-h2-eth1.pcap                6122 패킷
+  D3-leaf1-ctl.pcap               363 패킷
+  D3-leaf2-ctl.pcap               356 패킷
+
+[1m=== Phase D3 결과 ===[0m
+  응답 없는 요청: 213 개 (0.01초 간격)
+  응답 공백 2.16초 (T0+6.09 ~ T0+8.24)
+  h2 에 닿은 요청이 끊긴 구간: 2.16초 (T0+6.09 ~ T0+8.24)
+  -- leaf1 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+30) --
+  T0 +0.004  10.1.1.0.49152 > 10.1.1.1.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +0.004  10.1.1.1.49152 > 10.1.1.0.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +6.021  10.1.1.0.49154 > 10.1.1.1.3784 BFD State Init (No Diagnostic)
+  T0 +6.021  10.1.1.1.49152 > 10.1.1.0.3784 BFD State Up (No Diagnostic)
+  T0 +6.021  10.1.1.0.49154 > 10.1.1.1.3784 BFD State Up (No Diagnostic)
+  T0 +6.022  10.1.1.1.43310 > 10.1.1.0.179 Open Message (1)
+  T0 +6.022  10.1.1.0.179 > 10.1.1.1.43310 Open Message (1)
+  T0 +6.022  10.1.1.0.48616 > 10.1.1.1.179 Open Message (1)
+  T0 +6.022  10.1.1.0.48616 > 10.1.1.1.179 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.023  10.1.1.0.49154 > 10.1.1.1.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +6.023  10.1.1.1.49152 > 10.1.1.0.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +6.023  10.1.1.1.43310 > 10.1.1.0.179 Notification Message (3), Cease (6), subcode Unknown (9)
+  T0 +7.024  10.1.1.0.49156 > 10.1.1.1.3784 BFD State Init (No Diagnostic)
+  T0 +7.024  10.1.1.1.49152 > 10.1.1.0.3784 BFD State Up (No Diagnostic)
+  T0 +7.024  10.1.1.0.49156 > 10.1.1.1.3784 BFD State Up (No Diagnostic)
+  T0 +7.025  10.1.1.1.43312 > 10.1.1.0.179 Open Message (1)
+  T0 +7.025  10.1.1.1.179 > 10.1.1.0.48618 Open Message (1)
+  T0 +7.025  10.1.1.0.179 > 10.1.1.1.43312 Open Message (1)
+  T0 +7.025  10.1.1.0.48618 > 10.1.1.1.179 Open Message (1)
+  T0 +7.025  10.1.1.1.179 > 10.1.1.0.48618 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +7.025  10.1.1.0.48618 > 10.1.1.1.179 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +7.025  10.1.1.1.179 > 10.1.1.0.48618 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +7.025  10.1.1.0.48618 > 10.1.1.1.179 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +8.176  10.1.1.0.179 > 10.1.1.1.43312 Update Message (2)
+  T0 +8.176  10.1.1.1.43312 > 10.1.1.0.179 Update Message (2)
+  T0 +8.176  10.1.1.1.43312 > 10.1.1.0.179 Update Message (2)
+  T0 +8.186  10.1.1.0.179 > 10.1.1.1.43312 Update Message (2)
+  T0 +8.186  10.1.1.0.179 > 10.1.1.1.43312 Update Message (2)
+  T0 +8.186  10.1.1.0.179 > 10.1.1.1.43312 Update Message (2)
+  T0 +8.227  10.1.1.1.43312 > 10.1.1.0.179 Update Message (2)
+  T0 +8.227  10.1.1.1.43312 > 10.1.1.0.179 Update Message (2)
+  -- leaf1 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +0.002  10.1.1.0.179 > 10.1.1.1.52824: [F.],
+  T0 +0.013  10.1.1.1.52824 > 10.1.1.0.179: [F.],
+  T0 +6.021  10.1.1.1.43310 > 10.1.1.0.179: [S],
+  T0 +6.021  10.1.1.0.179 > 10.1.1.1.43310: [S.],
+  T0 +6.022  10.1.1.0.48616 > 10.1.1.1.179: [S],
+  T0 +6.022  10.1.1.1.179 > 10.1.1.0.48616: [S.],
+  T0 +6.023  10.1.1.0.48616 > 10.1.1.1.179: [F.],
+  T0 +6.023  10.1.1.1.179 > 10.1.1.0.48616: [R.],
+  T0 +6.023  10.1.1.1.43310 > 10.1.1.0.179: [F.],
+  T0 +6.023  10.1.1.0.179 > 10.1.1.1.43310: [F.],
+  T0 +7.024  10.1.1.1.43312 > 10.1.1.0.179: [S],
+  T0 +7.024  10.1.1.0.48618 > 10.1.1.1.179: [S],
+  -- leaf1 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +6.022  10.1.1.1.43310 > 10.1.1.0.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.022  10.1.1.1.43310 > 10.1.1.0.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.022  10.1.1.1.43310 > 10.1.1.0.179 Restart Flags: [none], Restart Time 30s
+  T0 +6.022  10.1.1.1.43310 > 10.1.1.0.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.022  10.1.1.0.179 > 10.1.1.1.43310 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.022  10.1.1.0.179 > 10.1.1.1.43310 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.022  10.1.1.0.179 > 10.1.1.1.43310 Restart Flags: [R], Restart Time 30s
+  T0 +6.022  10.1.1.0.179 > 10.1.1.1.43310 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.022  10.1.1.0.48616 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.022  10.1.1.0.48616 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.022  10.1.1.0.48616 > 10.1.1.1.179 Restart Flags: [R], Restart Time 30s
+  T0 +6.022  10.1.1.0.48616 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.022  10.1.1.0.48616 > 10.1.1.1.179 Notification Message (3), length: 21, Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.023  10.1.1.1.43310 > 10.1.1.0.179 Notification Message (3), length: 23, Cease (6), subcode Unknown (9)
+  T0 +7.025  10.1.1.1.43312 > 10.1.1.0.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +7.025  10.1.1.1.43312 > 10.1.1.0.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +7.025  10.1.1.1.43312 > 10.1.1.0.179 Restart Flags: [none], Restart Time 30s
+  T0 +7.025  10.1.1.1.43312 > 10.1.1.0.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +7.025  10.1.1.1.179 > 10.1.1.0.48618 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +7.025  10.1.1.1.179 > 10.1.1.0.48618 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +7.025  10.1.1.1.179 > 10.1.1.0.48618 Restart Flags: [none], Restart Time 30s
+  T0 +7.025  10.1.1.1.179 > 10.1.1.0.48618 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +7.025  10.1.1.0.179 > 10.1.1.1.43312 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +7.025  10.1.1.0.179 > 10.1.1.1.43312 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +7.025  10.1.1.0.179 > 10.1.1.1.43312 Restart Flags: [R], Restart Time 30s
+  T0 +7.025  10.1.1.0.179 > 10.1.1.1.43312 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +7.025  10.1.1.0.48618 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +7.025  10.1.1.0.48618 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +7.025  10.1.1.0.48618 > 10.1.1.1.179 Restart Flags: [R], Restart Time 30s
+  T0 +7.025  10.1.1.0.48618 > 10.1.1.1.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  -- leaf2 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+30) --
+  T0 +0.004  10.1.1.2.49153 > 10.1.1.3.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +0.004  10.1.1.3.49152 > 10.1.1.2.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +6.031  10.1.1.2.49155 > 10.1.1.3.3784 BFD State Init (No Diagnostic)
+  T0 +6.031  10.1.1.3.49152 > 10.1.1.2.3784 BFD State Up (No Diagnostic)
+  T0 +6.031  10.1.1.2.49155 > 10.1.1.3.3784 BFD State Up (No Diagnostic)
+  T0 +6.032  10.1.1.3.43726 > 10.1.1.2.179 Open Message (1)
+  T0 +6.032  10.1.1.2.179 > 10.1.1.3.43726 Open Message (1)
+  T0 +6.032  10.1.1.2.33902 > 10.1.1.3.179 Open Message (1)
+  T0 +6.032  10.1.1.2.33902 > 10.1.1.3.179 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.033  10.1.1.2.49155 > 10.1.1.3.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +6.033  10.1.1.3.49152 > 10.1.1.2.3784 BFD State Down (Neighbor Signaled Session Down)
+  T0 +6.033  10.1.1.3.43726 > 10.1.1.2.179 Notification Message (3), Cease (6), subcode Unknown (9)
+  T0 +7.034  10.1.1.2.49157 > 10.1.1.3.3784 BFD State Init (No Diagnostic)
+  T0 +7.034  10.1.1.3.49152 > 10.1.1.2.3784 BFD State Up (No Diagnostic)
+  T0 +7.034  10.1.1.2.49157 > 10.1.1.3.3784 BFD State Up (No Diagnostic)
+  T0 +7.034  10.1.1.2.33910 > 10.1.1.3.179 Open Message (1)
+  T0 +7.034  10.1.1.3.179 > 10.1.1.2.33910 Open Message (1)
+  T0 +7.034  10.1.1.3.43730 > 10.1.1.2.179 Open Message (1)
+  T0 +7.034  10.1.1.2.179 > 10.1.1.3.43730 Open Message (1)
+  T0 +7.034  10.1.1.2.33910 > 10.1.1.3.179 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +7.034  10.1.1.3.179 > 10.1.1.2.33910 Notification Message (3), Cease (6), subcode Connection Collision Resolution (7)
+  T0 +8.176  10.1.1.2.179 > 10.1.1.3.43730 Update Message (2)
+  T0 +8.185  10.1.1.3.43730 > 10.1.1.2.179 Update Message (2)
+  T0 +8.185  10.1.1.3.43730 > 10.1.1.2.179 Update Message (2)
+  T0 +8.186  10.1.1.2.179 > 10.1.1.3.43730 Update Message (2)
+  T0 +8.186  10.1.1.2.179 > 10.1.1.3.43730 Update Message (2)
+  T0 +8.186  10.1.1.2.179 > 10.1.1.3.43730 Update Message (2)
+  T0 +8.227  10.1.1.3.43730 > 10.1.1.2.179 Update Message (2)
+  T0 +8.227  10.1.1.3.43730 > 10.1.1.2.179 Update Message (2)
+  -- leaf2 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +0.002  10.1.1.2.179 > 10.1.1.3.42540: [F.],
+  T0 +0.002  10.1.1.3.42540 > 10.1.1.2.179: [F.],
+  T0 +6.032  10.1.1.3.43726 > 10.1.1.2.179: [S],
+  T0 +6.032  10.1.1.2.179 > 10.1.1.3.43726: [S.],
+  T0 +6.032  10.1.1.2.33902 > 10.1.1.3.179: [S],
+  T0 +6.032  10.1.1.3.179 > 10.1.1.2.33902: [S.],
+  T0 +6.033  10.1.1.2.33902 > 10.1.1.3.179: [F.],
+  T0 +6.033  10.1.1.3.179 > 10.1.1.2.33902: [R.],
+  T0 +6.033  10.1.1.3.43726 > 10.1.1.2.179: [F.],
+  T0 +6.034  10.1.1.2.179 > 10.1.1.3.43726: [F.],
+  T0 +7.034  10.1.1.2.33910 > 10.1.1.3.179: [S],
+  T0 +7.034  10.1.1.3.179 > 10.1.1.2.33910: [S.],
+  -- leaf2 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  T0 +6.032  10.1.1.3.43726 > 10.1.1.2.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.032  10.1.1.3.43726 > 10.1.1.2.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.032  10.1.1.3.43726 > 10.1.1.2.179 Restart Flags: [none], Restart Time 30s
+  T0 +6.032  10.1.1.3.43726 > 10.1.1.2.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.032  10.1.1.2.179 > 10.1.1.3.43726 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.032  10.1.1.2.179 > 10.1.1.3.43726 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.032  10.1.1.2.179 > 10.1.1.3.43726 Restart Flags: [R], Restart Time 30s
+  T0 +6.032  10.1.1.2.179 > 10.1.1.3.43726 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.032  10.1.1.2.33902 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +6.032  10.1.1.2.33902 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +6.032  10.1.1.2.33902 > 10.1.1.3.179 Restart Flags: [R], Restart Time 30s
+  T0 +6.032  10.1.1.2.33902 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +6.032  10.1.1.2.33902 > 10.1.1.3.179 Notification Message (3), length: 21, Cease (6), subcode Connection Collision Resolution (7)
+  T0 +6.033  10.1.1.3.43726 > 10.1.1.2.179 Notification Message (3), length: 23, Cease (6), subcode Unknown (9)
+  T0 +7.034  10.1.1.2.33910 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +7.034  10.1.1.2.33910 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +7.034  10.1.1.2.33910 > 10.1.1.3.179 Restart Flags: [R], Restart Time 30s
+  T0 +7.034  10.1.1.2.33910 > 10.1.1.3.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +7.034  10.1.1.3.179 > 10.1.1.2.33910 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +7.034  10.1.1.3.179 > 10.1.1.2.33910 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +7.034  10.1.1.3.179 > 10.1.1.2.33910 Restart Flags: [none], Restart Time 30s
+  T0 +7.034  10.1.1.3.179 > 10.1.1.2.33910 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +7.034  10.1.1.3.43730 > 10.1.1.2.179 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +7.034  10.1.1.3.43730 > 10.1.1.2.179 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +7.034  10.1.1.3.43730 > 10.1.1.2.179 Restart Flags: [none], Restart Time 30s
+  T0 +7.034  10.1.1.3.43730 > 10.1.1.2.179 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  T0 +7.034  10.1.1.2.179 > 10.1.1.3.43730 AFI IPv4 (1), SAFI Unicast (1)
+  T0 +7.034  10.1.1.2.179 > 10.1.1.3.43730 AFI IPv4 (1), SAFI Unicast (1), Send/Receive: Receive
+  T0 +7.034  10.1.1.2.179 > 10.1.1.3.43730 Restart Flags: [R], Restart Time 30s
+  T0 +7.034  10.1.1.2.179 > 10.1.1.3.43730 AFI IPv4 (1), SAFI Unicast (1), Forwarding state preserved: yes
+  -- leaf1 커널 경로 변화 (172.16.11/12.0/24) --
+  T0 +6.094  Deleted 172.16.12.0/24 nhid 21 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  T0 +8.237  172.16.12.0/24 nhid 21 via 10.1.1.0 dev eth1 proto bgp metric 20 
+  -- spine1 커널 경로 변화 (172.16.11/12.0/24) --
+  -- leaf1 frr.log --
+  T0 +0.002  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Down NSF peer closed the session
+  T0 +0.002  BGP: 10.1.1.0(spine1) graceful restart stalepath timer stopped
+  T0 +0.002  BGP: 10.1.1.0(spine1) graceful restart timer started for 30 sec
+  T0 +0.002  BGP: 10.1.1.0(spine1) graceful restart stalepath timer started for 360 sec
+  T0 +0.004  BGP: zclient_bfd_session_update: 10.1.1.1/32 -> 10.1.1.0/32 (interface eth1) VRF default(0) (CPI bit no): Down
+  T0 +0.004  BGP: bfd_session_status_update: neighbor 10.1.1.0 vrf default(0) bfd state Up -> Down
+  T0 +0.004  BGP: 10.1.1.0 BFD DOWN message ignored in the process of graceful restart when C bit is cleared
+  T0 +0.004  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +6.021  BGP: zclient_bfd_session_update: 10.1.1.1/32 -> 10.1.1.0/32 (interface eth1) VRF default(0) (CPI bit yes): Up
+  T0 +6.021  BGP: bfd_session_status_update: neighbor 10.1.1.0 vrf default(0) bfd state Down -> Up
+  T0 +6.021  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +6.021  BGP: 10.1.1.0: Sending GR Capability, Restart time 30 R-bit NOT-SET, N-bit SET
+  T0 +6.022  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +6.022  BGP: 10.1.1.0 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.022  BGP: 10.1.1.0(spine1) OPEN has GR capability, Restart time 30 R-bit SET N-bit SET
+  T0 +6.022  BGP: 10.1.1.0 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.022  BGP: 10.1.1.0 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +6.022  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Up
+  T0 +6.022  BGP: 10.1.1.0(spine1) graceful restart timer stopped
+  T0 +6.023  BGP: zclient_bfd_session_update: 10.1.1.1/32 -> 10.1.1.0/32 (interface eth1) VRF default(0) (CPI bit yes): Down
+  T0 +6.023  BGP: bfd_session_status_update: neighbor 10.1.1.0 vrf default(0) bfd state Up -> Down
+  T0 +6.023  BGP: %NOTIFICATION(Hard Reset): sent to neighbor 10.1.1.0 6/10 (Cease/BFD Down) 0 bytes 
+  T0 +6.023  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +6.023  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Down BGP Notification send
+  T0 +6.023  BGP: 10.1.1.0(spine1) graceful restart stalepath timer stopped
+  T0 +7.024  BGP: zclient_bfd_session_update: 10.1.1.1/32 -> 10.1.1.0/32 (interface eth1) VRF default(0) (CPI bit yes): Up
+  T0 +7.024  BGP: bfd_session_status_update: neighbor 10.1.1.0 vrf default(0) bfd state Down -> Up
+  T0 +7.024  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +7.024  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +7.024  BGP: 10.1.1.0: Sending GR Capability, Restart time 30 R-bit NOT-SET, N-bit SET
+  T0 +7.024  BGP: 10.1.1.0: Sending GR Capability, Restart time 30 R-bit NOT-SET, N-bit SET
+  T0 +7.025  BGP: %NOTIFICATION: sent to neighbor 10.1.1.0 6/7 (Cease/Connection Collision Resolution) 0 bytes 
+  T0 +7.025  BGP: 10.1.1.0 OPEN has Graceful Restart capability (64), length 6
+  T0 +7.025  BGP: 10.1.1.0(spine1) OPEN has GR capability, Restart time 30 R-bit SET N-bit SET
+  T0 +7.025  BGP: 10.1.1.0 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +7.025  BGP: 10.1.1.0 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +7.025  BGP: %NOTIFICATION: sent to neighbor 10.1.1.0 6/7 (Cease/Connection Collision Resolution) 0 bytes 
+  T0 +7.025  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Up
+  T0 +8.176  BGP: send End-of-RIB for IPv4 Unicast to 10.1.1.0
+  T0 +8.185  BGP: EOR REQ 0, EOR RCV 0
+  -- spine1 frr.log --
+  T0 +4.999  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x5 peer flags 0x2002800000
+  T0 +4.999  BGP: VRF default: Global GR state is GLOBAL_HELPER
+  T0 +5.011  BGP: VRF default: Handle GR command GLOBAL_GR_CMD, current GR state GLOBAL_HELPER, new GR state GLOBAL_GR
+  T0 +5.011  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +5.012  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +5.012  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +5.021  BGP: zclient_bfd_session_update: 0.0.0.0/32 -> 10.1.1.1/32 VRF default(0) (CPI bit no): Down
+  T0 +5.021  BGP: bfd_session_status_update: neighbor 10.1.1.1 vrf default(0) bfd state Unknown -> Down
+  T0 +5.021  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +5.031  BGP: zclient_bfd_session_update: 0.0.0.0/32 -> 10.1.1.3/32 VRF default(0) (CPI bit no): Down
+  T0 +5.031  BGP: bfd_session_status_update: neighbor 10.1.1.3 vrf default(0) bfd state Unknown -> Down
+  T0 +5.031  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +6.021  BGP: zclient_bfd_session_update: 0.0.0.0/32 -> 10.1.1.1/32 (interface eth1) VRF default(0) (CPI bit no): Up
+  T0 +6.021  BGP: bfd_session_status_update: neighbor 10.1.1.1 vrf default(0) bfd state Down -> Up
+  T0 +6.021  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +6.021  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +6.022  BGP: 10.1.1.1: Sending GR Capability, Restart time 30 R-bit SET, N-bit SET
+  T0 +6.022  BGP: 10.1.1.1 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.022  BGP: 10.1.1.1(leaf1) OPEN has GR capability, Restart time 30 R-bit NOT-SET N-bit SET
+  T0 +6.022  BGP: 10.1.1.1 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+  T0 +6.022  BGP: 10.1.1.1 Addr-family IPv4/unicast(afi/safi) Long-lived Graceful Restart capability stale time 0 sec
+  T0 +6.022  BGP: 10.1.1.1: Sending GR Capability, Restart time 30 R-bit SET, N-bit SET
+  T0 +6.022  BGP: %ADJCHANGE: neighbor 10.1.1.1(leaf1) in vrf default Up
+  T0 +6.022  BGP: %NOTIFICATION: sent to neighbor 10.1.1.1 6/7 (Cease/Connection Collision Resolution) 0 bytes 
+  T0 +6.022  BGP: bgp_peer_bfd_update_source: address [0.0.0.0->10.1.1.1] to [10.1.1.0->10.1.1.1]
+  T0 +6.022  BGP: bgp_peer_bfd_update_source: interface none to eth1
+  T0 +6.023  BGP: %NOTIFICATION(Hard Reset): received from neighbor 10.1.1.1 6/10 (Cease/BFD Down) 0 bytes 
+  T0 +6.023  BGP: 10.1.1.1 [FSM] Receive_NOTIFICATION_message (Established->Clearing), fd 27
+  T0 +6.023  BGP: %ADJCHANGE: neighbor 10.1.1.1(leaf1) in vrf default Down BGP Notification received
+  T0 +6.023  BGP: zclient_bfd_session_update: 10.1.1.0/32 -> 10.1.1.1/32 (interface eth1) VRF default(0) (CPI bit no): Down
+  T0 +6.023  BGP: bfd_session_status_update: neighbor 10.1.1.1 vrf default(0) bfd state Up -> Down
+  T0 +6.023  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +6.031  BGP: zclient_bfd_session_update: 0.0.0.0/32 -> 10.1.1.3/32 (interface eth2) VRF default(0) (CPI bit no): Up
+  T0 +6.031  BGP: bfd_session_status_update: neighbor 10.1.1.3 vrf default(0) bfd state Down -> Up
+  T0 +6.031  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +6.031  BGP: (unspec): Peer GR mode changed from PEER_HELPER to PEER_GLOBAL_INHERIT, GR flags 0x6 peer flags 0x3003010020
+  T0 +6.032  BGP: 10.1.1.3: Sending GR Capability, Restart time 30 R-bit SET, N-bit SET
+  T0 +6.032  BGP: 10.1.1.3 OPEN has Graceful Restart capability (64), length 6
+  T0 +6.032  BGP: 10.1.1.3(leaf2) OPEN has GR capability, Restart time 30 R-bit NOT-SET N-bit SET
+  T0 +6.032  BGP: 10.1.1.3 OPEN has Long-lived BGP Graceful Restart capability (71), length 7
+
+[1m=== 세션 재수립 대기 ===[0m
+  leaf1 Established 1/1
+
+[1m=== 랩 새로 띄우기 (down.sh → up.sh) ===[0m
+  6 노드 기동
+
+[1m=== 설정: GR fwk / BFD cpf / 단일경로 off ===[0m
+  bgpd_options: bgpd_options="  -A 127.0.0.1 -K"
+  리프 bgpd 기동 후 130초가 되도록 108초 대기
+  leaf1 Established 2/2, leaf2 2/2
+
+[1m=== Phase D4 — GR + BFD + check-control-plane-failure, ECMP, freeze ===[0m
+  요청 h1→h2: leaf1 → spine1   응답 h2→h1: leaf2 → spine1   얼릴 장비: spine1
+  leaf1 → spine1 GR 상태:
+    Local GR Mode: Restart*; Remote GR Mode: Restart; R bit: True; N bit: True; Received Restart Time(sec): 30; F bit: True
+  BFD 1800371294 10.1.1.1                                 10.1.1.0                                up             
+  BFD 3744131761 10.1.2.1                                 10.1.2.0                                up             
+
+[1m=== T0 spine1 먹통 (ip_forward=0 + docker pause, 링크는 up) ===[0m
+  --- [T0+12] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 19
+    Paths: (2 available, best #1, table default)
+      spine2(10.1.2.0)
+      65001 65012, (stale)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (10.255.0.1)
+          Origin IGP, valid, external, multipath, bestpath-from-AS 65001, best (Older Path)
+          Last update: Thu Oct 15 16:24:05 2026
+          Time until Graceful Restart stale route deleted: 25
+        10.1.2.0(spine2) from spine2(10.1.2.0) (10.255.0.2)
+          Origin IGP, valid, external, multipath, bestpath-from-AS 65002
+          Last update: Thu Oct 15 16:24:05 2026
+  --- [T0+12] leaf1 커널: 172.16.12.0/24 nhid 24 proto bgp metric 20 	nexthop via 10.1.1.0 dev eth1 weight 1 	nexthop via 10.1.2.0 dev eth2 weight 1 
+  --- [T0+12] spine1 커널: 172.16.12.0/24 nhid 18 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 17 via 10.1.1.1 dev eth1 proto bgp metric 20 
+  leaf1 → spine1:
+    BGP state = Idle
+    Graceful restart information:
+    The remaining time of restart timer is 24
+    The remaining time of stalepath timer is 354
+    Configured LLGR Stale Path Time(sec): 0
+    Last reset 00:00:05,  Notification sent (Hold Timer Expired)
+  --- [T0+15] leaf1 BGP 172.16.12.0/24 ---
+    BGP routing table entry for 172.16.12.0/24, version 19
+    Paths: (2 available, best #1, table default)
+      spine2(10.1.2.0)
+      65001 65012, (stale)
+        10.1.1.0(spine1) from spine1(10.1.1.0) (10.255.0.1)
+          Origin IGP, valid, external, multipath, bestpath-from-AS 65001, best (Older Path)
+          Last update: Thu Oct 15 16:24:05 2026
+          Time until Graceful Restart stale route deleted: 21
+        10.1.2.0(spine2) from spine2(10.1.2.0) (10.255.0.2)
+          Origin IGP, valid, external, multipath, bestpath-from-AS 65002
+          Last update: Thu Oct 15 16:24:05 2026
+  --- [T0+15] leaf1 커널: 172.16.12.0/24 nhid 24 proto bgp metric 20 	nexthop via 10.1.1.0 dev eth1 weight 1 	nexthop via 10.1.2.0 dev eth2 weight 1 
+  --- [T0+15] spine1 커널: 172.16.12.0/24 nhid 18 via 10.1.1.3 dev eth2 proto bgp metric 20  / 172.16.11.0/24 nhid 17 via 10.1.1.1 dev eth1 proto bgp metric 20 
+
+[1m=== T0+15 spine1 복구 ===[0m
+  A-h1-eth1.pcap                 5822 패킷
+  A-h2-eth1.pcap                 5084 패킷
+  A-leaf1-ctl.pcap                 57 패킷
+  A-leaf2-ctl.pcap                 55 패킷
+  B1-h1-eth1.pcap                6432 패킷
+  B1-h2-eth1.pcap                6312 패킷
+  B1-leaf1-ctl.pcap                57 패킷
+  B1-leaf2-ctl.pcap                57 패킷
+  B2-h1-eth1.pcap                6564 패킷
+  B2-h2-eth1.pcap                6564 패킷
+  B2-leaf1-ctl.pcap                52 패킷
+  B2-leaf2-ctl.pcap                52 패킷
+  B3-h1-eth1.pcap                6554 패킷
+  B3-h2-eth1.pcap                6554 패킷
+  B3-leaf1-ctl.pcap                52 패킷
+  B3-leaf2-ctl.pcap                52 패킷
+  C-h1-eth1.pcap                 7333 패킷
+  C-h2-eth1.pcap                 3522 패킷
+  C-leaf1-ctl.pcap                 83 패킷
+  C-leaf2-ctl.pcap                 83 패킷
+  D1-h1-eth1.pcap                4478 패킷
+  D1-h2-eth1.pcap                4384 패킷
+  D1-leaf1-ctl.pcap               155 패킷
+  D1-leaf2-ctl.pcap               155 패킷
+  D2-h1-eth1.pcap                6333 패킷
+  D2-h2-eth1.pcap                6122 패킷
+  D2-leaf1-ctl.pcap               366 패킷
+  D2-leaf2-ctl.pcap               355 패킷
+  D3-h1-eth1.pcap                6335 패킷
+  D3-h2-eth1.pcap                6122 패킷
+  D3-leaf1-ctl.pcap               363 패킷
+  D3-leaf2-ctl.pcap               356 패킷
+  D4-h1-eth1.pcap                2876 패킷
+  D4-h2-eth1.pcap                1180 패킷
+  D4-leaf1-ctl.pcap               157 패킷
+  D4-leaf2-ctl.pcap               158 패킷
+
+[1m=== Phase D4 결과 ===[0m
+  응답 없는 요청: 1696 개 (0.01초 간격)
+  응답 공백 17.07초 (T0+0.00 ~ T0+17.08)
+  h2 에 닿은 요청이 끊긴 구간: 17.07초 (T0+0.00 ~ T0+17.08)
+  -- leaf1 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+15) --
+  T0 +0.874  10.1.1.1.49152 > 10.1.1.0.3784 BFD State Down (Control Detection Time Expired)
+  T0 +7.958  10.1.1.1.53730 > 10.1.1.0.179 Notification Message (3), Hold Timer Expired (4)
+  -- leaf1 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +7.958  10.1.1.1.53730 > 10.1.1.0.179: [F.],
+  T0+17.068  10.1.1.1.53730 > 10.1.1.0.179: [R],
+  T0+17.359  10.1.1.1.51662 > 10.1.1.0.179: [S],
+  T0+17.359  10.1.1.0.47992 > 10.1.1.1.179: [S],
+  T0+17.359  10.1.1.1.179 > 10.1.1.0.47992: [S.],
+  T0+17.359  10.1.1.0.179 > 10.1.1.1.51662: [S.],
+  T0+17.360  10.1.1.0.47992 > 10.1.1.1.179: [F.],
+  T0+17.360  10.1.1.1.179 > 10.1.1.0.47992: [F.],
+  -- leaf1 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  -- leaf2 ↔ spine1 BGP·BFD (keepalive 제외, T0-1 ~ T0+15) --
+  T0 +0.935  10.1.1.3.49152 > 10.1.1.2.3784 BFD State Down (Control Detection Time Expired)
+  T0 +7.958  10.1.1.3.46002 > 10.1.1.2.179 Notification Message (3), Hold Timer Expired (4)
+  -- leaf2 ↔ spine1 TCP SYN/FIN/RST --
+  T0 +7.958  10.1.1.3.46002 > 10.1.1.2.179: [F.],
+  T0+17.068  10.1.1.3.46002 > 10.1.1.2.179: [R],
+  T0+17.131  10.1.1.2.42108 > 10.1.1.3.179: [S],
+  T0+17.131  10.1.1.3.36000 > 10.1.1.2.179: [S],
+  T0+17.131  10.1.1.3.179 > 10.1.1.2.42108: [S.],
+  T0+17.131  10.1.1.2.179 > 10.1.1.3.36000: [S.],
+  T0+17.132  10.1.1.2.42108 > 10.1.1.3.179: [F.],
+  T0+17.132  10.1.1.3.179 > 10.1.1.2.42108: [F.],
+  -- leaf2 ↔ spine1 OPEN 의 GR 능력 / End-of-RIB / NOTIFICATION 세부 --
+  -- leaf1 커널 경로 변화 (172.16.11/12.0/24) --
+  -- spine1 커널 경로 변화 (172.16.11/12.0/24) --
+  -- leaf1 frr.log --
+  T0 +0.873  BGP: zclient_bfd_session_update: 10.1.1.1/32 -> 10.1.1.0/32 (interface eth1) VRF default(0) (CPI bit no): Down
+  T0 +0.873  BGP: bfd_session_status_update: neighbor 10.1.1.0 vrf default(0) bfd state Up -> Down
+  T0 +0.873  BGP: 10.1.1.0 BFD DOWN message ignored in the process of graceful restart when C bit is cleared
+  T0 +0.873  BGP: zclient_bfd_session_update:   sessions updated: 1
+  T0 +7.957  BGP: %NOTIFICATION: sent to neighbor 10.1.1.0 4/0 (Hold Timer Expired) 0 bytes 
+  T0 +7.957  BGP: %ADJCHANGE: neighbor 10.1.1.0(spine1) in vrf default Down BGP Notification send
+  T0 +7.957  BGP: 10.1.1.0(spine1) graceful restart timer started for 30 sec
+  T0 +7.957  BGP: 10.1.1.0(spine1) graceful restart stalepath timer started for 360 sec
+  -- spine1 frr.log --
+
+[1m=== 세션 재수립 대기 ===[0m
+  leaf1 Established 2/2
+
+[1m=== 원복 — GR·BFD 끄고 링크 올림 (랩은 그대로 둔다. 지울 때는 down.sh) ===[0m
+
+[1m=== 설정: GR off / BFD off / 단일경로 off ===[0m
+  bgpd_options: bgpd_options="  -A 127.0.0.1"
+  leaf1 Established 2/2, leaf2 2/2

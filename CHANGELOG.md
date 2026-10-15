@@ -13,7 +13,7 @@
 
 | 버전 | 기간 | 한 줄 |
 |---|---|---|
-| [v0.16](#v016--roce-over-vxlan-2회차-dscpecmpmac-이동-준비-2026-10-14--10-15) | 2026-10-14 ~ 10-16 | 실험 16 2회차(장애1 정지 = BGP 굶김), 18 DSCP 소실, 19 VXLAN ECMP 엔트로피, 09 NAT 포트 고갈, 20 준비 |
+| [v0.16](#v016--roce-over-vxlan-2회차-dscpecmpmac-이동-nat-포트-고갈-bgp-gr-2026-10-14--10-16) | 2026-10-14 ~ 10-16 | 실험 16 2회차(장애1 정지 = BGP 굶김), 18 DSCP 소실, 19 VXLAN ECMP 엔트로피, 20 EVPN MAC 이동, 09 NAT 포트 고갈, 21 BGP GR |
 | [v0.15](#v015--roce-over-vxlan-ecn-2026-10-15) | 2026-10-15 | 실험 16 RoCE over VXLAN: ECN 전달 누락 (짧은 회차) |
 | [v0.14](#v014--실험-폴더-정리-2026-10-14) | 2026-10-14 | 완료 실험은 `_completed/`, 진행 중은 `_wip/`, 옛 01 HTTP+MTU 삭제 |
 | [v0.13](#v013--실험-정리-2026-10-10) | 2026-10-10 | 14·15·16을 계획 중으로, 13을 12의 R8로, 16을 14의 2부로 합침 |
@@ -32,7 +32,7 @@
 
 ---
 
-## v0.16 — RoCE over VXLAN 2회차, DSCP·ECMP·MAC 이동 준비 (2026-10-14 ~ 10-15)
+## v0.16 — RoCE over VXLAN 2회차, DSCP·ECMP·MAC 이동, NAT 포트 고갈, BGP GR (2026-10-14 ~ 10-16)
 
 ### 추가
 - 실험 16 2회차 `experiments/_wip/16-roce-vxlan-ecn/run2/`: 데스크톱에서 다른 구성(rxe 붙는 VRF g1~g4, 병목 300Mbit)으로 60초 × 3회. 트랙 A′(rxe + 실험 13 의 흉내 DCQCN) 추가, Step 1 에 4×4 디캡 ECN 표, 진단 스크립트 `diag-stall.sh`(미실행)
@@ -44,6 +44,8 @@
 - 실험 09 세션 테이블 고갈 (별도 소형 랩 natlab, 에이전트가 수행): SNAT 포트 10개에서 같은 목적지로 가는 새 연결만 SYN 5번 뒤 조용히 실패(NAT 뒤 0개, 흔적은 `insert_failed` 뿐), 다른 목적지 포트는 즉시 성공. TIME_WAIT 는 포트를 안 붙잡고, FIN 없이 사라진 연결(5일)·끝난 UDP(30초)가 붙잡음. 주소 3개 × 포트 10개 = 출발지 1개면 10, 10개면 28
 
 - 실험 20 EVPN MAC 이동: GARP 이사 0.48초·끊김 70ms, GARP·IPv6 없는 조용한 이사도 0.33초 — 옛 리프 철회 뒤 BUM 플러딩이 새 자리 VM 을 깨운다. 복제 MAC(0.5초마다 이동)은 FRR 이 1초 만에 감지하지만 기본값은 막지 않아 60초에 순번 243·EVPN 메시지 2,307, `freeze 30` 이면 251(−89%)
+
+- 실험 21 BGP Graceful Restart (별도 소형 FRR 랩 grlab, 에이전트가 수행): 스파인 bgpd 재시작 끊김 7.43초(GR 없음) → 1.22초(GR, 새 OPEN 의 F 비트 0) → 0초(`preserve-fw-state`, 리프 R 비트 미설정일 때). 같은 GR 이 스파인 freeze 를 38초 블랙홀(hold 8.2 + restart-time 30)로 늘리고, BFD 는 0.95초로 줄이지만 FRR 10.2.1 에서 무중단 재시작을 2.15초로 깸
 
 ### 변경
 - `run2/scripts/setup.sh`: spine2:eth3 을 내렸는지 state 파일이 아니라 실제 링크 상태로 판단 (재배포 뒤 파일만 남아 경로 고정이 풀렸던 일)
