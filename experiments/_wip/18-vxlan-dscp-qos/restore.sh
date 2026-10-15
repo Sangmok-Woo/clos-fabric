@@ -5,5 +5,6 @@ pkill -9 -f 'ib_write_(bw|lat) -d rxe_x' 2>/dev/null; pkill -9 -f 'iperf3 .*540[
 for p in $(pgrep -f "tcpdump .*18-vxlan-dscp-qos"); do kill $p; done
 vx_tos 0
 nsx spine1 tc qdisc del dev eth3 root 2>/dev/null
+tc qdisc del dev xg1 root 2>/dev/null
 echo "spine1 eth3: $(nsx spine1 tc qdisc show dev eth3 | head -1)"
 echo "leaf1 vni: $(dx leaf1 ip -d link show vni10010 | grep -o 'tos [^ ]*' || echo 'tos 기본(0)')"

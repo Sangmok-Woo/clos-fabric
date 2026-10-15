@@ -38,6 +38,8 @@
 - 실험 16 2회차 `experiments/_wip/16-roce-vxlan-ecn/run2/`: 데스크톱에서 다른 구성(rxe 붙는 VRF g1~g4, 병목 300Mbit)으로 60초 × 3회. 트랙 A′(rxe + 실험 13 의 흉내 DCQCN) 추가, Step 1 에 4×4 디캡 ECN 표, 진단 스크립트 `diag-stall.sh`(미실행)
 - 실험 18 `_wip/18-vxlan-dscp-qos/`, 19 `_wip/19-vxlan-ecmp-entropy/`, 20 `_wip/20-evpn-mac-mobility/`: 스크립트와 실행 전 예측 (16 run2 의 setup.sh 를 같이 쓴다)
 
+- 실험 18 VXLAN 바깥 DSCP 소실: 기본 `tos 0` 에서 RoCE 가 스파인의 RoCE 클래스를 못 타고 TCP 8흐름과 BE 줄에 섬 → 150 → 12Mbit/s, NAK 0 → 581, 지연 99% 42µs → 3.4ms. `tos inherit` 이면 그대로(150Mbit, NAK 0, 45µs), `tos 0x68` 고정이면 TCP 까지 RoCE 클래스로 몰려 다시 무너짐
+
 ### 변경
 - `run2/scripts/setup.sh`: spine2:eth3 을 내렸는지 state 파일이 아니라 실제 링크 상태로 판단 (재배포 뒤 파일만 남아 경로 고정이 풀렸던 일)
 - 처음 18번으로 만든 RoCE over VXLAN 데스크톱 회차를 노트북 1회차(16번)와 합쳐 `16-roce-vxlan-ecn/run2/` 로 옮김. 이어 만든 19·20·21 → 18·19·20 (17은 다른 작업이 쓰는 중)

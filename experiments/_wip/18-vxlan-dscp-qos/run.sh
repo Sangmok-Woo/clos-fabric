@@ -7,6 +7,9 @@
 #                                          1:20 = 나머지      (보장 100Mbit, 우선순위 1), 각 버퍼 256KB
 #   g1 → g3 RoCE (tclass 106 = DSCP 26 + ECT0)   +   g2·g4 → g3 TCP cubic 4흐름씩 (DSCP 0)
 #   S0 RoCE 혼자 / S1 tos 0(기본) / S2 tos inherit / S3 tos 0x68(고정) — 각각 처리량 30초 × 3회 + 지연 측정
+#   g1 의 RoCE 는 송신측(xg1)에서 ROCE_RATE(기본 150Mbit, burst 작게)로 묶는다. rxe 는 혼잡 제어가 없어 그대로 두면
+#   혼자서도 256KB 버퍼를 넘쳐 무너진다(첫 시도 S0: 64Mbit, 드랍 14만 — first-try-output.txt). 실제 RoCE NIC 의
+#   DCQCN 이 맞춰 놓았을 '자기 몫 안의 속도'를 흉내 내는 것이고, 그래야 클래스 분류의 효과만 남는다
 # 먼저: experiments/_wip/16-roce-vxlan-ecn/run2/scripts/setup.sh (g1~g4 VNI 10010 + rxe, 경로 spine1 고정)
 # 사용: run.sh [S0 S1 S2 S3]
 set -u
@@ -16,7 +19,7 @@ OUT=$H/capture; mkdir -p "$OUT"
 STEPS=${*:-S0 S1 S2 S3}
 [ $# -eq 0 ] && rm -rf "$OUT"/*
 exec > >(tee -a "$OUT/run-output.txt") 2>&1
-DUR=30; REPS=3
+DUR=30; REPS=3; ROCE_RATE=${ROCE_RATE:-150mbit}
 
 qos_on() {
   local d=eth3
@@ -51,10 +54,16 @@ for f in sys.argv[1:]:
     except Exception: pass
 print(f"{t:.0f}")' "$@"; }
 
+pace_roce() {  # xg1 의 RoCE 클래스(DSCP 26)를 ROCE_RATE 로, burst 는 패킷 몇 개 (실험 12 R5: burst 가 크면 소용없다)
+  sender_queue 1
+  tc class change dev xg1 parent 1: classid 1:10 htb rate $ROCE_RATE ceil $ROCE_RATE burst 15k cburst 15k quantum 60000
+}
+
 scen() {   # scen <id> <tos> <tcp 0|1> <제목>
   local id=$1 tos=$2 load=$3 L=$OUT/$1; mkdir -p "$L"
   say "$id  $4"
-  vx_tos $tos; qos_on
+  vx_tos $tos; qos_on; pace_roce
+  echo "  RoCE 송신 속도 제한 $ROCE_RATE (xg1)"
   # 바깥 DSCP 표본: spine1:eth3 에서 RoCE·TCP 200개씩
   nsenter -t "$(pid spine1)" -n tcpdump -i eth3 -s 128 -U -nn -c 400 -w "$L/spine1-eth3.pcap" udp port 4789 >/dev/null 2>&1 & local cp=$!
   echo "rep,roce_mbit,tcp_mbit,nak,retry,c10_MB,c10_drop,c20_MB,c20_drop" > "$L/bw.csv"
@@ -97,5 +106,6 @@ date
 for s in $STEPS; do $s; done
 vx_tos 0
 nsx spine1 tc qdisc del dev eth3 root 2>/dev/null
+tc qdisc del dev xg1 root 2>/dev/null
 for f in "$OUT"/*/*.pcap; do head_pcap "$f" 400; done
 date
