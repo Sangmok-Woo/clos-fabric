@@ -9,13 +9,17 @@
 #   E  정책 1 에서 큰 흐름 2개 × 20회: 둘이 같은 스파인에 부딪히는 비율과 그때 처리량
 #   Q  정책 1 에서 RoCE QP 1/2/4/8 (rxe 는 QP 마다 UDP 출발 포트가 다르다)
 #   S  정책 1 + vxlan srcport 범위를 한 개로 좁힘 → 엔트로피 0
+#   N  정책 1 + 네 리프 vxlan tos inherit — 커널 vxlan_get_route 는 tos 가 0 이 아니면 dst_cache 를 안 쓴다.
+#      그러면 흐름마다 경로를 새로 찾아 출발 포트 해시가 먹는가 (TCP 8흐름 + 큰 흐름 2개 × 10회)
+#   C  정책 1, TCP 1흐름씩 12번 — 매번 leaf1 의 경로 캐시를 비우고(ip route flush cache) 보낸다.
+#      P1 에서 흐름 8개가 전부 한 링크로 간 것이 vxlan 의 dst_cache(원격 VTEP 마다 경로 하나를 캐시) 때문인지 가린다
 # 먼저: experiments/_wip/16-roce-vxlan-ecn/run2/scripts/setup.sh. 18 이 내려 둔 spine2:eth3 은 이 장에서만 올렸다가 되돌린다
 # 사용: run.sh [P0 P1 P3 E Q S]
 set -u
 . "$(dirname "$0")/../16-roce-vxlan-ecn/run2/scripts/common.sh"
 H=$(cd "$(dirname "$0")" && pwd)
 OUT=$H/capture; mkdir -p "$OUT" "$H/state"
-STEPS=${*:-P0 P1 P3 E Q S}
+STEPS=${*:-P0 P1 P3 E Q S C}
 [ $# -eq 0 ] && rm -rf "$OUT"/*
 exec > >(tee -a "$OUT/run-output.txt") 2>&1
 G1=$(ip_of 1); G3=$(ip_of 3)
@@ -149,8 +153,58 @@ S() {
   fi
 }
 
+N() {
+  vx_tos inherit
+  pol_run N 1
+  local same=0 n=10
+  for k in $(seq $n); do
+    local pa=$((20000 + RANDOM % 20000)) pb=$((40001 + RANDOM % 20000))
+    for p in 5511 5512; do T timeout 20 iperf3 -s -1 -p $p --bind-dev vr3 >/dev/null 2>&1 & done
+    sleep 0.7; capboth te
+    timeout 20 docker exec rtool iperf3 -c $G3 -p 5511 --cport $pa --bind-dev vr1 -t 4 -J > $OUT/te-a.json 2>/dev/null &
+    timeout 20 docker exec rtool iperf3 -c $G3 -p 5512 --cport $pb --bind-dev vr1 -t 4 -J > $OUT/te-b.json 2>/dev/null
+    wait %% 2>/dev/null; sleep 0.3; capstop
+    python3 "$H/flows.py" "$OUT/te-eth1.pcap" "$OUT/te-eth2.pcap" $G1 > "$OUT/te-flows.txt"
+    local la lb ma mb
+    la=$(awk -v p=$pa '$1==p{print $2}' "$OUT/te-flows.txt"); lb=$(awk -v p=$pb '$1==p{print $2}' "$OUT/te-flows.txt")
+    ma=$(python3 -c 'import json,sys; print(round(json.load(open(sys.argv[1]))["end"]["sum_received"]["bits_per_second"]/1e6))' $OUT/te-a.json 2>/dev/null || echo 0)
+    mb=$(python3 -c 'import json,sys; print(round(json.load(open(sys.argv[1]))["end"]["sum_received"]["bits_per_second"]/1e6))' $OUT/te-b.json 2>/dev/null || echo 0)
+    [ "$la" = "$lb" ] && same=$((same + 1))
+    printf "  %2d  A :%-5s → %-4s %3s   B :%-5s → %-4s %3s   합 %3s %s
+" $k $pa "$la" $ma $pb "$lb" $mb $((ma + mb)) "$([ "$la" = "$lb" ] && echo '← 충돌')"
+  done
+  echo "  tos inherit 큰 흐름 2개: 충돌 $same/$n"
+  rm -f $OUT/te-*.pcap $OUT/te-*.json
+  vx_tos 0
+}
+
+C() {
+  say "C  정책 1 — TCP 1흐름 × 12번, 매번 leaf1 경로 캐시 비우기 (flush=1) / 안 비우기 (flush=0)"
+  uplinks; policy 1
+  echo "flush,trial,sport,link" > "$OUT/cache.csv"
+  for fl in 0 1; do
+    local c1n=0 c2n=0
+    for k in $(seq 12); do
+      [ $fl = 1 ] && nsx leaf1 ip route flush cache
+      T timeout 15 iperf3 -s -1 -p 5521 --bind-dev vr3 >/dev/null 2>&1 &
+      sleep 0.5
+      capboth c
+      timeout 15 docker exec rtool iperf3 -c $G3 -p 5521 --bind-dev vr1 -t 1 -J > $OUT/c.json 2>/dev/null
+      capstop
+      local sp; sp=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["start"]["connected"][0]["local_port"])' $OUT/c.json 2>/dev/null)
+      python3 "$H/flows.py" "$OUT/c-eth1.pcap" "$OUT/c-eth2.pcap" $G1 > "$OUT/c-flows.txt"
+      local l; l=$(awk -v p=$sp '$1==p{print $2}' "$OUT/c-flows.txt")
+      [ "$l" = eth1 ] && c1n=$((c1n + 1)); [ "$l" = eth2 ] && c2n=$((c2n + 1))
+      echo "$fl,$k,$sp,$l" >> "$OUT/cache.csv"
+      wait 2>/dev/null
+    done
+    echo "  캐시 비우기 $fl: spine1 $c1n · spine2 $c2n (12흐름)"
+  done
+  rm -f $OUT/c-*.pcap $OUT/c.json
+}
+
 date
-echo "id,policy,fields,mbit,eth1_MB,eth2_MB,flows_s1,flows_s2,flows_both" > "$OUT/policy.csv"
+[ -f "$OUT/policy.csv" ] || echo "id,policy,fields,mbit,eth1_MB,eth2_MB,flows_s1,flows_s2,flows_both" > "$OUT/policy.csv"
 for s in $STEPS; do $s; done
 "$H/restore.sh"
 date

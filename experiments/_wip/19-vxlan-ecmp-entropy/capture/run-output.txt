@@ -1,0 +1,153 @@
+leaf1 → leaf3 VTEP: 10.255.1.3 nhid 33 proto bgp metric 20 	nexthop via 10.1.1.0 dev eth1 weight 1 	nexthop via 10.1.2.0 dev eth2 weight 1 
+Thu Oct 15 23:54:42 KST 2026
+
+[1m=== P0  정책 0 — g1 → g3 TCP 8흐름 10초, 업링크 각 200Mbit ===[0m
+  합계 198 Mbit   eth1(spine1) 0MB   eth2(spine2) 250MB   흐름: spine1 0 · spine2 8 · 둘다 0
+
+[1m=== P1  정책 1 — g1 → g3 TCP 8흐름 10초, 업링크 각 200Mbit ===[0m
+  합계 198 Mbit   eth1(spine1) 0MB   eth2(spine2) 250MB   흐름: spine1 0 · spine2 8 · 둘다 0
+
+[1m=== P3  정책 3 fields 0x37 — g1 → g3 TCP 8흐름 10초, 업링크 각 200Mbit ===[0m
+  합계 198 Mbit   eth1(spine1) 0MB   eth2(spine2) 250MB   흐름: spine1 0 · spine2 8 · 둘다 0
+
+[1m=== E  정책 1 — 큰 흐름 2개(각각 다른 iperf3)를 20번, 출발 포트만 새로 ===[0m
+   1  흐름A :30700 → eth2  92 Mbit   흐름B :47171 → eth2 106 Mbit   합 198 ← 충돌
+   2  흐름A :26768 → eth2 101 Mbit   흐름B :50807 → eth2  98 Mbit   합 199 ← 충돌
+   3  흐름A :38094 → eth2 107 Mbit   흐름B :57825 → eth2  92 Mbit   합 199 ← 충돌
+   4  흐름A :33576 → eth2  94 Mbit   흐름B :57291 → eth2 105 Mbit   합 199 ← 충돌
+   5  흐름A :26521 → eth2  99 Mbit   흐름B :43415 → eth2 100 Mbit   합 199 ← 충돌
+   6  흐름A :27244 → eth2 102 Mbit   흐름B :51738 → eth2  97 Mbit   합 199 ← 충돌
+   7  흐름A :27086 → eth2 103 Mbit   흐름B :52596 → eth2  96 Mbit   합 199 ← 충돌
+   8  흐름A :28026 → eth2  92 Mbit   흐름B :41802 → eth2 107 Mbit   합 199 ← 충돌
+   9  흐름A :22536 → eth2  92 Mbit   흐름B :56897 → eth2 107 Mbit   합 199 ← 충돌
+  10  흐름A :26975 → eth2 104 Mbit   흐름B :43293 → eth2  95 Mbit   합 199 ← 충돌
+  11  흐름A :24991 → eth2  94 Mbit   흐름B :41558 → eth2 105 Mbit   합 199 ← 충돌
+  12  흐름A :36374 → eth2  90 Mbit   흐름B :45320 → eth2 109 Mbit   합 199 ← 충돌
+  13  흐름A :23312 → eth2  98 Mbit   흐름B :56343 → eth2 102 Mbit   합 200 ← 충돌
+  14  흐름A :24463 → eth2  92 Mbit   흐름B :45991 → eth2 107 Mbit   합 199 ← 충돌
+  15  흐름A :29749 → eth2 105 Mbit   흐름B :58174 → eth2  95 Mbit   합 200 ← 충돌
+  16  흐름A :23538 → eth2  94 Mbit   흐름B :57304 → eth2 105 Mbit   합 199 ← 충돌
+  17  흐름A :36592 → eth2  99 Mbit   흐름B :49097 → eth2 100 Mbit   합 199 ← 충돌
+  18  흐름A :21956 → eth2  99 Mbit   흐름B :41274 → eth2 100 Mbit   합 199 ← 충돌
+  19  흐름A :27663 → eth2 100 Mbit   흐름B :47009 → eth2  99 Mbit   합 199 ← 충돌
+  20  흐름A :34579 → eth2  99 Mbit   흐름B :51462 → eth2 100 Mbit   합 199 ← 충돌
+  충돌 20/20회 (합 평균 199 Mbit)   갈림 0/20회 (합 평균 0 Mbit)
+
+[1m=== Q  정책 1 — RoCE g1 → g3, QP 1·2·4·8개 (64KB, 10초) ===[0m
+  QP 1  57 Mbit   eth1 0MB  eth2 166MB   QP(안쪽 UDP 출발 포트): spine1 0 · spine2 1 · 둘다 0
+  QP 2  79 Mbit   eth1 0MB  eth2 190MB   QP(안쪽 UDP 출발 포트): spine1 0 · spine2 2 · 둘다 0
+  QP 4  91 Mbit   eth1 0MB  eth2 231MB   QP(안쪽 UDP 출발 포트): spine1 0 · spine2 4 · 둘다 0
+  QP 8  95 Mbit   eth1 0MB  eth2 243MB   QP(안쪽 UDP 출발 포트): spine1 0 · spine2 8 · 둘다 0
+
+[1m=== S  정책 1 + leaf1 vxlan srcport 49152-49153 (바깥 출발 포트 하나뿐) ===[0m
+  지금: srcport 0 0
+  실행 중에는 못 바꾼다: Error: Cannot change port range.
+cat: /sys/class/net/eth3/operstate: No such file or directory
+leaf1 해시 정책 0, fields 7, vxlan srcport 0 0, spine2 eth3 
+Thu Oct 15 23:59:20 KST 2026
+leaf1 → leaf3 VTEP: 10.255.1.3 nhid 33 proto bgp metric 20 	nexthop via 10.1.1.0 dev eth1 weight 1 	nexthop via 10.1.2.0 dev eth2 weight 1 
+Thu Oct 15 23:59:24 KST 2026
+
+[1m=== C  정책 1 — TCP 1흐름 × 12번, 매번 leaf1 경로 캐시 비우기 (flush=1) / 안 비우기 (flush=0) ===[0m
+  캐시 비우기 0: spine1 0 · spine2 0 (12흐름)
+  캐시 비우기 1: spine1 2 · spine2 1 (12흐름)
+cat: /sys/class/net/eth3/operstate: No such file or directory
+leaf1 해시 정책 0, fields 7, vxlan srcport 0 0, spine2 eth3 
+Fri Oct 16 00:00:51 KST 2026
+leaf1 → leaf3 VTEP: 10.255.1.3 nhid 33 proto bgp metric 20 	nexthop via 10.1.1.0 dev eth1 weight 1 	nexthop via 10.1.2.0 dev eth2 weight 1 
+Fri Oct 16 00:01:47 KST 2026
+
+[1m=== T  정책 1 — g1 → g3 TCP 8흐름 10초, 업링크 각 200Mbit ===[0m
+  합계 0 Mbit   eth1(spine1) 0MB   eth2(spine2) 0MB   흐름: spine1 0 · spine2 0 · 둘다 0
+   1  A :28170 →        0   B :55879 →        0   합   0 ← 충돌
+   2  A :39978 →        0   B :47252 →        0   합   0 ← 충돌
+   3  A :29607 →        0   B :46065 →        0   합   0 ← 충돌
+   4  A :29163 →        0   B :49337 →        0   합   0 ← 충돌
+   5  A :28659 →        0   B :48224 →        0   합   0 ← 충돌
+   6  A :36039 →        0   B :48976 →        0   합   0 ← 충돌
+   7  A :20493 →        0   B :42184 →        0   합   0 ← 충돌
+   8  A :20596 →        0   B :52368 →        0   합   0 ← 충돌
+   9  A :36122 →        0   B :51107 →        0   합   0 ← 충돌
+  10  A :35335 →        0   B :46081 →        0   합   0 ← 충돌
+  tos inherit 큰 흐름 2개: 충돌 10/10
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (319963) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (319964) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (322339) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (322374) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (325328) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (325329) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (325386) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (325389) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (325394) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (325395) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (325413) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (325414) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (326003) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (326004) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (326200) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (326201) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (326225) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (326226) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (326430) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (326458) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (328296) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (328454) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (328456) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (328560) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (328563) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (329002) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (329007) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (329088) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (329089) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (329291) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (329293) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (329693) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (329694) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (330426) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (330542) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (330545) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (332021) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (332023) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (333297) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (333323) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (336111) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (336112) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (336677) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (336701) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (337371) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (337372) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (338135) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (338137) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (338251) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (338252) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (339171) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (339242) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (339761) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (339762) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (339800) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (339801) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (339814) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (339815) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (340880) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: line 6: kill: (340881) - No such process
+/root/labs/clos-fabric/experiments/_wip/19-vxlan-ecmp-entropy/restore.sh: fork: retry: Resource temporarily unavailable
+leaf1 해시 정책 1, fields 7, vxlan srcport 0 0, spine2 eth3 down
+Fri Oct 16 00:07:05 KST 2026
+leaf1 → leaf3 VTEP: 10.255.1.3 nhid 31 proto bgp metric 20 	nexthop via 10.1.1.0 dev eth1 weight 1 	nexthop via 10.1.2.0 dev eth2 weight 1 
+Fri Oct 16 00:10:49 KST 2026
+
+[1m=== N  정책 1 — g1 → g3 TCP 8흐름 10초, 업링크 각 200Mbit ===[0m
+  합계 396 Mbit   eth1(spine1) 250MB   eth2(spine2) 250MB   흐름: spine1 2 · spine2 2 · 둘다 4
+   1  A :21202 → eth1  98   B :46386 → eth1 101   합 199 ← 충돌
+   2  A :27361 → eth1 199   B :51534 → eth2 198   합 397 
+   3  A :29973 → eth1 198   B :51550 → eth2 199   합 397 
+   4  A :25395 → eth1  99   B :48954 → eth1 100   합 199 ← 충돌
+   5  A :27799 → eth2 198   B :47480 → eth1 199   합 397 
+   6  A :31482 → eth1 110   B :50798 → eth1  88   합 198 ← 충돌
+   7  A :33475 → eth1 198   B :42229 → eth2 198   합 396 
+   8  A :26983 → eth2  92   B :43517 → eth2 107   합 199 ← 충돌
+   9  A :20949 → eth1 198   B :45000 → eth2 198   합 396 
+  10  A :23676 → eth1 103   B :45446 → eth1  97   합 200 ← 충돌
+  tos inherit 큰 흐름 2개: 충돌 5/10
+leaf1 해시 정책 0, fields 7, vxlan srcport 0 0, spine2 eth3 down
+Fri Oct 16 00:12:16 KST 2026
