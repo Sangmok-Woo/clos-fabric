@@ -52,33 +52,48 @@ for s in senders:
         thr[s], rtx[s] = [], []
 n = max((len(v) for v in thr.values()), default=0)
 
-# ping: 1초 칸마다 평균 RTT
+# 표본은 1초 + 표본 뜨는 시간마다 찍혀서 뒤로 밀린다. iperf 1초 칸 [S+i, S+i+1] 에 맞춰 시각으로 보간한다
+def interp(t, key):
+    if t <= rows[0]["t"]:
+        return key(rows[0])
+    for a, b in zip(rows, rows[1:]):
+        if a["t"] <= t <= b["t"]:
+            f = (t - a["t"]) / (b["t"] - a["t"]) if b["t"] > a["t"] else 0
+            return key(a) + f * (key(b) - key(a))
+    return key(rows[-1])
+ts = os.path.join(work, "t_start")
+if os.path.exists(ts):
+    S = float(open(ts).read())
+else:  # 기준 시각을 안 남긴 회차: iperf 시작 시각(정수 초)
+    S = float(json.load(open(os.path.join(work, f"iperf-{senders[0]}.json")))["start"]["timestamp"]["timesecs"])
+
 pings = []
 for line in open(os.path.join(work, "ping.txt")):
     m = re.match(r"\[(\d+\.\d+)\].*time=([\d.]+)", line)
     if m:
         pings.append((float(m.group(1)), float(m.group(2))))
-t0 = rows[0]["t"] if rows else 0
 rtt_bins = {}
-for ts, ms in pings:
-    rtt_bins.setdefault(int(ts - t0), []).append(ms)
+for t, ms in pings:
+    rtt_bins.setdefault(int(t - S), []).append(ms)
+
+K = {"marked": lambda r: r["marked"], "drops": lambda r: r["drops"], "backlog": lambda r: r["backlog"],
+     "ce": lambda r: r["rx"].get("InCEPkts", 0), "ect0": lambda r: r["rx"].get("InECT0Pkts", 0),
+     "dce": lambda r: txsum(r, "TCPDeliveredCE")}
+d = lambda k, i: round(interp(S + i + 1, K[k]) - interp(S + i, K[k]))
 
 out = os.path.join(data, f"{name}-r{rep}.csv")
 cols = ["sec", "thr_v1", "thr_x2", "thr_x4", "thr_sum", "retrans", "bn_marked", "bn_drops", "bn_backlog_B",
         "rx_ce", "rx_ect0", "tx_delivered_ce", "rtt_ms"]
 with open(out, "w", newline="") as fh:
-    w = csv.writer(fh)
+    w = csv.writer(fh, lineterminator="\n")
     w.writerow(cols)
     for i in range(n):
-        a, b = (rows[i], rows[i + 1]) if i + 1 < len(rows) else (rows[-1], rows[-1])
         v = [thr[s][i] if i < len(thr[s]) else 0 for s in senders]
-        rt = rtt_bins.get(i + 1, [])
+        rt = rtt_bins.get(i, [])
         w.writerow([i + 1, *[round(x, 2) for x in v], round(sum(v), 2),
                     sum(rtx[s][i] if i < len(rtx[s]) else 0 for s in senders),
-                    b["marked"] - a["marked"], b["drops"] - a["drops"], b["backlog"],
-                    b["rx"].get("InCEPkts", 0) - a["rx"].get("InCEPkts", 0),
-                    b["rx"].get("InECT0Pkts", 0) - a["rx"].get("InECT0Pkts", 0),
-                    txsum(b, "TCPDeliveredCE") - txsum(a, "TCPDeliveredCE"),
+                    d("marked", i), d("drops", i), round(interp(S + i + 1, K["backlog"])),
+                    d("ce", i), d("ect0", i), d("dce", i),
                     round(statistics.mean(rt), 3) if rt else ""])
 
 f, l = rows[0], rows[-1]
@@ -102,7 +117,7 @@ summ = {
 sp = os.path.join(data, "summary.csv")
 new = not os.path.exists(sp)
 with open(sp, "a", newline="") as fh:
-    w = csv.DictWriter(fh, fieldnames=list(summ))
+    w = csv.DictWriter(fh, fieldnames=list(summ), lineterminator="\n")
     if new:
         w.writeheader()
     w.writerow(summ)

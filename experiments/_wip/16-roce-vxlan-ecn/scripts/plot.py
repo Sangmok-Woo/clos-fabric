@@ -4,7 +4,7 @@
   rtt.png             v1 → v3 RTT 1초 시계열 (같은 네 조건)
   ce-outer-inner.png  스파인 마킹(바깥 CE) vs 수신측 안쪽 CE — 정상 / 장애1 / 대조군+장애1
   retrans-ece.png     재전송 수와 ECE(수신측 CE 를 돌려받아 송신이 확인한 수) — 조건별
-값은 3회 평균, 막대 위 숫자, 선 끝에 이름표."""
+값은 회차 평균, 막대 위 숫자, 선 끝에 이름표."""
 import csv, glob, os, statistics
 import matplotlib
 matplotlib.use("Agg")
@@ -41,11 +41,14 @@ def series(name, col):
     n = min(len(r) for r in runs)
     out = []
     for i in range(n):
-        v = [r[i] for r in runs if r[i] is not None]
-        out.append(statistics.mean(v) if v else None)
+        v = [r[i] for r in runs]
+        out.append(None if any(x is None for x in v) else statistics.mean(v))   # 한 회차라도 비면 빈 칸
     return out
 
 summ = list(csv.DictReader(open(os.path.join(DATA, "summary.csv"), encoding="utf-8")))
+REPS = max(int(r["rep"]) for r in summ)
+SECS = int(summ[0]["secs"])
+RUN = f"{SECS}초, {REPS}회 평균"
 def mean_of(name, col):
     v = [float(r[col]) for r in summ if r["name"] == name and r[col] != ""]
     return statistics.mean(v) if v else 0
@@ -66,10 +69,11 @@ def lines(col, title, ylabel, fname, ymax=None):
         y = series(name, col)
         if not y:
             continue
-        x = [i + 1 for i, v in enumerate(y) if v is not None]
-        yy = [v for v in y if v is not None]
+        x = list(range(1, len(y) + 1))
+        yy = [float("nan") if v is None else v for v in y]   # 응답 없는 칸은 선을 끊는다
         ax.plot(x, yy, color=color, linewidth=2, label=label)
-        ends.append([yy[-1], label, color, x[-1]])
+        last = [(xi, v) for xi, v in zip(x, y) if v is not None][-1]
+        ends.append([last[1], label, color, last[0]])
     # 선 끝 이름표 — 겹치지 않게 세로로 벌린다
     lo, hi = ax.get_ylim() if ymax is None else (0, ymax)
     gap = (hi - lo) * 0.07
@@ -108,12 +112,12 @@ def bars(groups, metrics, title, fname, ylabel):
     fig.savefig(os.path.join(FIG, fname), dpi=130)
     plt.close(fig)
 
-lines("thr_sum", "합계 처리량 (수신측, 3회 평균) — 병목 100Mbit", "Mbit/s", "throughput.png", ymax=110)
-lines("rtt_ms", "v1 → v3 RTT (ECT ping, 3회 평균)", "ms", "rtt.png")
+lines("thr_sum", f"합계 처리량 (수신측, {REPS}회 평균) — 병목 100Mbit", "Mbit/s", "throughput.png", ymax=110)
+lines("rtt_ms", f"v1 → v3 RTT (ECT ping, {REPS}회 평균, 빈 칸은 응답 없음)", "ms", "rtt.png")
 bars([("baseline", "정상"), ("fault-decap", "장애1"), ("control-decap", "대조군 + 장애1")],
      [("bn_marked", "병목이 찍은 CE (바깥 또는 안쪽)", "#2a78d6"), ("rx_ce", "수신 v3 가 받은 안쪽 CE", "#eb6834")],
-     "CE 마킹은 일어나는데 수신측에 닿는가 (60초, 3회 평균)", "ce-outer-inner.png", "패킷")
+     f"CE 마킹은 일어나는데 수신측에 닿는가 ({RUN})", "ce-outer-inner.png", "패킷")
 bars([(n, l.split(" ")[0]) for n, l, _ in COND],
      [("retrans", "재전송 (iperf3 송신측 합)", "#2a78d6"), ("tx_delivered_ce", "ECE 로 돌아온 CE (송신측)", "#eb6834")],
-     "재전송과 ECE (60초, 3회 평균)", "retrans-ece.png", "세그먼트")
+     f"재전송과 ECE ({RUN})", "retrans-ece.png", "세그먼트")
 print("figures:", sorted(os.listdir(FIG)))

@@ -1,0 +1,22 @@
+
+=== 장애·병목 해제 ===
+
+=== 트랙 A rxe 서버 ===
+
+=== 송신 서버 x2·x4 와 leaf2·leaf4 VNI ===
+
+=== 서버 설정 되돌리기 ===
+
+=== 경로 고정 해제 (spine2 eth3 up) ===
+
+=== 패브릭 확인 ===
+  leaf1 BGP Established: 4
+  leaf3 BGP Established: 4
+  leaf1 EVPN 경로(Type-2/3): 4
+  leaf1 → leaf3 VTEP 경로: 2 갈래
+  v1 → v3 0% packet loss
+  h1 → h3 0% packet loss
+  spine1 eth3 qdisc: noqueue 
+  leaf3 eth1 qdisc: noqueue 
+  leaf1 eth1 qdisc: noqueue 
+  leaf3 eth4 qdisc: noqueue 

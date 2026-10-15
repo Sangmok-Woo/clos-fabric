@@ -1,1 +1,9 @@
-rxe_e1 active_mtu: 4096 (5)
+rxe_e1 active_mtu: 1024 (VRF 장치 mtu 1500)
+== tclass 2 (변한 카운터만)
+  e1/completer_retry_err 22
+  e1/rcvd_pkts 640
+  e1/sent_pkts 43927
+  e3/duplicate_request 2731
+  e3/rcvd_pkts 43820
+  e3/sent_pkts 3373
+== tclass 0 (변한 카운터만)

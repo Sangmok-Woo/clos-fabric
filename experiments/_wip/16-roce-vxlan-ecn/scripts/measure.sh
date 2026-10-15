@@ -35,6 +35,7 @@ for r in $(seq 1 $REPS); do
   SP=$!
   nsx v1 ping -D -O -Q 2 -i 0.2 -w $((DUR + 2)) $RX_IP > "$W/ping.txt" 2>&1 &
   PP=$!
+  date +%s.%N > "$W/t_start"   # iperf 1초 칸과 표본을 시각으로 맞추는 기준
   for s in $SENDERS; do
     dx $s iperf3 -c $RX_IP -p ${PORT[$s]} -t $DUR -i 1 -J --get-server-output > "$W/iperf-$s.json" 2>&1 &
   done
