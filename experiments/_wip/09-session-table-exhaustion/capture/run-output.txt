@@ -1,0 +1,112 @@
+실행 2026-10-15 23:56:35  커널 6.6.114.1-microsoft-standard-WSL2
+nat 원래 값: net.netfilter.nf_conntrack_tcp_timeout_time_wait = 120 net.netfilter.nf_conntrack_tcp_timeout_established = 432000 net.netfilter.nf_conntrack_udp_timeout = 30 
+
+=== Phase 0 — 기준: 포트 범위 제한 없는 SNAT (10.9.100.1) ===
+  NAT 없이 cli2 -> srv:   000 connect=0.000000s total=2.002142s   (srv 는 안쪽 경로를 모른다)
+  SNAT 후 cli2 -> srv:    200 connect=0.000188s total=0.000628s
+  14:56:42 connect 50/50 ok  (0.51s, ctimeout 3s)
+  conntrack 엔트리(tcp) 51개, 서로 다른 (NAT주소:포트) 51개
+  엔트리 예 (안쪽 출발 포트 → 바깥 포트):
+    src=10.9.1.18 sport=54143 → dst=10.9.100.1 dport=54143
+    src=10.9.1.10 sport=34615 → dst=10.9.100.1 dport=34615
+    src=10.9.1.17 sport=55173 → dst=10.9.100.1 dport=55173
+  50개 붙잡힌 상태에서 새 curl: 200 connect=0.000114s total=0.000448s
+  conntrack -S 합계: insert_failed=0 drop=0 early_drop=0 clash_resolve=0  (netns 가 생긴 뒤 누적)
+
+=== Phase 1 — SNAT 포트 10개 (10.9.100.1:20000-20009) ===
+  14:56:47 connect 1/1 ok  (0.00s, ctimeout 3s)
+  ↑ cli2 의 '기존 사용자' 연결 1개 (1초마다 PING/PONG)
+  14:56:51 connect 9/20 ok  (3.20s, ctimeout 3.0s)
+  ↑ cli1 이 20개를 동시에 시도
+  conntrack 엔트리(tcp) 10개, 쓰인 바깥 포트 10개
+  바깥 포트 목록: 20000 20001 20002 20003 20004 20005 20006 20007 20008 20009 
+  cli2 의 SYN 재전송 설정: net.ipv4.tcp_syn_retries = 6 net.ipv4.tcp_syn_linear_timeouts = 4
+  새 연결 cli2 -> srv:80  ① 000 connect=0.000000s total=5.002750s
+                          ② 000 connect=0.000000s total=5.002894s
+  같은 서버 다른 포트 cli2 -> srv:8080  200 connect=0.000138s total=0.000488s
+  [p1-old] 14:57:04 alive 1/1
+  [p1] 14:57:03 alive 9/9
+  insert_failed 증가: 10   (curl 세 번 동안)
+  --- 30초 기다리는 curl 을 걸어 두고 5초 뒤 cli1 연결을 정상 종료(FIN)
+  cli1 종료 시각 +6.2s
+  기다린 curl: 200 connect=5.103085s total=5.103384s
+  p1-in.pcap                 93 패킷
+  p1-out.pcap                 4 패킷
+  NAT 앞(eth2)에서 본 cli2 의 SYN (첫 SYN 기준 시각):
+    + 0.000s  10.9.2.10.39066 > 10.9.100.10.80:
+    + 1.024s  10.9.2.10.39066 > 10.9.100.10.80:
+    + 2.052s  10.9.2.10.39066 > 10.9.100.10.80:
+    + 3.076s  10.9.2.10.39066 > 10.9.100.10.80:
+    + 5.184s  10.9.2.10.39076 > 10.9.100.10.80:
+    + 6.208s  10.9.2.10.39076 > 10.9.100.10.80:
+    + 7.232s  10.9.2.10.39076 > 10.9.100.10.80:
+    + 8.256s  10.9.2.10.39076 > 10.9.100.10.80:
+    +10.720s  10.9.2.10.56826 > 10.9.100.10.80:
+    +11.744s  10.9.2.10.56826 > 10.9.100.10.80:
+    +12.768s  10.9.2.10.56826 > 10.9.100.10.80:
+    +13.792s  10.9.2.10.56826 > 10.9.100.10.80:
+    +14.816s  10.9.2.10.56826 > 10.9.100.10.80:
+  NAT 뒤(eth3)로 나간 SYN (같은 시간):
+    10.9.100.1.20006 > 10.9.100.10.80:
+  conntrack -S 합계: insert_failed=48 drop=48 early_drop=0 clash_resolve=0
+
+=== Phase 2 — 닫힌 연결(TIME_WAIT)이 포트를 붙잡는가 (time_wait 타임아웃 120s 그대로) ===
+  14:57:14 connect 10/10 ok  (0.09s, ctimeout 3s)
+  열린 상태에서 새 curl: 000 connect=0.000000s total=3.001462s
+  ① 클라이언트가 먼저 닫음(FIN). 직후 엔트리: TIME_WAIT×10 
+    예: 117초 남음 TIME_WAIT src=10.9.1.10 sport=46047 → dst=10.9.100.1 dport=20002
+    TIME_WAIT 10개 남은 채 새 curl (1): 200 connect=0.000139s total=0.000439s
+    TIME_WAIT 10개 남은 채 새 curl (2): 200 connect=0.000101s total=0.000415s
+    TIME_WAIT 10개 남은 채 새 curl (3): 200 connect=0.000118s total=0.000413s
+    insert_failed 증가: 0   엔트리: TIME_WAIT×10 
+    새 curl 이 받은 바깥 포트: 20009 20001 20000 
+  ② 서버가 먼저 닫음 (srv.py 는 HTTP 응답 뒤 먼저 닫는다). cli1 에서 curl 10번
+    직후 엔트리: TIME_WAIT×6 
+    새 curl (1): 200 connect=0.000113s total=0.000409s
+    새 curl (2): 200 connect=0.000106s total=0.000435s
+    새 curl (3): 200 connect=0.000113s total=0.000412s
+    insert_failed 증가: 0   엔트리: TIME_WAIT×8 
+
+=== Phase 3 — 사라진 클라이언트: FIN 없이 사라지면 ESTABLISHED 타이머(432000s)가 포트를 붙잡는다 ===
+  14:57:26 connect 10/10 ok  (0.10s, ctimeout 3s)
+  cli1 이 선을 뽑힌 것처럼 사라짐 (cli1 송신 DROP + 프로세스 강제 종료 → FIN 이 못 나간다)
+  엔트리: ESTABLISHED×10  남은 시간 예: 431997s
+  +1.6s 새 curl: 000 connect=0.000000s total=3.002191s
+  ① established 타임아웃을 지금 20s 로 낮춰 본다 (이미 있는 엔트리에 먹히나?)
+    +29.9s 엔트리 10개, 남은 시간 예: 431968s, 새 curl: 000 connect=0.000000s total=3.002185s
+  ② 수동 삭제: conntrack -D --reply-port-dst 20000 (바깥 포트 하나만)
+    tcp      6 431965 ESTABLISHED src=10.9.1.15 dst=10.9.100.10 sport=38039 dport=80 src=10.9.100.10 dst=10.9.100.1 sport=80 dport=20000 [ASSURED] mark=0 use=1
+    +33.6s 새 curl: 200 connect=0.009430s total=0.009644s
+  ③ 처음부터 established=20s 로 두고 다시. 사라진 뒤 1초 curl 을 반복해 첫 성공 시각
+  14:58:04 connect 10/10 ok  (2.12s, ctimeout 3s)
+    사라진 뒤 +20.2s 에 첫 성공: 200 connect=0.015813s total=0.016066s  (시도 17번)
+
+=== Phase 4 — UDP(DNS): 질의 하나가 끝나도 udp 타임아웃 동안 포트를 붙잡는다 ===
+  --- udp 타임아웃 30s: cli1 이 질의 20개를 연달아 (매번 새 출발 포트, 1초 대기·재시도 없음)
+  결과 (o 성공 x 실패): ooooooooooxxxxxxxxxx   10/20  (+13.9s)
+  udp 엔트리 10개, 쓰인 바깥 포트 10개, insert_failed +10
+    예: 17초 남음 src=10.9.1.10 sport=55093 → dst=10.9.100.1 dport=20008 mark=0
+  p4-in.pcap                 30 패킷
+  p4-out.pcap                20 패킷
+  cli2(다른 사용자) 질의: 첫 질의 기준 +30.5s 에 첫 성공 (실패 12번 뒤)
+  --- udp 타임아웃 5s: cli1 이 질의 20개를 연달아 (매번 새 출발 포트, 1초 대기·재시도 없음)
+  결과 (o 성공 x 실패): ooooooooooxxxooooooo   17/20  (+6.9s)
+  udp 엔트리 7개, 쓰인 바깥 포트 7개, insert_failed +3
+    예: 3초 남음 src=10.9.1.10 sport=60565 → dst=10.9.100.1 dport=20008 mark=0
+  cli2(다른 사용자) 질의: 첫 질의 기준 +7.8s 에 첫 성공 (실패 0번 뒤)
+
+=== Phase 5 — 고치기: 범위·주소를 늘리면 몇 개까지 붙나 (동시 시도, ctimeout 3s) ===
+  주소 1개 × 포트 10개, 출발지 1개 시도  20 → 붙음 10/20    바깥 주소별: .1×10 
+  주소 1개 × 포트 100개, 출발지 10개 시도 150 → 붙음 100/150  바깥 주소별: .1×100 
+  주소 3개 × 포트 10개, 출발지 1개 시도  40 → 붙음 10/40    바깥 주소별: .3×10 
+  주소 3개 × 포트 10개, 출발지 10개 시도  40 → 붙음 28/40    바깥 주소별: .1×10 .2×8 .3×10 
+  주소 3개 규칙에서 안쪽 주소마다 어느 바깥 주소로 묶이나 (주소마다 :80 한 번씩):
+    10.9.1.10:80 → 10.9.100.3	10.9.1.11:80 → 10.9.100.3	10.9.1.12:80 → 10.9.100.1	10.9.1.13:80 → 10.9.100.2	10.9.1.14:80 → 10.9.100.1
+    10.9.1.15:80 → 10.9.100.3	10.9.1.16:80 → 10.9.100.3	10.9.1.17:80 → 10.9.100.2	10.9.1.18:80 → 10.9.100.1	10.9.1.19:80 → 10.9.100.3
+  포트 100개로 넓힌 뒤 cli1 20개 + cli2 새 curl:
+  14:59:40 connect 20/20 ok  (0.20s, ctimeout 3.0s)
+    200 connect=0.000137s total=0.000483s
+
+=== 원복 ===
+  nat: net.netfilter.nf_conntrack_tcp_timeout_time_wait = 120 net.netfilter.nf_conntrack_tcp_timeout_established = 432000 net.netfilter.nf_conntrack_udp_timeout = 30 
+  nat nft 규칙 줄 수: 0, eth3 주소: 1개, cli1 nft 줄 수: 0
