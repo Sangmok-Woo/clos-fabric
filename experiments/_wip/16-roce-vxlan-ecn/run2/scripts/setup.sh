@@ -23,7 +23,7 @@ modprobe ib_core; modprobe ib_uverbs
 lsmod | grep -q '^crc32_generic' || insmod /root/kbuild/crc32mod/crc32_generic.ko
 lsmod | grep -q '^rdma_rxe' || insmod /root/kbuild/linux/drivers/infiniband/sw/rxe/rdma_rxe.ko
 for m in tcp_dctcp cls_flower act_pedit act_csum sch_red sch_htb; do modprobe $m; done
-docker image inspect rdma-tools >/dev/null 2>&1 || docker build -q --network host -t rdma-tools "$EXP/../12-roce/tools"
+docker image inspect rdma-tools >/dev/null 2>&1 || docker build -q --network host -t rdma-tools "$EXP/../../12-roce/tools"
 docker ps --format '{{.Names}}' | grep -qx rtool || { docker rm -f rtool >/dev/null 2>&1
   docker run -d --name rtool --network host --privileged -v /dev/infiniband:/dev/infiniband -v /tmp:/tmp rdma-tools sleep infinity >/dev/null; }
 ip addr show dev lo | grep -q "$OOB/32" || ip addr add $OOB/32 dev lo

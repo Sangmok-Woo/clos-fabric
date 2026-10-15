@@ -5,8 +5,8 @@ set -u
 . "$(dirname "$0")/common.sh"
 
 say "1) 돌고 있는 도구 정리"
-pkill -TERM -f '18-roce-vxlan-ecn/scripts/(dcqcn|sampler).py' 2>/dev/null; sleep 1
-pkill -9 -f '18-roce-vxlan-ecn/scripts/(dcqcn|sampler).py' 2>/dev/null
+pkill -TERM -f 'run2/scripts/(dcqcn|sampler).py' 2>/dev/null; sleep 1
+pkill -9 -f 'run2/scripts/(dcqcn|sampler).py' 2>/dev/null
 pkill -9 -f 'ib_write_bw -d rxe_x' 2>/dev/null; pkill -9 -f 'iperf3 .*530[0-9]' 2>/dev/null
 for p in $(pgrep -f "tcpdump .*18-roce-vxlan-ecn"); do kill $p 2>/dev/null; done
 

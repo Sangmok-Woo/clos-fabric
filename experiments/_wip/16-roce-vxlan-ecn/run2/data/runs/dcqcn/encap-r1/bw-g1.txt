@@ -1,0 +1,22 @@
+ethernet_read_keys: Couldn't read remote address
+ Unable to read from socket/rdma_cm
+ Failed to exchange data between server and clients
+ WARNING: BW peak won't be measured in this run.
+---------------------------------------------------------------------------------------
+                    RDMA_Write BW Test
+ Dual-port       : OFF		Device         : rxe_x1
+ Number of qps   : 1		Transport type : IB
+ Connection type : RC		Using SRQ      : OFF
+ PCIe relax order: ON
+ ibv_wr* API     : OFF
+ TX depth        : 128
+ CQ Moderation   : 1
+ Mtu             : 4096[B]
+ Link type       : Ethernet
+ GID index       : 1
+ Max inline data : 0[B]
+ rdma_cm QPs	 : OFF
+ Data ex. method : Ethernet
+---------------------------------------------------------------------------------------
+ local address: LID 0000 QPN 0x001f PSN 0x9f1ab0 RKey 0x00104d VAddr 0x00744c5e17a000
+ GID: 00:00:00:00:00:00:00:00:00:00:255:255:10:10:10:101

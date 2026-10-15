@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 윈도우 원본 → WSL 실행 사본. WSL root 로 실행. 결과(data/·capture/)는 반대로 되가져온다: sync.sh back
-S=/mnt/c/Users/wsm02/Desktop/Claude/clos-fabric/experiments/18-roce-vxlan-ecn
-D=/root/labs/clos-fabric/experiments/18-roce-vxlan-ecn
+S=/mnt/c/Users/wsm02/Desktop/Claude/clos-fabric/experiments/_wip/16-roce-vxlan-ecn/run2
+D=/root/labs/clos-fabric/experiments/_wip/16-roce-vxlan-ecn/run2
 if [ "${1:-}" = back ]; then
   mkdir -p "$S/data" "$S/capture"
   cp -r "$D"/data/. "$S/data/"; [ -d "$D/capture" ] && cp -r "$D"/capture/. "$S/capture/"

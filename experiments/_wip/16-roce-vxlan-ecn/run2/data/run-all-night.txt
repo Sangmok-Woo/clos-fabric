@@ -1,0 +1,78 @@
+Wed Oct 14 22:38:42 KST 2026
+
+[1m=== tcp / base / r1 ===[0m
+  수신 269Mbit  스파인 표시 512932 드랍 21  리프병목 표시 0 드랍 0  바깥CE 512932 안쪽CE 512932  ECE 359463 CNP 0  goodput 92+85+100=277Mbit  retrans 17
+
+[1m=== tcp / decap / r1 ===[0m
+  수신 123Mbit  스파인 표시 673392 드랍 779  리프병목 표시 0 드랍 0  바깥CE 672690 안쪽CE 0  ECE 6 CNP 0  goodput 53+36+38=126Mbit  retrans 1075
+
+[1m=== tcp / encap / r1 ===[0m
+  수신 269Mbit  스파인 표시 0 드랍 42585  리프병목 표시 0 드랍 0  바깥CE 0 안쪽CE 0  ECE 6 CNP 0  goodput 108+88+80=277Mbit  retrans 42591
+
+[1m=== tcp / control / r1 ===[0m
+  수신 271Mbit  스파인 표시 0 드랍 0  리프병목 표시 185036 드랍 3  바깥CE 0 안쪽CE 583368  ECE 169756 CNP 0  goodput 96+98+92=286Mbit  retrans 7
+
+[1m=== tcp / base / r2 ===[0m
+  수신 268Mbit  스파인 표시 509749 드랍 16  리프병목 표시 0 드랍 0  바깥CE 509749 안쪽CE 509749  ECE 357372 CNP 0  goodput 99+99+78=276Mbit  retrans 22
+
+[1m=== tcp / decap / r2 ===[0m
+  수신 140Mbit  스파인 표시 776066 드랍 886  리프병목 표시 0 드랍 0  바깥CE 775276 안쪽CE 0  ECE 6 CNP 0  goodput 52+45+48=144Mbit  retrans 1225
+
+[1m=== tcp / encap / r2 ===[0m
+  수신 269Mbit  스파인 표시 0 드랍 41905  리프병목 표시 0 드랍 0  바깥CE 0 안쪽CE 0  ECE 6 CNP 0  goodput 100+99+77=276Mbit  retrans 41913
+
+[1m=== tcp / control / r2 ===[0m
+  수신 272Mbit  스파인 표시 0 드랍 0  리프병목 표시 184597 드랍 0  바깥CE 0 안쪽CE 582088  ECE 169317 CNP 0  goodput 96+94+96=286Mbit  retrans 2
+
+[1m=== tcp / base / r3 ===[0m
+  수신 269Mbit  스파인 표시 511087 드랍 20  리프병목 표시 0 드랍 0  바깥CE 511087 안쪽CE 511087  ECE 359987 CNP 0  goodput 96+95+85=276Mbit  retrans 19
+
+[1m=== tcp / decap / r3 ===[0m
+  수신 157Mbit  스파인 표시 846801 드랍 653  리프병목 표시 0 드랍 0  바깥CE 846233 안쪽CE 0  ECE 6 CNP 0  goodput 45+64+53=162Mbit  retrans 1025
+
+[1m=== tcp / encap / r3 ===[0m
+  수신 269Mbit  스파인 표시 0 드랍 40296  리프병목 표시 0 드랍 0  바깥CE 0 안쪽CE 0  ECE 6 CNP 0  goodput 91+87+99=277Mbit  retrans 40308
+
+[1m=== tcp / control / r3 ===[0m
+  수신 272Mbit  스파인 표시 0 드랍 0  리프병목 표시 188495 드랍 6  바깥CE 0 안쪽CE 581983  ECE 172613 CNP 0  goodput 97+93+97=287Mbit  retrans 9
+
+[1m=== dcqcn / base / r1 ===[0m
+  수신 224Mbit  스파인 표시 169650 드랍 9716  리프병목 표시 0 드랍 0  바깥CE 159946 안쪽CE 159946  ECE 0 CNP 26319  perftest 46+69+95=211Mbit  NAK 406  retry 451  CNP수신 26319
+
+[1m=== dcqcn / decap / r1 ===[0m
+  수신 190Mbit  스파인 표시 443795 드랍 102098  리프병목 표시 0 드랍 0  바깥CE 341884 안쪽CE 0  ECE 0 CNP 0  perftest 39+4+31=74Mbit  NAK 1398  retry 3162  CNP수신 0
+
+[1m=== dcqcn / encap / r1 ===[0m
+  수신 93Mbit  스파인 표시 0 드랍 198763  리프병목 표시 0 드랍 0  바깥CE 0 안쪽CE 0  ECE 0 CNP 0  perftest 0+10+12=23Mbit  NAK 1616  retry 2679  CNP수신 0
+
+[1m=== dcqcn / control / r1 ===[0m
+  수신 225Mbit  스파인 표시 0 드랍 0  리프병목 표시 165827 드랍 8230  바깥CE 0 안쪽CE 157600  ECE 0 CNP 25509  perftest 49+67+95=211Mbit  NAK 377  retry 415  CNP수신 25509
+
+[1m=== dcqcn / base / r2 ===[0m
+  수신 225Mbit  스파인 표시 166419 드랍 8543  리프병목 표시 0 드랍 0  바깥CE 157885 안쪽CE 157885  ECE 0 CNP 26067  perftest 53+69+93=215Mbit  NAK 372  retry 403  CNP수신 26067
+
+[1m=== dcqcn / decap / r2 ===[0m
+  수신 208Mbit  스파인 표시 531407 드랍 138909  리프병목 표시 0 드랍 0  바깥CE 392648 안쪽CE 0  ECE 0 CNP 0  perftest 5+44+110=159Mbit  NAK 1861  retry 3202  CNP수신 0
+
+[1m=== dcqcn / encap / r2 ===[0m
+  수신 116Mbit  스파인 표시 0 드랍 303135  리프병목 표시 0 드랍 0  바깥CE 0 안쪽CE 0  ECE 0 CNP 0  perftest 10+8+8=25Mbit  NAK 2173  retry 3792  CNP수신 0
+
+[1m=== dcqcn / control / r2 ===[0m
+  수신 227Mbit  스파인 표시 0 드랍 0  리프병목 표시 170403 드랍 8937  바깥CE 0 안쪽CE 161466  ECE 0 CNP 26124  perftest 50+67+98=216Mbit  NAK 384  retry 426  CNP수신 26124
+
+[1m=== dcqcn / base / r3 ===[0m
+  수신 226Mbit  스파인 표시 166139 드랍 9209  리프병목 표시 0 드랍 0  바깥CE 156945 안쪽CE 156945  ECE 0 CNP 25968  perftest 48+74+93=215Mbit  NAK 375  retry 419  CNP수신 25968
+
+[1m=== dcqcn / decap / r3 ===[0m
+  수신 208Mbit  스파인 표시 515731 드랍 121154  리프병목 표시 0 드랍 0  바깥CE 394768 안쪽CE 0  ECE 0 CNP 0  perftest 2+87+49=139Mbit  NAK 1632  retry 3158  CNP수신 0
+
+[1m=== dcqcn / encap / r3 ===[0m
+  수신 89Mbit  스파인 표시 0 드랍 200519  리프병목 표시 0 드랍 0  바깥CE 0 안쪽CE 0  ECE 0 CNP 0  perftest 0+11+10=21Mbit  NAK 1618  retry 2653  CNP수신 0
+
+[1m=== dcqcn / control / r3 ===[0m
+  수신 228Mbit  스파인 표시 0 드랍 0  리프병목 표시 172336 드랍 9030  바깥CE 0 안쪽CE 163307  ECE 0 CNP 26139  perftest 47+68+100=214Mbit  NAK 356  retry 408  CNP수신 26139
+
+[1m=== roce / base / r1 ===[0m
+  수신 211Mbit  스파인 표시 585483 드랍 189455  리프병목 표시 0 드랍 0  바깥CE 396174 안쪽CE 396174  ECE 0 CNP 0  perftest 47+56+24=126Mbit  NAK 2455  retry 3623
+
+[1m=== roce / decap / r1 ===[0m

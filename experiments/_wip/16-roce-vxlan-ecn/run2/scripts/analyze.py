@@ -122,6 +122,8 @@ def figs(S, T):
     for ax, tr in zip(axs, TRACKS):
         for sc in SCEN:
             d = T[(T.track == tr) & (T.scenario == sc)].groupby("sec")["rx_mbit"].mean()
+            if len(d) < 10:
+                continue
             ax.plot(d.index, d.values, color=COL[sc], lw=2, label=SNAME[sc])
             ax.annotate(sc, (d.index[-8], d.values[-8]), color=INK2, fontsize=8, xytext=(0, 4), textcoords="offset points")
         ax.axhline(300, color=INK2, lw=0.8, ls=":")
@@ -134,7 +136,7 @@ def figs(S, T):
     fig, axs = plt.subplots(1, len(TRACKS), figsize=(12, 4))
     for ax, tr in zip(axs, TRACKS):
         sc3 = ["base", "decap", "control"]
-        m = S[S.track == tr].groupby("scenario")[["sp_mark", "lf_mark", "outer_ce", "in_ce"]].mean()
+        m = S[S.track == tr].groupby("scenario")[["sp_mark", "lf_mark", "outer_ce", "in_ce"]].mean().reindex(["base", "decap", "control"]).fillna(0)
         x = range(len(sc3)); w = 0.38
         oc = [m.loc[s, "outer_ce"] for s in sc3]; ic = [m.loc[s, "in_ce"] for s in sc3]
         b1 = ax.bar([i - w / 2 - 0.01 for i in x], oc, w, color="#2a78d6", label="outer CE (leaf3 uplink)")

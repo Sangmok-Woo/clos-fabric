@@ -5,7 +5,7 @@
 #   gN = WSL 기본 netns 의 VRF vrN(10.10.10.10N/32, rxe_xN 이 붙는다) + veth xgN ↔ leafN:eth6(br10010 포트)
 #   병목(기본) spine1:eth3 egress = 바깥 헤더가 있는 VXLAN 구간.  spine2:eth3 은 내려서 경로를 spine1 로 고정
 #   병목(대조) leaf3:eth6 egress  = 디캡 이후 구간
-. "$(dirname "${BASH_SOURCE[0]}")/../../_tools/lab.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/../../../../_tools/lab.sh"
 EXP=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 ST=$EXP/state; mkdir -p "$ST"
 DATA=$EXP/data; mkdir -p "$DATA"
