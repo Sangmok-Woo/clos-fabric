@@ -4,6 +4,7 @@
 #   tclass 2 : GRH traffic class = ECT(0). 스파인이 CE 를 찍는다 → e3 가 CNP(opcode 0x81)를 보내는가, e1 이 줄이는가
 #   tclass 0 : 기본값 Not-ECT. RED 는 마킹 대신 버린다 → NAK 과 Go-Back-N 재전송
 # 캡처: leaf3 eth1 in (바깥 헤더), leaf3 eth6 양방향 (디캡 뒤 안쪽 RoCE). 카운터: rxe hw_counters 전후
+# 캡처는 nsx(함수) 대신 nsenter 로 바로 띄운다. 함수로 감싸면 $! 가 서브셸이라 kill 해도 tcpdump 가 남는다
 # 결과: data/rxe-track.csv, data/rxe-counters.txt, data/pcap/rxe-*.pcap (앞 200개)
 . "$(dirname "$0")/common.sh"
 DUR=${1:-10}
@@ -49,8 +50,8 @@ for tc in 2 0; do
   W=$CAP/rxe-tc$tc; rm -rf "$W"; mkdir -p "$W"
   say "tclass $tc — e1 → e3 ib_write_bw 64KB × ${DUR}초"
   hw > "$W/hw0"; read m0 d0 < <(red)
-  nsx leaf3 tcpdump -i eth1 -Q in -s 128 -U -nn -w "$W/up.pcap" 'udp dst port 4789' >/dev/null 2>&1 & p1=$!
-  nsx leaf3 tcpdump -i eth6 -s 128 -U -nn -w "$W/host.pcap" 'udp port 4791' >/dev/null 2>&1 & p2=$!
+  nsenter -t "$(pid leaf3)" -n tcpdump -i eth1 -Q in -s 128 -U -nn -w "$W/up.pcap" 'udp dst port 4789' >/dev/null 2>&1 & p1=$!
+  nsenter -t "$(pid leaf3)" -n tcpdump -i eth6 -s 128 -U -nn -w "$W/host.pcap" 'udp port 4791' >/dev/null 2>&1 & p2=$!
   sleep 1
   T sh -c "timeout $((DUR + 15)) ib_write_bw -d rxe_e3 -x 1 -p 18610 -D $DUR -F -s 65536 --tclass=$tc > /tmp/e3srv.txt 2>&1" & sp=$!
   sleep 1

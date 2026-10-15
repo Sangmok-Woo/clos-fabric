@@ -5,6 +5,7 @@
 #   leaf3 eth1 in  : 디캡 직전 — 스파인이 찍은 바깥 CE, 아직 안 바뀐 안쪽 ECN (tcpdump 는 tc ingress 보다 앞)
 #   leaf3 eth4 out : 디캡 뒤 v3 로 가는 안쪽 헤더
 # 변형: vxlan tos 기본(0) / inherit / 고정 0x20, 그리고 장애 1·2 를 건 상태
+# 캡처는 nsx(함수) 대신 nsenter 로 바로 띄운다. 함수로 감싸면 $! 가 서브셸이라 kill 해도 tcpdump 가 남는다
 # 결과: data/q1-signal.csv, data/pcap/q1-*.pcap (앞 200개)
 . "$(dirname "$0")/common.sh"
 DUR=${1:-8}
@@ -26,9 +27,9 @@ run() {   # run <변형 이름>
   local v=$1 W=$CAP/q1-$1; rm -rf "$W"; mkdir -p "$W"
   dx $RX pkill iperf3 2>/dev/null; sleep 0.3
   for s in $SENDERS; do dx $RX iperf3 -s -D -p ${PORT[$s]}; done; sleep 0.5
-  nsx leaf1 tcpdump -i eth1 -Q out -s 96 -U -nn -w "$W/l1up.pcap" 'udp dst port 4789 and dst host 10.255.1.3' >/dev/null 2>&1 & local p1=$!
-  nsx leaf3 tcpdump -i eth1 -Q in  -s 96 -U -nn -w "$W/l3up.pcap" 'udp dst port 4789' >/dev/null 2>&1 & local p2=$!
-  nsx leaf3 tcpdump -i eth4 -Q out -s 96 -U -nn -w "$W/l3host.pcap" 'tcp and dst host 10.10.10.33 and greater 200' >/dev/null 2>&1 & local p3=$!
+  nsenter -t "$(pid leaf1)" -n tcpdump -i eth1 -Q out -s 96 -U -nn -w "$W/l1up.pcap" 'udp dst port 4789 and dst host 10.255.1.3' >/dev/null 2>&1 & local p1=$!
+  nsenter -t "$(pid leaf3)" -n tcpdump -i eth1 -Q in  -s 96 -U -nn -w "$W/l3up.pcap" 'udp dst port 4789' >/dev/null 2>&1 & local p2=$!
+  nsenter -t "$(pid leaf3)" -n tcpdump -i eth4 -Q out -s 96 -U -nn -w "$W/l3host.pcap" 'tcp and dst host 10.10.10.33 and greater 200' >/dev/null 2>&1 & local p3=$!
   sleep 1
   local m0; m0=$(nsx spine1 tc -s -j qdisc show dev eth3 | python3 -c 'import json,sys; print(sum(q.get("marked",0) for q in json.load(sys.stdin)))')
   for s in $SENDERS; do dx $s iperf3 -c $RX_IP -p ${PORT[$s]} -t $DUR >/dev/null 2>&1 & done
@@ -53,5 +54,6 @@ settos 0
 "$EXP/scripts/inject-decap.sh" on >/dev/null; run fault-decap; "$EXP/scripts/inject-decap.sh" off >/dev/null
 "$EXP/scripts/inject-encap.sh" on >/dev/null; run fault-encap; "$EXP/scripts/inject-encap.sh" off >/dev/null
 dx $RX pkill iperf3 2>/dev/null
+pkill -f "tcpdump .*$CAP/q1-" 2>/dev/null   # 혹시 남은 캡처
 echo "  vxlan tos 원복: $(dx leaf1 ip -d link show $VX | grep -o 'tos [a-z0-9]*' || echo '기본(0)')"
 column -s, -t "$OUT"

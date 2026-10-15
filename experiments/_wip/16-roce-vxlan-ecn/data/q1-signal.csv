@@ -1,0 +1,31 @@
+variant,point,total,not_ect,ect1,ect0,ce,outer_tos_top
+default,leaf1-up outer,21409,0,0,21409,0,0x2
+default,leaf1-up inner,21409,0,0,21409,0,
+default,leaf3-up outer,64066,0,0,47575,16491,0x2
+default,leaf3-up inner,64066,0,0,64066,0,
+default,leaf3-host inner,64014,0,0,47532,16482,
+default,spine1 red marked,16491,,,,,
+tos-inherit,leaf1-up outer,21371,0,0,21371,0,0x2
+tos-inherit,leaf1-up inner,21371,0,0,21371,0,
+tos-inherit,leaf3-up outer,64153,1,0,47460,16692,0x2
+tos-inherit,leaf3-up inner,64153,0,1,64152,0,
+tos-inherit,leaf3-host inner,64102,0,0,47412,16690,
+tos-inherit,spine1 red marked,16692,,,,,
+tos-0x20,leaf1-up outer,20865,0,0,20865,0,0x22
+tos-0x20,leaf1-up inner,20865,0,0,20865,0,
+tos-0x20,leaf3-up outer,64036,0,0,47417,16619,0x22
+tos-0x20,leaf3-up inner,64036,0,0,64036,0,
+tos-0x20,leaf3-host inner,63988,0,0,47380,16608,
+tos-0x20,spine1 red marked,16619,,,,,
+fault-decap,leaf1-up outer,36749,0,0,36749,0,0x2
+fault-decap,leaf1-up inner,36749,0,0,36749,0,
+fault-decap,leaf3-up outer,66337,0,0,68,66269,0x3
+fault-decap,leaf3-up inner,66337,0,0,66337,0,
+fault-decap,leaf3-host inner,66283,0,0,66283,0,
+fault-decap,spine1 red marked,66942,,,,,
+fault-encap,leaf1-up outer,21838,21838,0,0,0,0x0
+fault-encap,leaf1-up inner,21838,0,0,21838,0,
+fault-encap,leaf3-up outer,64619,64619,0,0,0,0x0
+fault-encap,leaf3-up inner,64619,0,0,64619,0,
+fault-encap,leaf3-host inner,64565,0,0,64565,0,
+fault-encap,spine1 red marked,0,,,,,

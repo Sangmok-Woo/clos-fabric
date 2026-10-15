@@ -1,0 +1,11 @@
+name,rep,bottleneck,secs,thr_mbps,thr_min_sender,retrans,bn_marked,bn_drops,rx_ce,rx_ect0,rx_noect,tx_delivered_ce,tx_retrans_segs,decap_filter_hits,rtt_avg_ms,rtt_p99_ms,ping_loss
+baseline,1,spine1 eth3,30,92.7,30.8,0,62338,5,62338,177619,0,62296,0,0,2.68,3.32,0
+baseline,2,spine1 eth3,30,92.6,30.7,0,62091,13,62091,177725,0,62041,0,0,2.68,3.38,0
+fault-decap,1,spine1 eth3,30,44.7,6.0,754,113708,706,0,113245,0,0,772,113064,24.16,48.0,53
+fault-decap,2,spine1 eth3,30,47.9,5.1,806,121169,830,0,120643,0,0,811,120384,25.05,46.8,48
+fault-encap,1,spine1 eth3,30,92.7,30.3,9881,0,9894,0,240052,0,0,9885,0,2.09,2.97,7
+fault-encap,2,spine1 eth3,30,92.7,29.8,9822,0,9839,0,240034,0,0,9829,0,2.14,2.89,7
+control-base,1,leaf3 eth4,30,96.1,30.2,10,26241,4,70214,178071,0,70223,10,0,2.98,3.9,0
+control-base,2,leaf3 eth4,30,96.1,31.0,4,26353,0,69914,178380,0,69961,4,0,2.99,4.01,0
+control-decap,1,leaf3 eth4,30,95.8,31.2,6,26475,1,70483,177383,0,70466,6,0,3.04,4.13,0
+control-decap,2,leaf3 eth4,30,96.1,31.1,5,26525,1,70228,177963,0,70190,5,0,3.04,4.28,0

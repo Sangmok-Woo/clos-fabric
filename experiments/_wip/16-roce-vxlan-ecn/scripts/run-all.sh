@@ -5,6 +5,8 @@
 REPS=${1:-3}; DUR=${2:-60}; S=$EXP/scripts
 rm -f "$DATA"/summary.csv "$DATA"/{baseline,fault-decap,fault-encap,control-base,control-decap}-r*.csv
 
+# 중간에 끊긴 실행이 남긴 장애·병목부터 걷는다
+"$S/inject-decap.sh" off >/dev/null; "$S/inject-encap.sh" off >/dev/null; bn_off $BN_RXPORT
 "$S/setup.sh"
 "$S/q1-signal.sh" 8                                       # Step 1
 

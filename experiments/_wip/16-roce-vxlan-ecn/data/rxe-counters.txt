@@ -1,0 +1,1 @@
+rxe_e1 active_mtu: 4096 (5)
