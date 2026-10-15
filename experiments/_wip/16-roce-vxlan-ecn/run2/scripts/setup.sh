@@ -14,7 +14,7 @@ for n in spine1 spine2; do
   e=$(dx $n vtysh -c "show bgp summary json" 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin)["ipv4Unicast"]["peers"]; print(sum(p["state"]=="Established" for p in d.values()))')
   echo "  $n BGP Established $e/4"; [ "$e" = 4 ] || bad=1
 done
-[ -f "$ST/spine2-eth3-down" ] && bad=0   # 이미 setup 을 한 번 했다 (spine2 세션 하나는 일부러 내려 둔 상태)
+[ "$(dx spine2 cat /sys/class/net/eth3/operstate)" = down ] && bad=0   # 이미 setup 을 한 번 했다 (spine2 세션 하나는 일부러 내려 둔 상태)
 dx leaf1 vtysh -c "show evpn vni $VNI" >/dev/null 2>&1 || { echo "  leaf1 에 VNI $VNI 이 없다 — scripts/evpn-apply.sh 먼저"; bad=1; }
 [ $bad = 0 ] || { echo "베이스가 정상이 아니라 멈춘다"; exit 1; }
 
@@ -67,7 +67,8 @@ sleep 2
 T rdma link | grep rxe_x | sed 's/^/  /'
 
 say "4) 경로 고정 — spine2:eth3(→leaf3) 내림"
-if [ ! -f "$ST/spine2-eth3-down" ]; then
+# state 파일만 믿으면 안 된다: 패브릭을 재배포하면 eth3 은 다시 올라와 있는데 파일은 남는다 (2026-10-15 에 한 번 당함)
+if [ "$(dx spine2 cat /sys/class/net/eth3/operstate)" != down ]; then
   nsx spine2 ip link set eth3 down; touch "$ST/spine2-eth3-down"
 fi
 for i in $(seq 30); do

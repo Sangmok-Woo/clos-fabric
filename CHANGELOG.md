@@ -39,11 +39,13 @@
 - 실험 18 `_wip/18-vxlan-dscp-qos/`, 19 `_wip/19-vxlan-ecmp-entropy/`, 20 `_wip/20-evpn-mac-mobility/`: 스크립트와 실행 전 예측 (16 run2 의 setup.sh 를 같이 쓴다)
 
 ### 변경
+- `run2/scripts/setup.sh`: spine2:eth3 을 내렸는지 state 파일이 아니라 실제 링크 상태로 판단 (재배포 뒤 파일만 남아 경로 고정이 풀렸던 일)
 - 처음 18번으로 만든 RoCE over VXLAN 데스크톱 회차를 노트북 1회차(16번)와 합쳐 `16-roce-vxlan-ecn/run2/` 로 옮김. 이어 만든 19·20·21 → 18·19·20 (17은 다른 작업이 쓰는 중)
 
 ### 검증
 - 바깥 CE + 안쪽 Not-ECT 는 리눅스 vxlan 이 버린다 (`vxlan: non-ECT from … TOS=0x3`). 바깥 ECT(1) + 안쪽 ECT(0) → 안쪽 ECT(1). 안쪽 CE 는 바깥에 ECT(0)으로 (RFC 6040)
-- 장애 1 (TCP+DCTCP, 60초 × 3회): 276.5 → 144.1Mbit/s, ECE 358,941 → 6, srtt 0.9 → 22.3ms. 정지가 60초에 3~4번 반복, 정지 중 빈 큐 드랍 초당 1~4개(1회차와 같은 현상, 원인 미확정)
+- 장애 1 (TCP+DCTCP, 60초 × 3회): 276.5 → 144.1Mbit/s, ECE 358,941 → 6, srtt 0.9 → 22.3ms. 정지가 60초에 3~4번 반복
+- **장애 1 의 정지 = 컨트롤 플레인 붕괴.** 감속 없는 송신으로 RED 평균 큐가 최대 문턱 위에 머무는 동안 ECN RED 가 Not-ECT 인 스파인 BGP keepalive 를 버려 spine1–leaf3 세션이 hold timer 마다 끊김(40초에 3번). BGP·ARP 만 보호하면 정지 0, 처리량 181 → 278Mbit/s(정상과 같음) — 1회차의 "빈 큐에서 ping 무응답"도 이것
 - 흉내 DCQCN: 장애 1 −42%(CNP 26,118 → 0), **장애 2 −89%** — go-back-N 이라 TCP(장애 2 영향 없음)와 피해 순서가 뒤집힌다
 - rxe 그대로 트랙은 WSL 이 두 번 멈춰 정상 1회만 (합 145Mbit, 드랍 156,550, NAK 1,946)
 

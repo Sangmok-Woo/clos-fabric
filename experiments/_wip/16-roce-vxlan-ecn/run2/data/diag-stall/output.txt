@@ -1,0 +1,7 @@
+spine1→leaf3 BGP 끊긴 횟수(시작): 12 Established
+spine1→leaf3 BGP 끊긴 횟수(끝): 15 Established   (시작 12 Established)
+qdisc noqueue 0: root refcnt 2 
+ Sent 0 bytes 0 pkt (dropped 0, overlimits 0 requeues 0) 
+ backlog 0b 0p requeues 0
+--- Not-ECT 바깥: leaf1:eth1(병목 앞) 132   leaf3:eth1(병목 뒤) 438
+--- RED xstats 끝값: 45.95,0,454,627676,63,391,0
