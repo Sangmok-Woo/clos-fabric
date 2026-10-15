@@ -200,12 +200,16 @@ rxe 는 CE 에 반응하지 않으므로 **정상과 장애1 이 같다**(217 vs
 
 ## 원상복구
 
-각 시나리오 끝에서 병목·장애 필터는 run-all.sh 가 걷었다. 패브릭 전체 원복(`scripts/teardown.sh`: spine2:eth3 올림, VNI 확장·MTU·VRF·rxe 장치 제거, 상태 재확인)은 **WSL 이 멈춰 아직 돌리지 못했다.** WSL 을 다시 띄우면 컨테이너가 새로 올라오므로 실험 흔적(tc·VRF·eth6)은 남지 않지만, 확인 기록은 다음 실행 때 `data/teardown.txt` 로 남긴다.
+각 시나리오 끝에서 병목·장애 필터는 run-all.sh 가 걷었다. 18·19·20장까지 이 셋업 위에서 돌린 뒤, 마지막에 각 장의 restore.sh 와 [scripts/teardown.sh](scripts/teardown.sh) 로 전부 되돌리고 상태를 다시 쟀다 → [data/teardown.txt](data/teardown.txt) (2026-10-16 00:30).
+
+- BGP: 스파인 2대 IPv4·EVPN 각 4/4, 리프 4대 각 2/2 Established (spine2:eth3 다시 올림)
+- leaf1 → leaf3 VTEP 경로 넥스트홉 2개(ECMP 복구), leaf1 의 VNI 10010 원격 VTEP 은 원래대로 leaf3 하나 (leaf2·leaf4 의 실험용 VNI 제거)
+- v1 → v3(EVPN), h1 → h2·h3·h4 손실 0%, `check.sh` 전부 OK
+- 남은 qdisc 없음, WSL 기본 netns 의 `tcp_ecn=2`·`tcp_congestion_control=cubic`·`tcp_l3mdev_accept=0` 원래 값, VRF·rxe_x 장치·lo 의 192.0.2.18 제거
 
 ## 후속 과제
 
 - ~~`diag-stall.sh` — 정지 구간 빈 큐 드랍의 정체~~ → BGP keepalive 가 ECN RED 에 굶어 hold timer 만료 (위 추적)
 - 흉내 DCQCN 트랙의 짧은 정지(1~3초)도 같은 원인인지 — 같은 진단을 RoCE 로
 - htb 아래 RED 의 평균 큐가 빈 큐에서 줄지 않는 것을 커널 코드(`red_dequeue` 의 idle 시작 조건)로 확인
-- teardown 기록
 - 장애1 을 흐름 하나에만 걸어 공정성 보기 (1회차 후속 과제와 같음)

@@ -1,0 +1,30 @@
+
+=== 1) 돌고 있는 도구 정리 ===
+
+=== 2) tc (병목·장애·계수기) ===
+
+=== 3) 경로 고정 해제 — spine2:eth3 올림 ===
+
+=== 4) g1~g4 · rxe_x · VNI 확장 · MTU ===
+
+=== 5) 패브릭 상태 재확인 ===
+  spine1 ipv4Unicast 4 / 4
+  spine1 l2VpnEvpn 4 / 4
+  spine2 ipv4Unicast 4 / 4
+  spine2 l2VpnEvpn 4 / 4
+  leaf1 ipv4Unicast 2 / 2
+  leaf1 l2VpnEvpn 2 / 2
+  leaf2 ipv4Unicast 2 / 2
+  leaf2 l2VpnEvpn 2 / 2
+  leaf3 ipv4Unicast 2 / 2
+  leaf3 l2VpnEvpn 2 / 2
+  leaf4 ipv4Unicast 2 / 2
+  leaf4 l2VpnEvpn 2 / 2
+  leaf1 VNI 10010 원격 VTEP: 10.255.1.3 
+  leaf1 → leaf3 VTEP 경로: 10.255.1.3 nhid 31 proto bgp metric 20  	nexthop via 10.1.1.0 dev eth1 weight 1  	nexthop via 10.1.2.0 dev eth2 weight 1  
+  v1 → v3 (EVPN): 3 packets transmitted, 3 packets received, 0% packet loss
+  h1 → 172.16.12.10: 2 packets transmitted, 2 packets received, 0% packet loss
+  h1 → 172.16.13.10: 2 packets transmitted, 2 packets received, 0% packet loss
+  h1 → 172.16.14.10: 2 packets transmitted, 2 packets received, 0% packet loss
+  남은 tc: spine1 eth3 []  leaf3 eth1 []
+  ip rule: 0:	from all iif loopback0 ipproto tcp lookup local;0:	from all iif loopback0 ipproto udp lookup local;1:	from all ipproto tcp lookup 127;1:	from all ipproto udp lookup 127;1:	from all ipproto tcp look
