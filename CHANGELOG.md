@@ -38,6 +38,7 @@
 ### 추가
 - 실험 18 `experiments/_wip/18-evpn-esi-lag/`: 서버 hmh 를 leaf1·leaf2 에 bond(LACP)로 한 줄씩, 두 리프에 같은 ES(FRR EVPN-MH). VLAN 20 / VNI 10020 / 10.10.20.0/24, RT 65000:10020. 서버 두 대(hmh, hrem)는 토폴로지 밖에서 setup.sh 가 붙이고 restore.sh 가 걷어 낸다 (베이스 설정 변경 없음)
 - 단방향 UDP 탐침(흐름 4개 × 10ms), 50ms 상태 감시, 캡처 네 곳을 합친 흐름 그림(`img/*.svg`)
+- 실험 18 Wireshark 화면 4장(`img/*.png`): 정상 상태 흐름 분산, leaf1 루프백 철회 UPDATE, LACP 0x07 → 0x3f 대기, 업링크 죽은 leaf1으로 나가는 ARP 응답
 
 ### 검증
 - leaf1 전체 down: 원격 → 서버 흐름 절반이 0.12~0.13초, 서버 → 원격 0.01초 이하. ES 없이 leaf1 에만 꽂은 대조군은 장애 15~17초 내내 전 흐름

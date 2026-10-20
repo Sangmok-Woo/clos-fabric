@@ -60,6 +60,10 @@ experiments/_wip/18-evpn-esi-lag/restore.sh           # 원상 복구
 - leaf3이 받은 Type-1은 리프마다 per-ES(EthTag 4294967295, `ESI-label-Rt`) + per-EVI(EthTag 0) 두 개, 스파인 두 경로라 8줄. Type-4(ES 경로, DF 선출용)는 리프마다 하나씩 4줄.
 - 흐름 8개를 흘려 보면 원격 → hmh는 leaf3이 흐름마다 leaf1·leaf2 중 하나를 고르고(5:3), hmh → 원격은 bond 해시가 4:4로 나눈다([capture/run-output.txt](capture/run-output.txt) Step 1). 리프와 스파인의 짝은 늘 같다(leaf3 → leaf1은 spine1, → leaf2는 spine2). 리눅스 vxlan이 원격 VTEP마다 경로를 캐시하기 때문이다(01장에서 본 현상).
 
+![leaf3 두 업링크를 합친 캡처: 흐름마다 바깥 VTEP이 갈린다](img/01-step1-flows-split.png)
+
+leaf3의 두 업링크 캡처를 합친 화면(`mergecap -I none`, 0 = spine1 쪽 eth1, 1 = spine2 쪽 eth2). 같은 10ms 안에 흐름 40000·40001·40007은 바깥 VTEP `10.255.1.2`(leaf2)로 spine2를, 40002~40006은 `10.255.1.1`(leaf1)로 spine1을 탄다. 안쪽 목적지는 모두 hmh(10.10.20.10) 하나다.
+
 ### A. 서버 쪽 링크 한 줄 끊기
 
 **주입**: `leaf1:eth5 down` (hmh의 eth1 쪽 캐리어가 사라진다). T1에 다시 up.
@@ -82,6 +86,10 @@ experiments/_wip/18-evpn-esi-lag/restore.sh           # 원상 복구
 
 **원인·복구**: 리눅스 802.3ad는 줄이 올라온 뒤 wait-while 타이머(2초)를 기다렸다가 그 줄을 묶음에 넣고 수신·송신(collecting/distributing)을 시작한다. 그 전까지 eth1로 들어온 프레임은 bond가 버린다. 반면 FRR은 bond1의 링크 상태만 보고 ES를 다시 광고하므로, 원격 리프가 아직 LACP가 끝나지 않은 줄로 흐름 절반을 2초 넘게 보낸다.
 
+![hmh:eth1 — LACP 상태가 0x07에서 0x3f로 가는 2.4초 동안 도착한 탐침](img/03-A-lacp-wait.png)
+
+hmh:eth1 캡처, T1 = 18.025초(LACP와 흐름 40002만, 중간은 100번째마다 하나). 18.35초(T1+0.32)부터 leaf1이 흐름 40002를 hmh에 보내기 시작한다 — leaf3이 이미 leaf1을 다시 쓰고 있다. 하지만 이 줄의 LACP는 양쪽 모두 actor 상태 `0x07`(Activity·Timeout·Aggregation)에 머문다. 20.445초에 leaf1 쪽이 `0x0f`(Synchronization), 20.653초에 hmh 쪽이 `0x3f`(+Collecting·Distributing)가 된다. 그 사이 도착한 40002 패킷은 bond가 받아 주지 않아 탐침 수신 기록에 하나도 없다. hmh가 이 줄로 처음 보내는 패킷(41000 → 7002)은 20.55초, T1+2.53초다.
+
 **한 줄 교훈**: 서버 링크 장애는 0.3초 안에 넘어가지만, 링크가 돌아올 때 LACP 대기 2초 동안 흐름 절반이 버려진다. ping 하나로는 이것도 못 본다(한 흐름이라 해시가 leaf2로 가면 손실 0).
 
 ### B. 리프 a 통째 장애
@@ -97,6 +105,10 @@ experiments/_wip/18-evpn-esi-lag/restore.sh           # 원상 복구
 | ping 두 방향 | 0 | 0 | | 0~5 | 0~10ms | |
 
 ![B 시나리오 패킷 흐름](img/B-timeline.svg)
+
+![leaf3:eth1 — spine1이 leaf1 루프백을 철회하는 UPDATE와 그 뒤의 VXLAN](img/02-B-leaf1-withdrawn.png)
+
+leaf3:eth1(spine1 쪽) 캡처. T0(주입 명령 시작)은 0.999초인데 nsenter를 거친 링크 down이 실제로 먹은 건 그보다 늦다. 599번(1.328초)이 spine1 → leaf3 UPDATE로, **leaf1의 서버망 172.16.11.0/24와 루프백 10.255.1.1/32를 철회**한다. VTEP 주소 자체가 언더레이에서 사라지는 것이다. 그런데 leaf3은 그 뒤 50ms 동안(612번, 1.381초까지) 흐름 40002·40003을 여전히 10.255.1.1로 캡슐화해 보낸다. 커널 FDB 묶음에서 leaf1이 빠지는 건 EVPN 철회를 처리한 뒤라서, 그 사이 패킷은 spine1에서 버려진다. 장애 중 손실 120ms는 링크가 실제로 내려간 뒤 이 철회가 도착하고 묶음이 갱신되기까지의 시간이다.
 
 **추적 과정**
 1. A보다 장애 쪽이 빨랐다(277ms → 123ms). leaf1이 링크를 잃고 철회를 보내는 단계가 없다. 스파인이 leaf1 쪽 캐리어를 잃자마자 leaf1에서 받은 경로(루프백, Type-1·2·3·4)를 한꺼번에 철회했고, leaf3은 leaf1 VTEP을 묶음에서 뺐다. 이것이 mass withdraw의 실제 모습이다 — hmh MAC 하나하나가 아니라 ES 묶음에서 VTEP 하나가 빠진다.
@@ -127,6 +139,10 @@ experiments/_wip/18-evpn-esi-lag/restore.sh           # 원상 복구
 1. hmh → 원격: 예상대로 블랙홀. hmh bond는 leaf1 쪽 줄이 멀쩡하니(캐리어·LACP 둘 다 살아 있음) 흐름 절반을 계속 eth1로 보내고, leaf1은 패브릭으로 나갈 길이 없어 버린다. 장애가 끝날 때까지 안 풀린다.
 2. 원격 → hmh: leaf1의 BGP가 끊기며 leaf3은 0.3초 만에 leaf2만 쓴다. 그러니 1회차처럼 0.13초면 끝나야 하는데, 2·3회차는 **4개 흐름이 모두** 6~8초 끊겼다. 처음엔 DF 문제(BUM을 맡은 leaf1이 고립돼 ARP 요청이 hmh에 안 닿음)를 의심했다. 스냅숏을 보니 leaf2는 장애 중 DF가 되어 있었다(leaf1은 고립돼 자기도 DF라고 믿고 있었다 — 둘 다 df). 그래서 요청 쪽 문제는 아니다.
 3. 따로 확인([arpcheck.sh](arpcheck.sh), [capture/C-arp/out.txt](capture/C-arp/out.txt), 장애 45초): hrem의 hmh 이웃 항목이 STALE → DELAY → PROBE로 넘어가며 유니캐스트 ARP 요청을 보내면, 요청은 leaf2 → hmh:eth2로 잘 도착한다. 그런데 **hmh의 ARP 응답은 매번 eth1(leaf1)로 나간다.** `layer3+4` 해시는 IP가 아닌 프레임(ARP)에는 MAC 기반 해시를 쓰므로 hmh → hrem ARP는 늘 같은 줄을 탄다. 응답이 고립된 leaf1에서 버려지고, hrem의 이웃 항목은 T0+5.5초에 INCOMPLETE가 된 뒤 원격 → hmh 흐름 4개가 장애 내내(+5.2 ~ +48초) 전부 끊겼다. 1회차는 이웃 항목이 마침 REACHABLE이라 장애 15초 안에 만료되지 않았던 것이다.
+
+![hmh 두 줄을 합친 ARP: 요청은 eth2(leaf2)로 들어오고 응답은 eth1(leaf1)로 나간다](img/04-C-arp-reply-to-dead-leaf.png)
+
+arpcheck의 hmh 두 줄 캡처를 합친 화면(0 = eth1 → leaf1, 1 = eth2 → leaf2), 시간 0 = T0+2.16초. hrem의 ARP 요청은 매번 살아 있는 leaf2를 거쳐 eth2(1)로 들어오고, hmh의 응답은 매번 eth1(0)으로, 즉 업링크가 죽은 leaf1으로 나간다. 처음 셋은 이웃 항목 PROBE 단계의 유니캐스트 요청, 7번부터는 INCOMPLETE 뒤의 브로드캐스트 요청이다. 응답이 한 번도 hrem에 닿지 않는다.
 
 **원인·복구**: 업링크를 잃은 리프가 서버 쪽 LACP를 계속 유지해서 생긴다. 흐름 절반이 버려지는 데서 끝나지 않고, ARP처럼 늘 같은 줄을 타는 프레임이 그 줄에 걸리면 나머지 흐름까지 같이 죽는다. 복구는 업링크 BGP가 다시 붙는 1.5초 남짓.
 
@@ -212,4 +228,5 @@ BFD 비교는 하지 않았다. 이 장의 장애는 전부 캐리어가 사라�
 | `capture/<시나리오>/r1/` | 1회차 pcap 4개(T0−1~+4초, T1−1~+5초만), 스냅숏 3장(장애 전·중·후), events.txt |
 | `capture/<시나리오>/r2·r3/` | events.txt, times |
 | `capture/step1/` | 정상 상태 스냅숏과 흐름 8개 캡처 |
-| `img/` | 시나리오별 패킷 흐름 그림 (원격 → hmh, hmh → 원격 각 6줄 + BGP·LACP 신호) |
+| `img/*.svg` | 시나리오별 패킷 흐름 그림 (원격 → hmh, hmh → 원격 각 6줄 + BGP·LACP 신호) |
+| `img/*.png` | Wireshark 화면 4장 (`_tools/ws-shot.ps1`). 두 캡처를 합친 것은 `mergecap -I none`으로 인터페이스를 나눠 둔 것 |
