@@ -1,0 +1,6 @@
+1792482775.728 leaf3→hmh=[10.255.1.1+10.255.1.2] hmh=[ eth1:up/묶임 eth2:up/묶임 ] leaf1=[] leaf2=[]
+1792482778.933 leaf3→hmh=[10.255.1.1+10.255.1.2] hmh=[ eth1:down/묶임 eth2:up/묶임 ] leaf1=[] leaf2=[]
+1792482779.195 leaf3→hmh=[10.255.1.2] hmh=[ eth1:down/묶임 eth2:up/묶임 ] leaf1=[] leaf2=[]
+1792482794.037 leaf3→hmh=[10.255.1.2] hmh=[ eth1:up/묶임 eth2:up/묶임 ] leaf1=[] leaf2=[]
+1792482794.126 leaf3→hmh=[10.255.1.1+10.255.1.2] hmh=[ eth1:up/빠짐 eth2:up/묶임 ] leaf1=[] leaf2=[]
+1792482794.299 leaf3→hmh=[10.255.1.1+10.255.1.2] hmh=[ eth1:up/묶임 eth2:up/묶임 ] leaf1=[] leaf2=[]

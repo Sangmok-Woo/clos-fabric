@@ -1,0 +1,6 @@
+1792483419.775 leaf3→hmh=[dst 10.255.1.1] hmh=[ eth1:up/묶임 eth2:down/묶임 ] leaf1=[] leaf2=[]
+1792483423.037 leaf3→hmh=[없음] hmh=[ eth1:down/빠짐 eth2:down/빠짐 ] leaf1=[] leaf2=[]
+1792483440.026 leaf3→hmh=[없음] hmh=[ eth1:up/묶임 eth2:down/묶임 ] leaf1=[] leaf2=[]
+1792483440.188 leaf3→hmh=[없음] hmh=[ eth1:up/묶임 eth2:down/빠짐 ] leaf1=[] leaf2=[]
+1792483440.429 leaf3→hmh=[없음] hmh=[ eth1:up/묶임 eth2:down/묶임 ] leaf1=[] leaf2=[]
+1792483441.236 leaf3→hmh=[dst 10.255.1.1] hmh=[ eth1:up/묶임 eth2:down/묶임 ] leaf1=[] leaf2=[]

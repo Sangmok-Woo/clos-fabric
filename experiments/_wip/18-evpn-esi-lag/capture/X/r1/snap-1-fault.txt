@@ -1,0 +1,17 @@
+### leaf1: show evpn es detail
+### leaf2: show evpn es detail
+### leaf3: show evpn es
+Type: B bypass, L local, R remote, N non-DF
+ESI                            Type ES-IF                 VTEPs
+### leaf3: show evpn mac vni 10020
+Number of MACs (local and remote) known for this VNI: 2
+Flags: N=sync-neighs, I=local-inactive, P=peer-active, X=peer-proxy
+MAC               Type   Flags Intf/Remote ES/VTEP            VLAN  Seq #'s
+02:00:00:00:20:30 local        eth5                                 0/0
+52:ba:79:94:f5:5d remote       10.255.1.2                           0/0
+### leaf3: show bgp l2vpn evpn route type ead (Type-1)
+No EVPN prefixes (of requested type) exist
+### leaf3: show bgp l2vpn evpn route type es (Type-4)
+No EVPN prefixes (of requested type) exist
+### leaf1: show bgp l2vpn evpn route type es (Type-4)
+No EVPN prefixes (of requested type) exist

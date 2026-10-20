@@ -1,0 +1,13 @@
+scenario,rep,dir,fault_lost,fault_maxgap_ms,fault_flows,rec_lost,rec_maxgap_ms,rec_flows,nflows
+Cu,1,to_mh,4422,10990,4,728,1820,4,4
+Cu,1,to_rm,3296,16480,2,298,1490,2,4
+Cu,1,ping-rm2mh,127,20,,23,10,,1
+Cu,1,ping-mh2rm,994,20,,110,20,,1
+Cu,2,to_mh,2576,6380,4,525,1280,4,4
+Cu,2,to_rm,3002,15010,2,299,1480,4,4
+Cu,2,ping-rm2mh,601,20,,12,10,,1
+Cu,2,ping-mh2rm,906,20,,91,20,,1
+Cu,3,to_mh,24,120,2,10,50,2,4
+Cu,3,to_rm,3000,15000,2,292,1460,2,4
+Cu,3,ping-rm2mh,903,20,,88,20,,1
+Cu,3,ping-mh2rm,0,0,,0,0,,1

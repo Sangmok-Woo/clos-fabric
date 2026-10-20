@@ -37,6 +37,7 @@ BGP 의 연결·능력협상·AS_PATH·정책·하이재킹/경로유출·RPKI �
 | 14 | [ACL과 방화벽 이중화](_wip/14-acl-vs-firewall/README.md) | 1부: 같은 정책을 stateless/stateful에. 위조 ACK·UDP 왕복·비대칭 라우팅·conntrack 고갈. 2부: 갈 때·올 때 다른 FW로 갈리는 ECMP, 대칭 해시 vs conntrackd | 완료 |
 | 15 | [EVPN 패브릭 위의 5G 코어](_wip/15-5g-core-evpn/README.md) | Open5GS CP/UP 분리, GTP-U in VXLAN의 MTU 두 겹, 구간별 VRF, N2·N4 차단·UPF 정지, AMF 파드 삭제 | 기획 |
 | 16 | [RoCE over VXLAN: ECN 전달 누락](_wip/16-roce-vxlan-ecn/README.md) | 스파인 RED/ECN 병목 + VTEP에서 바깥 CE를 안쪽으로 안 옮김(tc pedit 재현), 캡슐화 때 ECT 지움. 대조군은 병목을 디캡 뒤로 | 1회차 30초×2회, 2회차 60초×3회(TCP·흉내 DCQCN) 완료. rxe 그대로 트랙·정지 구간 원인 남음 |
+| 18 | [EVPN ESI-LAG: 리프 한 대가 죽을 때 서버 이중화](_wip/18-evpn-esi-lag/README.md) | 서버(bond, LACP)를 leaf1·leaf2에 한 줄씩, 같은 ES. leaf1 서버 포트 down / leaf1 전체 down / leaf1 업링크만 down(uplink 추적 없음·있음), 대조군은 ES 없이 leaf1에만 | 완료 — leaf1 전체 down 0.12초(흐름 절반), 대조군 15초 내내. 복구 때 LACP 대기로 1.4~2.4초, 업링크만 죽으면 장애 내내 블랙홀 |
 
 ## 실행 준비
 
