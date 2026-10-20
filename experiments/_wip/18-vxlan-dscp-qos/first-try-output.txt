@@ -1,5 +1,0 @@
-Thu Oct 15 23:40:30 KST 2026
-
-[1m=== S0  기준 — RoCE 혼자 (짐 없음, tos 0) ===[0m
-  r1  RoCE   64 Mbit  TCP    0 Mbit │ NAK  1625 재시도  1624 │ 클래스10(DSCP26)     0MB 드랍      0 │ 클래스20(BE)   475MB 드랍 142254
-  r2  RoCE   59 Mbit  TCP    0 Mbit │ NAK  1649 재시도  1648 │ 클래스10(DSCP26)     0MB 드랍      0 │ 클래스20(BE)   481MB 드랍 144572

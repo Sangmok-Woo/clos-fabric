@@ -1,6 +1,0 @@
-[2026-10-16T01:04:49.409462] Deleted 10.255.0.1 nhid 25 via 10.1.1.0 dev eth1 proto bgp metric 20 
-[2026-10-16T01:04:49.409559] Deleted 10.255.1.2 nhid 25 via 10.1.1.0 dev eth1 proto bgp metric 20 
-[2026-10-16T01:04:49.409568] Deleted 172.16.12.0/24 nhid 25 via 10.1.1.0 dev eth1 proto bgp metric 20 
-[2026-10-16T01:04:50.509802] 10.255.0.1 nhid 25 via 10.1.1.0 dev eth1 proto bgp metric 20 
-[2026-10-16T01:04:50.610342] 10.255.1.2 nhid 25 via 10.1.1.0 dev eth1 proto bgp metric 20 
-[2026-10-16T01:04:50.610407] 172.16.12.0/24 nhid 25 via 10.1.1.0 dev eth1 proto bgp metric 20 

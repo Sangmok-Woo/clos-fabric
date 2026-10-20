@@ -37,10 +37,6 @@ BGP 의 연결·능력협상·AS_PATH·정책·하이재킹/경로유출·RPKI �
 | 14 | [ACL과 방화벽 이중화](_wip/14-acl-vs-firewall/README.md) | 1부: 같은 정책을 stateless/stateful에. 위조 ACK·UDP 왕복·비대칭 라우팅·conntrack 고갈. 2부: 갈 때·올 때 다른 FW로 갈리는 ECMP, 대칭 해시 vs conntrackd | 완료 |
 | 15 | [EVPN 패브릭 위의 5G 코어](_wip/15-5g-core-evpn/README.md) | Open5GS CP/UP 분리, GTP-U in VXLAN의 MTU 두 겹, 구간별 VRF, N2·N4 차단·UPF 정지, AMF 파드 삭제 | 기획 |
 | 16 | [RoCE over VXLAN: ECN 전달 누락](_wip/16-roce-vxlan-ecn/README.md) | 스파인 RED/ECN 병목 + VTEP에서 바깥 CE를 안쪽으로 안 옮김(tc pedit 재현), 캡슐화 때 ECT 지움. 대조군은 병목을 디캡 뒤로 | 1회차 30초×2회, 2회차 60초×3회(TCP·흉내 DCQCN) 완료. rxe 그대로 트랙·정지 구간 원인 남음 |
-| 18 | [VXLAN 바깥 DSCP 소실: 언더레이 QoS가 RoCE를 못 알아본다](_wip/18-vxlan-dscp-qos/README.md) | 네 리프 vxlan tos 0/inherit/0x68. 스파인 htb 두 클래스(바깥 DSCP 26 우선), RoCE + TCP 8흐름 | 완료 — tos 0: RoCE 150 → 12Mbit, 지연 99% 42µs → 3.4ms / inherit: 그대로 |
-| 19 | [VXLAN의 ECMP 엔트로피: 바깥 헤더는 VTEP 쌍 하나](_wip/19-vxlan-ecmp-entropy/README.md) | leaf1 해시 정책 0/1/3, 큰 흐름 2개 충돌 20회, RoCE QP 1~8, vxlan srcport 범위, tos inherit | 완료 — 리눅스 vxlan 의 CPU별 경로 캐시 때문에 정책 0·1·3 모두 8흐름이 한 스파인(충돌 20/20). tos inherit 면 캐시가 꺼져 396Mbit·충돌 5/10 |
-| 20 | [EVPN MAC 이동과 중복 MAC 감지](_wip/20-evpn-mac-mobility/README.md) | 같은 MAC 의 VM 자리 둘(leaf1·leaf2): GARP 있는/없는 이사, 복제 MAC 0.5초 GARP, dup-addr-detection freeze | 완료 — 이사 끊김 70ms(GARP 없어도 60ms: 철회 후 BUM 플러딩이 VM 을 깨움). 복제 MAC 은 1초 만에 감지되지만 기본값은 막지 않아 60초에 순번 243·EVPN 메시지 2,307, freeze 30 이면 251 |
-| 21 | [BGP Graceful Restart: 컨트롤 플레인이 재시작하는 동안 데이터 플레인](_wip/21-bgp-graceful-restart/README.md) | 별도 소형 랩(grlab)에서 스파인 bgpd `kill -9`(GR 없음 / GR / +preserve-fw-state / +BFD / +check-control-plane-failure)와 스파인 freeze(GR, GR+BFD) | 완료 — 재시작 끊김 7.43초 → GR 1.22초(F 비트 0) → preserve-fw-state 0초. 같은 GR 이 freeze 를 38초 블랙홀로, BFD 는 0.95초로 줄이지만 재시작을 2.15초로 깸 |
 
 ## 실행 준비
 

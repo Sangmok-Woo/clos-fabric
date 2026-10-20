@@ -156,7 +156,7 @@ Q1 결과 ([data/q1-signal.csv](data/q1-signal.csv), 8초씩, 캡처 앞 200개�
 1. **장애1 의 정지는 되풀이되고, 그 정체는 BGP 였다.** 60초 창에서는 "약 8초 전속 → 수 초 정지"가 3~4번 반복됐다. 진단해 보니 송신이 감속하지 않아 RED 평균 큐가 최대 문턱 위에 붙어 있는 동안, ECN RED 가 **Not-ECT 인 스파인의 BGP keepalive 를 버려** spine1–leaf3 세션이 hold timer(9초)마다 끊겼다. 언더레이 경로가 빠지니 leaf3 로 가는 모든 것이 멈춘다 — 1회차의 "큐가 비었는데 ping 무응답"도 이것이다. 같은 병목에서 BGP·ARP 만 보호하자 정지 0초, 처리량 181 → **278Mbit**(정상과 같음). 처리량 붕괴는 TCP 혼잡 붕괴가 아니라 **컨트롤 플레인 붕괴**였다 ([run2 추적](run2/README.md#추적--정지의-정체는-tcp-가-아니라-bgp-였다)).
 2. **RoCE 에서는 장애2 가 장애1 보다 아프다.** TCP 는 장애2 의 드랍 4만 개를 SACK 으로 흡수해 처리량이 그대로였지만, go-back-N 인 RoCE(흉내 DCQCN)는 −89% 로 무너졌다. 같은 ECN 비트 하나라도 어느 쪽이 지워지느냐와 전송 계층의 손실 내성에 따라 피해 순서가 뒤집힌다.
 
-Q1 도 2회차에서 4×4 디캡 표로 다시 확인했다: 바깥 CE + 안쪽 ECT → 안쪽 CE, **바깥 CE + 안쪽 Not-ECT → 드랍**(`vxlan: non-ECT from … with TOS=0x3` 로그), `tos` 옵션은 DSCP 만 바꾼다 — 기본값 `tos 0` 에서는 RoCE 의 DSCP 26 이 바깥에서 사라진다(이 현상은 [18장](../18-vxlan-dscp-qos/README.md)에서 이어 본다).
+Q1 도 2회차에서 4×4 디캡 표로 다시 확인했다: 바깥 CE + 안쪽 ECT → 안쪽 CE, **바깥 CE + 안쪽 Not-ECT → 드랍**(`vxlan: non-ECT from … with TOS=0x3` 로그), `tos` 옵션은 DSCP 만 바꾼다 — 기본값 `tos 0` 에서는 RoCE 의 DSCP 26 이 바깥에서 사라진다.
 
 ## 한 줄 교훈
 
