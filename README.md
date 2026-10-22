@@ -46,10 +46,7 @@ BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
 - [07 스파인 먹통 + BFD](experiments/_completed/07-spine-freeze-bfd/README.md) — **7.61초 → 1.15초**
 - [08 마이크로버스트](experiments/_completed/08-microburst/README.md) — 70% 손실인데 **드랍 0, 알람 0**
 - [09 EVPN-VXLAN 패킷 추적](experiments/_completed/09-packet-life-evpn/README.md) — 주소록 한 줄이 50바이트 상자가 되기까지
-- [10 NAT 포트 고갈](experiments/_completed/10-session-table-exhaustion/README.md) — **새 연결만** 죽고 기존 연결은 멀쩡
 - [11 RoCEv2](experiments/_completed/11-roce/README.md) — 손실 1%에 TCP는 그대로, RoCE는 **-75%**
-- [12 ACL vs 방화벽](experiments/_completed/12-acl-vs-firewall/README.md) — 위조 ACK는 ACL을 **3/3 통과**
-- 진행 중 13 — [목록](#진행-중)
 
 </td>
 </tr>
