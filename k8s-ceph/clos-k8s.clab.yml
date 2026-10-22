@@ -1,0 +1,213 @@
+name: clos
+
+# K8s + Ceph 스토리지망 = 베이스 패브릭(../clos.clab.yml) + 워커 3대 + Ceph 3대.
+# elice-infra(스파인2/리프6, 3랙) 설계의 스토리지 분리를 이 패브릭(스파인2/리프4)에 옮겼다.
+# 이름을 'clos'로 두어 컨테이너가 clab-clos-* 가 되게 한다 → 기존 스크립트가 그대로 동작한다.
+# 베이스·모니터링과 같은 이름이라 셋 중 하나만 떠 있는다. 설정 파일은 ../configs 를 재사용한다.
+#
+#   leaf1: wrk1          leaf2: wrk2, ceph1     leaf3: wrk3, ceph2     leaf4: ceph3
+
+topology:
+  defaults:
+    kind: linux
+
+  kinds:
+    linux:
+      image: quay.io/frrouting/frr:10.2.1
+
+  nodes:
+    # ── 베이스 패브릭 (../configs 재사용, 리프에는 오버레이 스크립트 leaf/ 를 붙인다) ──
+    spine1:
+      binds:
+        - ../configs/daemons:/etc/frr/daemons:ro
+        - ../configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - ../configs/spine1/frr.conf:/etc/frr/frr.conf:ro
+    spine2:
+      binds:
+        - ../configs/daemons:/etc/frr/daemons:ro
+        - ../configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - ../configs/spine2/frr.conf:/etc/frr/frr.conf:ro
+    leaf1:
+      binds:
+        - ../configs/daemons:/etc/frr/daemons:ro
+        - ../configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - ../configs/leaf1/frr.conf:/etc/frr/frr.conf:ro
+        - leaf:/k8s:ro
+    leaf2:
+      binds:
+        - ../configs/daemons:/etc/frr/daemons:ro
+        - ../configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - ../configs/leaf2/frr.conf:/etc/frr/frr.conf:ro
+        - leaf:/k8s:ro
+    leaf3:
+      binds:
+        - ../configs/daemons:/etc/frr/daemons:ro
+        - ../configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - ../configs/leaf3/frr.conf:/etc/frr/frr.conf:ro
+        - leaf:/k8s:ro
+    leaf4:
+      binds:
+        - ../configs/daemons:/etc/frr/daemons:ro
+        - ../configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - ../configs/leaf4/frr.conf:/etc/frr/frr.conf:ro
+        - leaf:/k8s:ro
+
+    h1:
+      image: alpine:3
+      cmd: sleep infinity
+      exec:
+        - ip addr add 172.16.11.10/24 dev eth1
+        - ip link set eth1 up
+        - ip route replace default via 172.16.11.1
+    h2:
+      image: alpine:3
+      cmd: sleep infinity
+      exec:
+        - ip addr add 172.16.12.10/24 dev eth1
+        - ip link set eth1 up
+        - ip route replace default via 172.16.12.1
+    h3:
+      image: alpine:3
+      cmd: sleep infinity
+      exec:
+        - ip addr add 172.16.13.10/24 dev eth1
+        - ip link set eth1 up
+        - ip route replace default via 172.16.13.1
+    h4:
+      image: alpine:3
+      cmd: sleep infinity
+      exec:
+        - ip addr add 172.16.14.10/24 dev eth1
+        - ip link set eth1 up
+        - ip route replace default via 172.16.14.1
+    v1:
+      image: alpine:3
+      cmd: sleep infinity
+      exec:
+        - ip addr add 10.10.10.11/24 dev eth1
+        - ip link set eth1 up
+    v3:
+      image: alpine:3
+      cmd: sleep infinity
+      exec:
+        - ip addr add 10.10.10.33/24 dev eth1
+        - ip link set eth1 up
+
+    # ── K8s 워커 3 + Ceph 3 ────────────────────────────────────────
+    # 워커: eth1 = VLAN 110 노드망(1500), eth2 = VLAN 120 스토리지망(9000)
+    # Ceph: eth1 = VLAN 120 public(9000), eth2 = VLAN 130 cluster(복제, 9000)
+    wrk1:   # leaf1
+      image: clos-k8s-node:latest
+      binds:
+        - ../configs/daemons:/etc/frr/daemons:ro
+        - ../configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - configs/wrk1/frr.conf:/etc/frr/frr.conf:ro
+      exec:
+        - ip link add link eth1 name eth1.110 type vlan id 110
+        - ip link set eth1 up
+        - ip link set eth1.110 mtu 1500 up
+        - ip addr add 10.10.16.21/24 dev eth1.110
+        - ip link add link eth2 name eth2.120 type vlan id 120
+        - ip link set eth2 up
+        - ip link set eth2.120 mtu 9000 up
+        - ip addr add 10.10.20.21/24 dev eth2.120
+        - ip route replace default via 10.10.16.1
+    wrk2:   # leaf2
+      image: clos-k8s-node:latest
+      binds:
+        - ../configs/daemons:/etc/frr/daemons:ro
+        - ../configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - configs/wrk2/frr.conf:/etc/frr/frr.conf:ro
+      exec:
+        - ip link add link eth1 name eth1.110 type vlan id 110
+        - ip link set eth1 up
+        - ip link set eth1.110 mtu 1500 up
+        - ip addr add 10.10.16.22/24 dev eth1.110
+        - ip link add link eth2 name eth2.120 type vlan id 120
+        - ip link set eth2 up
+        - ip link set eth2.120 mtu 9000 up
+        - ip addr add 10.10.20.22/24 dev eth2.120
+        - ip route replace default via 10.10.16.1
+        - ip addr add 10.10.32.10/32 dev lo   # Ingress VIP (BGP로 광고)
+    wrk3:   # leaf3
+      image: clos-k8s-node:latest
+      binds:
+        - ../configs/daemons:/etc/frr/daemons:ro
+        - ../configs/vtysh.conf:/etc/frr/vtysh.conf:ro
+        - configs/wrk3/frr.conf:/etc/frr/frr.conf:ro
+      exec:
+        - ip link add link eth1 name eth1.110 type vlan id 110
+        - ip link set eth1 up
+        - ip link set eth1.110 mtu 1500 up
+        - ip addr add 10.10.16.23/24 dev eth1.110
+        - ip link add link eth2 name eth2.120 type vlan id 120
+        - ip link set eth2 up
+        - ip link set eth2.120 mtu 9000 up
+        - ip addr add 10.10.20.23/24 dev eth2.120
+        - ip route replace default via 10.10.16.1
+        - ip addr add 10.10.32.10/32 dev lo   # Ingress VIP (BGP로 광고)
+    ceph1:   # leaf2
+      image: clos-k8s-node:latest
+      exec:
+        - ip link add link eth1 name eth1.120 type vlan id 120
+        - ip link set eth1 up
+        - ip link set eth1.120 mtu 9000 up
+        - ip addr add 10.10.20.31/24 dev eth1.120
+        - ip link add link eth2 name eth2.130 type vlan id 130
+        - ip link set eth2 up
+        - ip link set eth2.130 mtu 9000 up
+        - ip addr add 10.10.24.31/24 dev eth2.130
+        - ip route replace default via 10.10.20.1
+    ceph2:   # leaf3
+      image: clos-k8s-node:latest
+      exec:
+        - ip link add link eth1 name eth1.120 type vlan id 120
+        - ip link set eth1 up
+        - ip link set eth1.120 mtu 9000 up
+        - ip addr add 10.10.20.32/24 dev eth1.120
+        - ip link add link eth2 name eth2.130 type vlan id 130
+        - ip link set eth2 up
+        - ip link set eth2.130 mtu 9000 up
+        - ip addr add 10.10.24.32/24 dev eth2.130
+        - ip route replace default via 10.10.20.1
+    ceph3:   # leaf4
+      image: clos-k8s-node:latest
+      exec:
+        - ip link add link eth1 name eth1.120 type vlan id 120
+        - ip link set eth1 up
+        - ip link set eth1.120 mtu 9000 up
+        - ip addr add 10.10.20.33/24 dev eth1.120
+        - ip link add link eth2 name eth2.130 type vlan id 130
+        - ip link set eth2 up
+        - ip link set eth2.130 mtu 9000 up
+        - ip addr add 10.10.24.33/24 dev eth2.130
+        - ip route replace default via 10.10.20.1
+
+  links:
+    - endpoints: ["spine1:eth1", "leaf1:eth1"]
+    - endpoints: ["spine1:eth2", "leaf2:eth1"]
+    - endpoints: ["spine1:eth3", "leaf3:eth1"]
+    - endpoints: ["spine1:eth4", "leaf4:eth1"]
+    - endpoints: ["spine2:eth1", "leaf1:eth2"]
+    - endpoints: ["spine2:eth2", "leaf2:eth2"]
+    - endpoints: ["spine2:eth3", "leaf3:eth2"]
+    - endpoints: ["spine2:eth4", "leaf4:eth2"]
+    - endpoints: ["leaf1:eth3", "h1:eth1"]
+    - endpoints: ["leaf2:eth3", "h2:eth1"]
+    - endpoints: ["leaf3:eth3", "h3:eth1"]
+    - endpoints: ["leaf4:eth3", "h4:eth1"]
+    - endpoints: ["leaf1:eth4", "v1:eth1"]
+    - endpoints: ["leaf3:eth4", "v3:eth1"]
+    # K8s·Ceph (리프 eth11~14. 베이스와 실험이 쓰는 eth3~eth5는 비워 둔다)
+    - endpoints: ["leaf1:eth11", "wrk1:eth1"]
+    - endpoints: ["leaf1:eth12", "wrk1:eth2"]
+    - endpoints: ["leaf2:eth11", "wrk2:eth1"]
+    - endpoints: ["leaf2:eth12", "wrk2:eth2"]
+    - endpoints: ["leaf3:eth11", "wrk3:eth1"]
+    - endpoints: ["leaf3:eth12", "wrk3:eth2"]
+    - endpoints: ["leaf2:eth13", "ceph1:eth1"]
+    - endpoints: ["leaf2:eth14", "ceph1:eth2"]
+    - endpoints: ["leaf3:eth13", "ceph2:eth1"]
+    - endpoints: ["leaf3:eth14", "ceph2:eth2"]
+    - endpoints: ["leaf4:eth13", "ceph3:eth1"]
+    - endpoints: ["leaf4:eth14", "ceph3:eth2"]

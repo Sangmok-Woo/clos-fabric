@@ -105,6 +105,13 @@ git clone https://github.com/Sangmok-Woo/clos-fabric && cd clos-fabric
 ./scripts/check.sh          # 세션·ECMP·서버 간 통신 점검
 ```
 
+K8s + Ceph 스토리지망(워커 3 + Ceph 3, VRF로 노드망·스토리지망·복제망 분리)을 얹어 보려면:
+
+```bash
+cd k8s-ceph && ./up.sh      # 베이스 대신 18대 기동 + EVPN 오버레이
+./test.sh                   # 점검 25개 — 점보 9000, VRF 분리, VIP ECMP, 장애 시험
+```
+
 ## 스크립트
 
 | 명령 | 하는 일 |
@@ -126,7 +133,8 @@ git clone https://github.com/Sangmok-Woo/clos-fabric && cd clos-fabric
 - [ ] **BGP unnumbered 전면 전환** — 검증은 끝났고([EXPERIMENTS §4](docs/EXPERIMENTS.md)), 재배포 때 링크 IP를 걷어낸다
 - [x] **모니터링** ✅ — Prometheus + Grafana. 자작 수집기가 세션·경로·BFD를 긁고, 기대값을 토폴로지에서 계산해 알람. 감지 시간 실측(BFD 없음 14.1초 → 있음 6.2초). 2차로 인터페이스 드랍·MTU·TCP 재전송, 3차로 블랙박스 링크 프로브 추가([실험 01](experiments/_completed/01-hidden-mtu-meets-spine-failure/README.md)). → [monitoring/](monitoring/README.md)
 - [x] **MTU** ✅ — 스파인 한 포트의 MTU 결함이 다른 스파인 장애 때 드러나는 과정을 재현·측정. → [실험 01](experiments/_completed/01-hidden-mtu-meets-spine-failure/README.md)
-- [ ] **쿠버네티스 연동** — Calico/Cilium이 리프와 BGP 피어링해 파드 네트워크를 패브릭에 직접 태우기
+- [x] **K8s + Ceph 스토리지망** ✅ — elice-infra 설계를 옮겨 노드망(1500)·Ceph public·복제망(9000)을 VRF로 분리, 워커 FRR이 리프와 BGP 피어링해 VIP를 ECMP로 광고. 점검 25/25. → [k8s-ceph/](k8s-ceph/README.md)
+- [ ] **쿠버네티스 연동** — 워커 BGP를 FRR 흉내 대신 실제 Calico/Cilium으로 바꿔 파드 네트워크를 패브릭에 직접 태우기
 
 ## 문서
 
@@ -136,6 +144,7 @@ git clone https://github.com/Sangmok-Woo/clos-fabric && cd clos-fabric
 | [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | **실험과 실측** — 측정 방법, ECMP·수렴·BFD·EVPN의 숫자와 함정, 검증으로 내린 결정 2건 |
 | [experiments/README.md](experiments/README.md) | **장애 시나리오** — 번호 붙인 실험 목록, 실험 디렉터리 규칙, 새 실험 추가 방법 |
 | [monitoring/README.md](monitoring/README.md) | **관측 시나리오** — Prometheus+Grafana 구성, 자작 수집기, 감지 시간 실측 |
+| [k8s-ceph/README.md](k8s-ceph/README.md) | **K8s + Ceph 스토리지망** — VRF 3개 분리, 워커 BGP 피어링, elice-infra와 다른 점, 점검 항목 |
 | [CHANGELOG.md](CHANGELOG.md) | 무엇이 언제 바뀌었나 — 검증·결정·변경의 시간 순 기록 |
 
 ---
