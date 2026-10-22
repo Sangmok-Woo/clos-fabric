@@ -51,7 +51,7 @@ done
 sleep 1   # tcpdump 가 붙을 시간
 while IFS= read -r g; do   # -g 는 여러 번 줄 수 있다. 동시에 돈다
   [ -n "$g" ] || continue
-  timeout "$dur" docker exec "clab-clos-${g%% *}" sh -c "${g#* }" >/dev/null 2>&1 &
+  timeout "$dur" docker exec --privileged "clab-clos-${g%% *}" sh -c "${g#* }" >/dev/null 2>&1 &
   pids+=($!)
 done <<< "$gen"
 sleep "$dur"

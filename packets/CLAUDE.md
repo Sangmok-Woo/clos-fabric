@@ -51,6 +51,31 @@ experiments/는 아카이브라 건드리지 않는다.
 ## k8s-flows.sh
 k8s-ceph 랩에서 망별 흐름 7개를 서버 포트·업링크에서 한꺼번에 캡처하고 해독문까지 만든다. WSL root에서 실행. 결과는 `<날짜>/raw/k8s-*`. 예시는 `2026-10-22/README.md` 2부
 
+## 코스
+"오늘은 ○○ 구경"에 이름이 맞으면 지점 제안 없이 아래 명령을 그대로 쓴다. 무대(`stage-vrf.sh up`)가 먼저 떠 있어야 한다.
+
+### 코스 1: 소문이 퍼지는 순간 (주제 `rumor`)
+prod4 링크를 내렸다 올리고, leaf4가 그걸 BGP EVPN으로 알리는 순서를 본다.
+지점: leaf4:eth15(prod4 포트), leaf4:eth1·eth2(업링크). BGP keepalive·ACK(100B 미만)와 BFD는 뺀다.
+
+```
+bash packets/_tools/peek.sh rumor -t 15 -s 0 -n 100 leaf4:eth15 leaf4:eth1 leaf4:eth2 -f "not udp port 3784 and not (tcp port 179 and less 100)" -g "prod4 sleep 2; ip link set eth1 down; sleep 4; ip link set eth1 up; sleep 1; ping -c1 -W1 10.10.16.1" -g "prod1 sleep 9; ping -c 3 -W1 10.10.16.14"
+```
+
+2026-10-22 리허설(90패킷)에서 찍힌 순서. 표가 50줄을 넘으니 `-n 100`을 붙인다.
+
+| 초 | 사건 | 찍힌 것 |
+|---|---|---|
+| 1.75 | prod4 eth1 down | 업링크: leaf4 → 스파인 Type-2 철회(MP_UNREACH, MAC만). 스파인끼리 잠깐 되돌려 주는 UPDATE도 섞인다 |
+| 5.71 | eth1 up | eth15: IPv6 MLD·DAD (ARP보다 먼저) |
+| 5.77 | | 업링크: Type-2 광고, MAC만 (RT 65000:10110) |
+| 6.71 | prod4 → 게이트웨이 ping | eth15: ARP 요청·응답 |
+| 6.76 | | 업링크: Type-2 광고, MAC + IP 10.10.16.14, RT 65000:10110 + 65014:50010, next-hop 10.255.1.4 |
+| 8.70~ | prod1 → prod4 ping | 업링크: VXLAN 10110, 10.255.1.1 ↔ 10.255.1.4 |
+
+- `-s 0`이라 UPDATE 속성(MAC·IP·VNI·RT·next-hop)이 다 남는다. 펼쳐 보려면 `tshark -r raw/rumor.pcap -Y "bgp.type==2" -V -O bgp`
+- -g 명령은 `docker exec --privileged`로 돈다. 그래서 호스트 안에서 `ip link`가 된다
+
 ## 구조
 ```
 packets/
