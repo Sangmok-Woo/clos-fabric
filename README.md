@@ -72,9 +72,25 @@ RFC 7938 방식의 eBGP 언더레이 위에 ECMP, BFD, VXLAN/EVPN 오버레이�
 <summary><b>English summary</b></summary>
 <br>
 
-A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and containerlab: 2 spines, 4 leaves, 6 servers. The underlay follows RFC 7938 — eBGP with one private AS per device, ECMP enabled via <code>multipath-relax</code>. On top of it I injected failures and measured convergence: a link cut converges in <b>0.2s</b>, a silently frozen spine blackholes traffic for <b>7.6–8.8s</b> (hold-timer bound), and adding <b>BFD (300ms×3)</b> cuts that to <b>0.8–1.2s</b>. ECMP load-sharing was measured per-link with 40 UDP flows, showing why <code>fib_multipath_hash_policy=1</code> is mandatory. A VXLAN/EVPN overlay stretches one L2 segment across racks, including the eBGP-specific pitfalls (route-target mismatch, next-hop rewriting). Design rationale lives in <a href="docs/DESIGN.md">docs/DESIGN.md</a>, experiments and evidence in <a href="docs/EXPERIMENTS.md">docs/EXPERIMENTS.md</a>. Everything is reproducible with the scripts in this repo.
+A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and containerlab: 2 spines, 4 leaves, 6 servers. The underlay follows RFC 7938 — eBGP with one private AS per device, ECMP enabled via <code>multipath-relax</code>. On top of it I injected failures and measured convergence: a link cut converges in <b>0.2s</b>, a silently frozen spine blackholes traffic for <b>7.6–8.8s</b> (hold-timer bound), and adding <b>BFD (300ms×3)</b> cuts that to <b>0.8–1.2s</b>. ECMP load-sharing was measured per-link with 40 UDP flows, showing why <code>fib_multipath_hash_policy=1</code> is mandatory. A VXLAN/EVPN overlay stretches one L2 segment across racks, including the eBGP-specific pitfalls (route-target mismatch, next-hop rewriting). Design rationale and the baseline measurements live in <a href="docs/DESIGN.md">docs/DESIGN.md</a>; twelve packet-level failure scenarios live in <a href="experiments/README.md">experiments/</a>. Everything is reproducible with the scripts in this repo.
 
 </details>
+
+## 저장소 구조
+
+베이스 패브릭 하나를 고정해 두고, 그 위에 시나리오를 디렉터리 단위로 얹는다. 새 것을 더할 때도 이 틀을 따른다.
+
+| 디렉터리 | 무엇 | 띄우는 법 |
+|---|---|---|
+| `clos.clab.yml` · [configs/](configs/) | **베이스 패브릭** — 스파인 2 · 리프 4 · 서버 6의 토폴로지와 FRR 설정 | `./scripts/deploy.sh up` |
+| [scripts/](#스크립트) · [ansible/](ansible/README.md) | 베이스를 다루는 도구. 측정·장애 주입은 셸, 상태 맞추기는 Ansible | |
+| [docs/](docs/DESIGN.md) | 설계 기준과 이유, 기본 측정 요약 | |
+| [monitoring/](monitoring/README.md) | **추가 시나리오** — 베이스 + Prometheus·Grafana·자작 수집기 | `monitoring/up.sh` |
+| [k8s-ceph/](k8s-ceph/README.md) | **추가 시나리오** — 베이스 + K8s 워커 3 · Ceph 3, VRF 3개로 스토리지망 분리 | `k8s-ceph/up.sh` |
+| [experiments/](experiments/README.md) | **장애 시나리오** — 번호 붙인 실험 13개. 완료 `_completed/`, 진행 중 `_wip/`, 보관 `_archive/` | 실험마다 `run.sh` |
+
+추가 시나리오는 토폴로지 이름을 `clos`로 두고 `../configs`를 그대로 쓴다. 그래서 컨테이너 이름이 같아 기존 스크립트가 그대로 돌고, 대신 베이스·monitoring·k8s-ceph 중 **하나만** 떠 있다.
+새 시나리오를 더할 때는 디렉터리 하나에 `up.sh` · `down.sh` · README를 두고, 베이스 설정은 고치지 않고 배포 뒤에 덧붙인다.
 
 ## 장애 시나리오
 
@@ -138,9 +154,8 @@ cd k8s-ceph && ./up.sh      # 베이스 대신 18대 기동 + EVPN 오버레이
 ## Roadmap
 
 - [ ] **설정 생성기** — `fabric.yml`의 숫자(스파인 수·리프 수)만 바꾸면 토폴로지와 FRR 설정 전체가 재생성되게. 주소·AS·포트가 전부 계산식이라([DESIGN §3~4](docs/DESIGN.md)) 코드로 옮기기만 하면 된다
-- [ ] **BGP unnumbered 전면 전환** — 검증은 끝났고([EXPERIMENTS §4](docs/EXPERIMENTS.md)), 재배포 때 링크 IP를 걷어낸다
+- [ ] **BGP unnumbered 전면 전환** — 검증은 끝났고([DESIGN §6](docs/DESIGN.md#bgp-unnumbered--채택)), 재배포 때 링크 IP를 걷어낸다
 - [x] **모니터링** ✅ — Prometheus + Grafana. 자작 수집기가 세션·경로·BFD를 긁고, 기대값을 토폴로지에서 계산해 알람. 감지 시간 실측(BFD 없음 14.1초 → 있음 6.2초). 2차로 인터페이스 드랍·MTU·TCP 재전송, 3차로 블랙박스 링크 프로브 추가([실험 01](experiments/_completed/01-hidden-mtu-meets-spine-failure/README.md)). → [monitoring/](monitoring/README.md)
-- [x] **MTU** ✅ — 스파인 한 포트의 MTU 결함이 다른 스파인 장애 때 드러나는 과정을 재현·측정. → [실험 01](experiments/_completed/01-hidden-mtu-meets-spine-failure/README.md)
 - [x] **K8s + Ceph 스토리지망** ✅ — elice-infra 설계를 옮겨 노드망(1500)·Ceph public·복제망(9000)을 VRF로 분리, 워커 FRR이 리프와 BGP 피어링해 VIP를 ECMP로 광고. 점검 25/25. → [k8s-ceph/](k8s-ceph/README.md)
 - [ ] **쿠버네티스 연동** — 워커 BGP를 FRR 흉내 대신 실제 Calico/Cilium으로 바꿔 파드 네트워크를 패브릭에 직접 태우기
 
@@ -148,9 +163,9 @@ cd k8s-ceph && ./up.sh      # 베이스 대신 18대 기동 + EVPN 오버레이
 
 | 문서 | 무엇을 적나 |
 |---|---|
-| [docs/DESIGN.md](docs/DESIGN.md) | **설계 기준과 이유** — 왜 spine-leaf·eBGP인가, 주소·AS·포트가 전부 계산식인 이유, 운영 원칙 |
-| [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | **실험과 실측** — 측정 방법, ECMP·수렴·BFD·EVPN의 숫자와 함정, 검증으로 내린 결정 2건 |
-| [experiments/README.md](experiments/README.md) | **장애 시나리오** — 번호 붙인 실험 목록, 실험 디렉터리 규칙, 새 실험 추가 방법 |
+| [docs/DESIGN.md](docs/DESIGN.md) | **설계 기준과 이유** — 왜 spine-leaf·eBGP인가, 주소·AS·포트가 전부 계산식인 이유, 운영 원칙, 기본 측정 요약과 검증으로 내린 결정 |
+| [experiments/README.md](experiments/README.md) | **장애 시나리오** — 실험 목록, 실험 디렉터리 규칙, 새 실험 추가 방법 |
+| [ansible/README.md](ansible/README.md) | **Ansible** — 상태를 만드는 셸 스크립트를 옮긴 playbook, 셸로 남긴 것과 이유 |
 | [monitoring/README.md](monitoring/README.md) | **관측 시나리오** — Prometheus+Grafana 구성, 자작 수집기, 감지 시간 실측 |
 | [k8s-ceph/README.md](k8s-ceph/README.md) | **K8s + Ceph 스토리지망** — VRF 3개 분리, 워커 BGP 피어링, elice-infra와 다른 점, 점검 항목 |
 | [CHANGELOG.md](CHANGELOG.md) | 무엇이 언제 바뀌었나 — 검증·결정·변경의 시간 순 기록 |

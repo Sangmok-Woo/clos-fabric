@@ -1,6 +1,6 @@
 # 실험 07 — 스파인 무응답과 BFD: 링크는 살아 있는데 상대가 죽었을 때
 
-> [실험 목록](../../README.md) · 옛 [docs/EXPERIMENTS §2](../../../docs/EXPERIMENTS.md)를 패킷 캡처로 다시 잰 장 · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
+> [실험 목록](../../README.md) · [DESIGN §6](../../../docs/DESIGN.md#6-검증--숫자와-결정)의 수렴 측정을 패킷 캡처로 다시 잰 장 · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
 
 [실험 06](../06-link-down-convergence/README.md)의 케이블 단선은 0.2초에 끝났다. 인터페이스가 내려가니 장비가 바로 알았다.
 이번에는 링크가 멀쩡한 채로 스파인이 멈춘다. 리프는 상대가 죽었다는 것을 무엇으로 알 수 있을까.

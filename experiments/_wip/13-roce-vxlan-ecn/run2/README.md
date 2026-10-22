@@ -94,6 +94,7 @@ ECN 두 비트는 옵션과 상관없이 늘 복사된다. 안쪽 CE 는 바깥�
 
 스크립트: [run-all.sh](scripts/run-all.sh) → 시나리오마다 [bottleneck.sh](scripts/bottleneck.sh)·[inject-decap.sh](scripts/inject-decap.sh)·[inject-encap.sh](scripts/inject-encap.sh)·[control.sh](scripts/control.sh)로 상태를 만들고 [measure.sh](scripts/measure.sh)가 60초 잰다(1초 계수기 [sampler.py](scripts/sampler.py)). 회차 순서는 정상 → 장애1 → 장애2 → 대조군을 한 바퀴로 세 바퀴.
 집계 [analyze.py](scripts/analyze.py) → [data/summary.csv](data/summary.csv)(회차별), [data/summary-mean.csv](data/summary-mean.csv)(평균·표준편차), `data/timeseries-<트랙>.csv`(1초).
+흉내 DCQCN의 송신측 속도 기록 `data/runs/dcqcn/*/rp-timeline.csv`는 회차마다 3만 줄이 넘어 앞 3,000줄(첫 몇 초)만 남겼다. 집계에는 쓰지 않는다.
 
 - 경로 고정: spine2:eth3 을 내려 leaf3 로 가는 VXLAN 을 전부 spine1:eth3 하나로 (병목이 한 곳).
 - 병목: spine1:eth3 egress htb 300Mbit + RED(ecn). TCP 는 DCTCP 식 계단(평균 큐 30KB 넘으면 전부 표시, 한도 1MB), RoCE 는 실험 11 문턱(100~300KB, 한도 1MB).

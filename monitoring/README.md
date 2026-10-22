@@ -53,7 +53,7 @@ spine2를 조용히 얼리고(`docker pause`), leaf1의 Established 세션이 �
 |---|---|---|
 | BFD 없음 | **14.1초** | BGP hold timer(9초) 만료 후 세션 down → 다음 scrape(최대 5초) |
 | BFD 300ms×3 | **6.2초** | 세션은 ~1초에 down → 그래도 다음 scrape 전까지는 못 봄 (하한 = 5초) |
-| (대조) 데이터플레인 복구 | **1.2초** | BFD가 우회시킨 실제 통신 복구 — [../docs/EXPERIMENTS.md](../docs/EXPERIMENTS.md) |
+| (대조) 데이터플레인 복구 | **1.2초** | BFD가 우회시킨 실제 통신 복구 — [실험 07](../experiments/_completed/07-spine-freeze-bfd/README.md) |
 
 **교훈**: BFD는 데이터플레인을 1.2초에 살리지만, *모니터링이 그 사실을 아는 데*는 scrape 주기에 묶여 6초가 걸린다.
 둘은 다른 시간 축이다. 감지를 앞당기려면 scrape_interval을 줄여야 하고, 그건 부하와의 거래다.

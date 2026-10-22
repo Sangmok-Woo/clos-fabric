@@ -1,7 +1,7 @@
 # 설계 — 기준과 이유
 
 이 문서는 만드는 방법이 아니라 **왜 이렇게 정했는지**를 적는다.
-실험 방법과 실측 결과는 [EXPERIMENTS.md](EXPERIMENTS.md), 결정의 시간 순 기록은 [CHANGELOG.md](../CHANGELOG.md)에 있다.
+패브릭의 기본 측정과 검증으로 내린 결정은 [6절](#6-검증--숫자와-결정), 장애 시나리오는 [experiments/](../experiments/README.md), 결정의 시간 순 기록은 [CHANGELOG.md](../CHANGELOG.md)에 있다.
 
 > **한눈에**
 > - **구조**: spine-leaf. 어느 랙 사이든 3홉, 증설은 스파인 추가로
@@ -20,6 +20,7 @@
 | [3. 주소 계획](#3-주소-계획--장비-번호에서-계산해-뽑는다) | 루프백·링크·서버망·VNI·RT |
 | [4. 이름·AS·포트 규칙](#4-이름as포트-규칙--판단을-0으로) | 리프 추가를 1군데 수정으로 |
 | [5. 운영 원칙](#5-운영-원칙) | 고장 주입, 점검, 설정 관리 |
+| [6. 검증](#6-검증--숫자와-결정) | 기본 측정 요약, eBGP 위 EVPN 함정, unnumbered 채택과 listen range 기각 |
 
 ## 1. 왜 spine-leaf인가
 
@@ -70,7 +71,7 @@ Clos(spine-leaf)는 이를 두 가지 원칙으로 푼다.
 |---|---|---|
 | 스파인 루프백 | `10.255.0.<번호>/32` | 어느 링크가 끊겨도 살아 있는 주소. BGP router-id와 VXLAN 터널 출발지로 쓴다 |
 | 리프 루프백 | `10.255.1.<번호>/32` | 옥텟 하나로 스파인/리프가 구분된다 |
-| 스위치 간 링크 | `/31` (스파인당 하나의 /24) | 라우터 둘만 마주보므로 주소 2개면 충분하다. /30 대비 절반. **BGP unnumbered 전환이 결정되어 폐기 예정** ([EXPERIMENTS §4](EXPERIMENTS.md)) |
+| 스위치 간 링크 | `/31` (스파인당 하나의 /24) | 라우터 둘만 마주보므로 주소 2개면 충분하다. /30 대비 절반. **BGP unnumbered 전환이 결정되어 폐기 예정** ([6절](#bgp-unnumbered--채택)) |
 | 서버망 | `172.16.<리프번호>.0/24`, GW `.1` | 랙마다 다른 서브넷. Clos의 기본형이고, 랙을 넘는 통신은 전부 L3 |
 | VNI | `10000 + VLAN ID` | VLAN 번호만 알면 VNI가 나온다 |
 | EVPN RT | `65000:<VNI>` 패브릭 공통 고정값 | FRR의 자동 생성값은 `내 AS:VNI`인데, 장비마다 AS가 다른 eBGP 패브릭에서는 서로 어긋나 EVPN이 조용히 실패한다. 실측으로 확인한 함정 |
@@ -101,3 +102,43 @@ Clos(spine-leaf)는 이를 두 가지 원칙으로 푼다.
 2. **점검 스크립트에 기대값을 상수로 박지 않는다.** 장비 수와 기대 세션 수는 토폴로지에서 계산한다. 상수로 박으면 대수가 바뀔 때 점검이 먼저 거짓말을 한다.
 3. **설정은 파일로, 읽기 전용 마운트로.** 설정이 깃에 남고, 랩을 부수고 다시 세워도 같은 상태로 돌아온다.
 4. **생성기를 붙인 뒤에는 생성물을 손으로 고치지 않는다.** 재생성 후 `git diff --exit-code`로 강제한다.
+
+## 6. 검증 — 숫자와 결정
+
+설계가 옳은지는 이 랩(FRR 10.2.1, containerlab)에서 숫자로 확인했다. 기본 측정은 패킷 캡처와 함께 다시 재서 실험 장으로 옮겼고, 여기에는 요약만 둔다.
+
+| 무엇 | 숫자 | 자세히 |
+|---|---|---|
+| ECMP 해시 | 정책 0(IP만)은 흐름 40개가 한쪽으로 몰림, 정책 1(포트까지)은 갈림 → 리프에 `fib_multipath_hash_policy=1` | [실험 05](../experiments/_completed/05-ecmp-hash/README.md) |
+| 케이블 단선 | 끊김 **0.2초** (인터페이스 다운과 함께 BGP도 즉시 내려간다) | [실험 06](../experiments/_completed/06-link-down-convergence/README.md) |
+| 스파인 조용한 먹통 | **7.6~8.8초** 블랙홀 (hold timer 9초를 기다린다) | [실험 07](../experiments/_completed/07-spine-freeze-bfd/README.md) |
+| 같은 먹통 + BFD 300ms×3 | **0.8~1.2초** | [실험 07](../experiments/_completed/07-spine-freeze-bfd/README.md) |
+| 모니터링이 아는 시간 | BFD 없음 14.1초, 있음 6.2초. 하한은 `scrape_interval`(5초) | [monitoring/](../monitoring/README.md) |
+
+<div align="center"><img src="../assets/convergence.svg" width="860" alt="같은 장애에서 BFD 유무에 따른 끊김 구간 타임라인 — 8.8초 vs 1.2초"></div>
+
+### eBGP 패브릭 위 EVPN의 함정
+
+`./scripts/evpn-apply.sh`로 랙이 다른 v1 ↔ v3(10.10.10.0/24)을 같은 L2에 놓으면서 걸린 세 가지다. 패킷 하나로 따라간 장은 [실험 09](../experiments/_completed/09-packet-life-evpn/README.md).
+
+1. **RT 불일치** — FRR은 RT를 `내 AS:VNI`로 자동 생성한다. 리프마다 AS가 다르면 광고하는 쪽과 기다리는 쪽이 어긋나 EVPN이 조용히 실패한다. → 패브릭 공통값 `65000:VNI`로 고정 (3절)
+2. **스파인의 next-hop 변경** — eBGP는 넥스트홉을 자기 주소로 바꾼다. 스파인은 터널의 끝이 아니라 캡슐을 풀 수 없다. → 스파인에 `attribute-unchanged next-hop`
+3. **주소군 협상은 세션을 맺을 때 한 번** — 이미 붙은 세션에 l2vpn evpn을 켜면 `NoNeg`. `clear bgp *`로 다시 맺어야 반영된다
+
+### BGP unnumbered — 채택
+
+spine1↔leaf1 **한 링크만** 바꾸고 나머지는 `/31`을 유지한 혼합 상태에서 검증했다 (`./scripts/unnumbered-test.sh`).
+
+- 세션이 링크로컬(fe80)로 10초 안에 수립, `Extended nexthop`(RFC 5549, IPv6 링크로 IPv4 경로 운반) 양방향 협상
+- IPv4 경로의 넥스트홉이 `fe80::… via eth1`로 설치되고, `/31` 링크와 **섞인 ECMP**와 서버 간 통신 모두 정상
+- RA 추가 설정 불필요 (FRR 10.2.1)
+
+채택 이유는 줄 수가 아니라 **계산이 사라진다**는 것이다. 링크 주소 계산식(3절)이 통째로 없어지고, 스파인 설정은 `neighbor ethN interface` 한 줄로 끝난다. 잃는 것은 링크 IP 기반 점검(`ping 10.1.1.0`)과 주소로 상대를 식별하는 습관이라, hostname·description 규칙이 전제가 된다.
+
+**전환 순서 함정**: `/31`을 지우기 전에 이웃을 `interface`로 바꾸면 FRR이 세션을 IPv4로 붙여 버린다. 그 상태에서 IP를 지우면 **세션은 Established인데 경로만 사라진다**. 넥스트홉이 더 이상 직접 연결된 주소가 아니기 때문이다. 순서는 ① `/31` 삭제 → ② 이웃 교체.
+
+### 스파인 동적 이웃(listen range) — 검증 후 기각
+
+`bgp listen range 10.1.1.0/24`로 이웃 8줄을 1줄로 줄이고, 리프 4대가 20초 안에 스스로 재접속하는 것까지 확인했다 (`./scripts/listen-range-test.sh`). 그러나 unnumbered를 채택하면 링크에 IP가 없어 열어 줄 대역 자체가 사라지므로 기각했다.
+대역 안이면 아무 장비나 붙을 수 있다는 걱정도 unnumbered에서는 저절로 풀린다. link-local은 라우팅되지 않아 그 포트에 꽂힌 장비만 붙는다.
+

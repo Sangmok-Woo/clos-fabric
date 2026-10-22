@@ -70,13 +70,12 @@ Ansible은 작업 하나마다 접속·모듈 전송에 1초 안팎이 들어서
 
 | 스크립트 | 남긴 이유 |
 |---|---|
-| `scripts/capture.sh`, `stream.sh` | tcpdump를 백그라운드로 띄우거나 stdout으로 Wireshark에 흘린다. Ansible은 작업이 끝나야 출력을 돌려준다 |
-| `scripts/traffic.sh` | 계속 도는 트래픽 생성기. "상태"가 아니라 "동작"이다 |
+| `scripts/capture.sh` | tcpdump를 백그라운드로 띄운다. Ansible은 작업이 끝나야 출력을 돌려준다 |
 | `scripts/failover.sh`, `ecmp-hash.sh`, `monitoring/detect-time.sh`, `experiments/_tools/timeline.sh` | 시간·분산 측정. Ansible이 끼면 측정값이 Ansible 지연만큼 틀어진다 |
 | `scripts/in.sh`, `experiments/_tools/lab.sh` | `nsenter` 한 줄을 감싼 편의 함수 |
 | `experiments/_tools/detail.sh`, `ws-shot.ps1` | 윈도우(Git Bash·PowerShell)에서 도는 도구. 대상 장비가 없다 |
 | `scripts/day.sh`, `days.sh` | 문제 내기·답 보기가 사람과 주고받는 흐름이고, 고장 주입은 대부분 한 줄이라 옮겨도 얻는 게 적다 |
-| `experiments/NN-*/run.sh` (11개) | 주입 → 캡처 → 트래픽 → 원복이 초 단위로 맞물린다. 나중에 원복 부분만 playbook을 부르게 바꿀 수는 있다 |
+| `experiments/_completed/NN-*/run.sh` 등 (13개) | 주입 → 캡처 → 트래픽 → 원복이 초 단위로 맞물린다. 나중에 원복 부분만 playbook을 부르게 바꿀 수는 있다 |
 
 ## Ansible로 바꾸면서 배운 것
 

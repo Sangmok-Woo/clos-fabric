@@ -1,6 +1,6 @@
 # 실험 06 — 링크 다운 수렴: 케이블이 뽑히면 0.2초
 
-> [실험 목록](../../README.md) · 옛 [docs/EXPERIMENTS §2](../../../docs/EXPERIMENTS.md)를 패킷 캡처로 다시 잰 장 · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
+> [실험 목록](../../README.md) · [DESIGN §6](../../../docs/DESIGN.md#6-검증--숫자와-결정)의 수렴 측정을 패킷 캡처로 다시 잰 장 · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
 
 케이블이 뽑히면 양쪽 장비가 인터페이스 다운을 바로 안다. BGP 타이머를 기다릴 필요가 없다.
 그래서 끊김은 0.2초 정도로 짧다. 이 장은 그 0.2초 동안 무슨 일이 있었는지를 본다.

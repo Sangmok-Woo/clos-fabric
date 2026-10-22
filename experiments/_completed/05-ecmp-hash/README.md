@@ -1,6 +1,6 @@
 # 실험 05 — ECMP 분산: 경로가 2개인 것과 반씩 나눠 가는 것은 다르다
 
-> [실험 목록](../../README.md) · 옛 [docs/EXPERIMENTS §1](../../../docs/EXPERIMENTS.md)을 패킷 캡처로 다시 잰 장 · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
+> [실험 목록](../../README.md) · [DESIGN §6](../../../docs/DESIGN.md#6-검증--숫자와-결정)의 ECMP 측정을 패킷 캡처로 다시 잰 장 · 실행 기록 [capture/run-output.txt](capture/run-output.txt)
 
 라우팅 테이블에 넥스트홉이 2개 있어도 트래픽이 반씩 나뉜다는 보장은 없다. 어느 링크로 보낼지는 커널의 **해시 정책**이 정한다.
 이 장에서는 leaf1의 스파인 방향 두 포트를 동시에 캡처해서, 흐름 하나하나가 어느 스파인으로 갔는지 센다.

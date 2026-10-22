@@ -23,7 +23,7 @@
 01~04와 08은 장애를 넣고 패킷으로 읽는 장, 05~07은 패브릭의 기본 동작(분산·수렴·BFD)을 패킷으로 다시 잰 장이다.
 09는 EVPN-VXLAN을 패킷 하나로 따라간 장, 10~12는 별도 소형 랩(natlab·fwacl·fwecmp)이나 RoCE 서버를 붙여 상태 장비와 RDMA를 다룬 장이다.
 
-05~07은 원래 [docs/EXPERIMENTS.md](../docs/EXPERIMENTS.md) §1·§2에 있던 측정을 캡처와 함께 다시 한 것이다.
+05~07은 패브릭을 세우며 스크립트로만 쟀던 기본 측정을 캡처와 함께 다시 한 것이다. 요약은 [DESIGN §6](../docs/DESIGN.md#6-검증--숫자와-결정).
 
 [_archive/](_archive/)에는 다 끝났고 지금은 쓰지 않는 실험을 보관한다.
 [bgp-anatomy](_archive/bgp-anatomy/README.md) — clos 패브릭 대신 AS 6개짜리 미니 인터넷을 세워
@@ -82,7 +82,7 @@ experiments/NN-이름/
 ## 새 실험 추가
 
 ```bash
-cp -r experiments/_template experiments/NN-이름
+cp -r experiments/_template experiments/_wip/NN-이름
 ```
 
 1. `run.sh`에 주입·캡처·트래픽·원복을 쓰고, `restore.sh`에 되돌리는 명령을 적는다
