@@ -13,6 +13,7 @@
 
 | 버전 | 기간 | 한 줄 |
 |---|---|---|
+| [v0.19](#v019--저장소-정리-실험-번호-다시-매김-2026-10-22) | 2026-10-22 | `captures/` 삭제, 완료 01~08 · 진행 중 09~15로 번호를 다시 매김 |
 | [v0.18](#v018--k8s--ceph-스토리지망-2026-10-22) | 2026-10-22 | `k8s-ceph/` 하위 프로젝트: elice-infra의 스토리지망 분리를 이 패브릭에 이식 |
 | [v0.17](#v017--실험-1821-삭제-실험-18-evpn-esi-lag-2026-10-20) | 2026-10-20 | 실험 18·19·20·21 삭제, 새 실험 18 EVPN ESI-LAG |
 | [v0.16](#v016--roce-over-vxlan-2회차-dscpecmpmac-이동-nat-포트-고갈-bgp-gr-2026-10-14--10-16) | 2026-10-14 ~ 10-16 | 실험 16 2회차(장애1 정지 = BGP 굶김), 18 DSCP 소실, 19 VXLAN ECMP 엔트로피, 20 EVPN MAC 이동, 09 NAT 포트 고갈, 21 BGP GR |
@@ -34,6 +35,30 @@
 
 ---
 
+## v0.19 — 저장소 정리, 실험 번호 다시 매김 (2026-10-22)
+
+### 삭제
+- 최상위 `captures/` (초기 EVPN 캡처 3개와 열기 스크립트). `scripts/capture.sh`는 남기고, 그 출력 폴더 `captures/`는 `.gitignore`에 넣었다
+
+### 변경
+- 완료 실험은 01~08, 진행 중은 09~15로 빈 번호 없이 다시 매겼다. 폴더 이름, 각 실험 README 제목, 실험끼리의 참조, 스크립트 머리 주석을 함께 고쳤다
+
+  | 이전 | 이후 | 실험 |
+  |---|---|---|
+  | `_completed/10` | `_completed/08` | 마이크로버스트 |
+  | `_wip/08` | `_wip/09` | EVPN-VXLAN 패킷 추적 |
+  | `_wip/09` | `_wip/10` | 세션 테이블 고갈 (NAT 포트 고갈) |
+  | `_wip/12` | `_wip/11` | RoCEv2 성능 튜닝 |
+  | `_wip/14` | `_wip/12` | ACL과 방화벽 이중화 |
+  | `_wip/15` | `_wip/13` | EVPN 패브릭 위의 5G 코어 |
+  | `_wip/16` | `_wip/14` | RoCE over VXLAN: ECN 전달 누락 |
+  | `_wip/18` | `_wip/15` | EVPN ESI-LAG |
+  | 예정 11 | 예정 16 | 비대칭 라우팅 + 상태 기반 방화벽 |
+
+- 14장 2회차 스크립트에 남아 있던 옛 번호(실험 18 = 지금 14, 실험 13 = 지금 11의 R8)도 지금 번호로 고쳤다
+- 메인 README: 장애 시나리오 표는 완료 01~08만, 진행 중은 번호순 표(09~15)로 따로. 위쪽 요약 목록도 01~08만 남겼다
+- 이 아래 과거 버전의 본문은 그때 번호 그대로 둔다(링크 경로만 새 폴더로 고쳤다). 대응은 위 표
+
 ## v0.18 — K8s + Ceph 스토리지망 (2026-10-22)
 
 ### 추가
@@ -48,7 +73,7 @@
 ## v0.17 — 실험 18~21 삭제, 실험 18 EVPN ESI-LAG (2026-10-20)
 
 ### 추가
-- 실험 18 `experiments/_wip/18-evpn-esi-lag/`: 서버 hmh 를 leaf1·leaf2 에 bond(LACP)로 한 줄씩, 두 리프에 같은 ES(FRR EVPN-MH). VLAN 20 / VNI 10020 / 10.10.20.0/24, RT 65000:10020. 서버 두 대(hmh, hrem)는 토폴로지 밖에서 setup.sh 가 붙이고 restore.sh 가 걷어 낸다 (베이스 설정 변경 없음)
+- 실험 18 `experiments/_wip/15-evpn-esi-lag/`: 서버 hmh 를 leaf1·leaf2 에 bond(LACP)로 한 줄씩, 두 리프에 같은 ES(FRR EVPN-MH). VLAN 20 / VNI 10020 / 10.10.20.0/24, RT 65000:10020. 서버 두 대(hmh, hrem)는 토폴로지 밖에서 setup.sh 가 붙이고 restore.sh 가 걷어 낸다 (베이스 설정 변경 없음)
 - 단방향 UDP 탐침(흐름 4개 × 10ms), 50ms 상태 감시, 캡처 네 곳을 합친 흐름 그림(`img/*.svg`)
 - 실험 18 Wireshark 화면 4장(`img/*.png`): 정상 상태 흐름 분산, leaf1 루프백 철회 UPDATE, LACP 0x07 → 0x3f 대기, 업링크 죽은 leaf1으로 나가는 ARP 응답
 
@@ -64,7 +89,7 @@
 ## v0.16 — RoCE over VXLAN 2회차, DSCP·ECMP·MAC 이동, NAT 포트 고갈, BGP GR (2026-10-14 ~ 10-16)
 
 ### 추가
-- 실험 16 2회차 `experiments/_wip/16-roce-vxlan-ecn/run2/`: 데스크톱에서 다른 구성(rxe 붙는 VRF g1~g4, 병목 300Mbit)으로 60초 × 3회. 트랙 A′(rxe + 실험 13 의 흉내 DCQCN) 추가, Step 1 에 4×4 디캡 ECN 표, 진단 스크립트 `diag-stall.sh`(미실행)
+- 실험 16 2회차 `experiments/_wip/14-roce-vxlan-ecn/run2/`: 데스크톱에서 다른 구성(rxe 붙는 VRF g1~g4, 병목 300Mbit)으로 60초 × 3회. 트랙 A′(rxe + 실험 13 의 흉내 DCQCN) 추가, Step 1 에 4×4 디캡 ECN 표, 진단 스크립트 `diag-stall.sh`(미실행)
 - 실험 18 `_wip/18-vxlan-dscp-qos/`, 19 `_wip/19-vxlan-ecmp-entropy/`, 20 `_wip/20-evpn-mac-mobility/`: 스크립트와 실행 전 예측 (16 run2 의 setup.sh 를 같이 쓴다)
 
 - 실험 18 VXLAN 바깥 DSCP 소실: 기본 `tos 0` 에서 RoCE 가 스파인의 RoCE 클래스를 못 타고 TCP 8흐름과 BE 줄에 섬 → 150 → 12Mbit/s, NAK 0 → 581, 지연 99% 42µs → 3.4ms. `tos inherit` 이면 그대로(150Mbit, NAK 0, 45µs), `tos 0x68` 고정이면 TCP 까지 RoCE 클래스로 몰려 다시 무너짐
@@ -78,7 +103,7 @@
 
 ### 변경
 - `run2/scripts/setup.sh`: spine2:eth3 을 내렸는지 state 파일이 아니라 실제 링크 상태로 판단 (재배포 뒤 파일만 남아 경로 고정이 풀렸던 일)
-- 처음 18번으로 만든 RoCE over VXLAN 데스크톱 회차를 노트북 1회차(16번)와 합쳐 `16-roce-vxlan-ecn/run2/` 로 옮김. 이어 만든 19·20·21 → 18·19·20 (17은 다른 작업이 쓰는 중)
+- 처음 18번으로 만든 RoCE over VXLAN 데스크톱 회차를 노트북 1회차(16번)와 합쳐 `14-roce-vxlan-ecn/run2/` 로 옮김. 이어 만든 19·20·21 → 18·19·20 (17은 다른 작업이 쓰는 중)
 
 ### 검증
 - 바깥 CE + 안쪽 Not-ECT 는 리눅스 vxlan 이 버린다 (`vxlan: non-ECT from … TOS=0x3`). 바깥 ECT(1) + 안쪽 ECT(0) → 안쪽 ECT(1). 안쪽 CE 는 바깥에 ECT(0)으로 (RFC 6040)
@@ -90,7 +115,7 @@
 ## v0.15 — RoCE over VXLAN ECN (2026-10-15)
 
 ### 추가
-- 실험 16 `experiments/_wip/16-roce-vxlan-ecn/`: 스파인 RED/ECN 병목에서 VTEP 디캡 때 CE 누락(장애 1), 캡슐화 때 ECT 누락(장애 2), 디캡 뒤 병목 대조군. 스크립트 setup·inject-decap·inject-encap·control·measure·teardown, Q1 캡처, rxe 점검, 그래프
+- 실험 16 `experiments/_wip/14-roce-vxlan-ecn/`: 스파인 RED/ECN 병목에서 VTEP 디캡 때 CE 누락(장애 1), 캡슐화 때 ECT 누락(장애 2), 디캡 뒤 병목 대조군. 스크립트 setup·inject-decap·inject-encap·control·measure·teardown, Q1 캡처, rxe 점검, 그래프
 
 ### 검증
 - 리눅스 vxlan은 기본값에서 CE를 안쪽으로, ECT를 바깥으로 옮긴다. tos 옵션은 DSCP만 바꾼다
@@ -116,9 +141,9 @@
 
 ### 변경
 - 실험 14·15·16을 `experiments/_planned/`로 옮김. 목록에서도 계획 중 칸으로 분리
-- 실험 13(ECN·DCQCN·PFC)을 12에 합쳐 R8로 이어 붙임. `13-ecn-dcqcn-pfc/run.sh` → `12-roce/run-r8.sh`, 도구는 `12-roce/tools/`, 결과는 `12-roce/capture/r8/`
-- `12-roce/restore.sh`가 R8 큐까지 되돌린다. `restore.sh r8`은 R8만
-- 실험 16(ECMP + 방화벽 두 대)을 14의 2부(Phase 7)로 합침. `16-ecmp-fw-sync/` → `14-acl-vs-firewall/ecmp/`, 실행 사본 동기화는 14의 `sync.sh` 하나로
+- 실험 13(ECN·DCQCN·PFC)을 12에 합쳐 R8로 이어 붙임. `13-ecn-dcqcn-pfc/run.sh` → `11-roce/run-r8.sh`, 도구는 `11-roce/tools/`, 결과는 `11-roce/capture/r8/`
+- `11-roce/restore.sh`가 R8 큐까지 되돌린다. `restore.sh r8`은 R8만
+- 실험 16(ECMP + 방화벽 두 대)을 14의 2부(Phase 7)로 합침. `16-ecmp-fw-sync/` → `12-acl-vs-firewall/ecmp/`, 실행 사본 동기화는 14의 `sync.sh` 하나로
 
 ## v0.12 — ECMP + 방화벽 두 대 (2026-10-10)
 
@@ -139,7 +164,7 @@
 ## v0.11 — 5G 코어 기획 (2026-10-10)
 
 ### 추가
-- `experiments/15-5g-core-evpn/README.md` — Open5GS·UERANSIM을 리프 4개에 CP/UP 분리로 올리는 실험의 기획(Phase 0~7, 비유표, 빈 주소·VRF 계획표, 설정 스켈레톤, 관찰 기록표). 토폴로지·스크립트는 아직 없음
+- `experiments/13-5g-core-evpn/README.md` — Open5GS·UERANSIM을 리프 4개에 CP/UP 분리로 올리는 실험의 기획(Phase 0~7, 비유표, 빈 주소·VRF 계획표, 설정 스켈레톤, 관찰 기록표). 토폴로지·스크립트는 아직 없음
 
 ### 검증
 - WSL 커널 6.6.114.1: `CONFIG_IP_SCTP=m`(modprobe 성공), `CONFIG_TUN=m`, `CONFIG_VXLAN=y`, `CONFIG_NET_VRF=m`, 커널 GTP 없음(사용자 공간 UPF라 무관)
@@ -151,7 +176,7 @@
 ## v0.10 — ACL vs 방화벽 (2026-10-10)
 
 ### 추가
-- `experiments/14-acl-vs-firewall/` — 베이스와 따로 뜨는 작은 랩 `fwacl`(h1·leaf1·acl·fw·serverA·serverB, 우회 링크 2개), 단계 실행기 `run.sh`(Phase 0~6), 노트·결과표
+- `experiments/12-acl-vs-firewall/` — 베이스와 따로 뜨는 작은 랩 `fwacl`(h1·leaf1·acl·fw·serverA·serverB, 우회 링크 2개), 단계 실행기 `run.sh`(Phase 0~6), 노트·결과표
 - 이미지 `fwlab:1`(ubuntu 24.04 + nftables·conntrack·hping3·dnsmasq) — alpine에는 hping3가 없어서
 
 ### 검증

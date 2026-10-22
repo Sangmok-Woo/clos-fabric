@@ -3,3 +3,6 @@ clab-clos/
 .clab.*.bak
 *.log
 clab-fwacl/
+
+# scripts/capture.sh 가 뜨는 임시 캡처 (저장소에 올리지 않는다)
+captures/

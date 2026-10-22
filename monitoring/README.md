@@ -103,8 +103,8 @@ Established 16/16, 알람 0이었다. 세션은 장애와 무관하게 살아 �
 
 ## 4차 — RoCE NIC 카운터 (2026-10-09)
 
-[실험 12](../experiments/_wip/12-roce/README.md)에서 인캐스트로 스위치 큐 드랍이 20만 개 넘게 났는데 인터페이스 카운터는 0이었다(tc qdisc 드랍은 `tx_dropped`에 안 잡힌다).
-RoCE는 그 손실을 NIC가 재전송으로 메우므로 서버 NIC(rxe)의 카운터를 읽는다. 수집기 컨테이너에서는 카운터 파일이 안 보여서, 기본 네임스페이스에서 도는 실험 12의 도구 상자(rtool)에 docker exec로 들어가 읽는다.
+[실험 11](../experiments/_wip/11-roce/README.md)에서 인캐스트로 스위치 큐 드랍이 20만 개 넘게 났는데 인터페이스 카운터는 0이었다(tc qdisc 드랍은 `tx_dropped`에 안 잡힌다).
+RoCE는 그 손실을 NIC가 재전송으로 메우므로 서버 NIC(rxe)의 카운터를 읽는다. 수집기 컨테이너에서는 카운터 파일이 안 보여서, 기본 네임스페이스에서 도는 실험 11의 도구 상자(rtool)에 docker exec로 들어가 읽는다.
 `clos_rdma_{sent_pkts,rcvd_pkts,out_of_seq_request,duplicate_request,completer_retry_err,rcvd_seq_err,retry_exceeded_err}_total`(장치별). rtool이 없으면 비어 있다.
 
 ## 알람 (`prometheus/alerts.yml`)
