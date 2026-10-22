@@ -1,0 +1,18 @@
+# Wireshark profile for the experiment chapters (screenshots).
+# Installed to %APPDATA%\Wireshark\profiles\lab-chapters by ws-shot.ps1.
+gui.update.enabled: FALSE
+gui.layout_type: 1
+gui.layout_content_1: PLIST
+gui.layout_content_2: PDETAILS
+gui.layout_content_3: NONE
+gui.column.format: 
+	"No.", "%m",
+	"Time", "%t",
+	"Source", "%s",
+	"Destination", "%d",
+	"Protocol", "%p",
+	"Length", "%L",
+	"Info", "%i"
+tcp.check_checksum: TRUE
+ip.check_checksum: TRUE
+udp.check_checksum: TRUE

@@ -1,0 +1,45 @@
+### leaf2-eth11   (13 패킷)
+17:08:51.101518 aa:c1:ab:b6:ae:64 > 00:00:5e:00:01:01, ethertype 802.1Q (0x8100), length 98: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0xc0, ttl 1, id 34192, offset 0, flags [DF], proto TCP (6), length 80)
+   10.10.16.22.39380 > 10.10.16.1.179: Flags [P.], cksum 0xf2e0 (correct), seq 2215741587:2215741615, ack 3517866889, win 501, options [nop,nop,TS val 4108732038 ecr 528475383], length 28: BGP
+	Update Message (2), length: 28
+	  Withdrawn routes:
+	    10.10.32.10/32
+	  End-of-Rib Marker (empty NLRI)
+17:08:51.101606 00:00:5e:00:01:01 > aa:c1:ab:b6:ae:64, ethertype 802.1Q (0x8100), length 70: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0xc0, ttl 1, id 49500, offset 0, flags [DF], proto TCP (6), length 52)
+   10.10.16.1.179 > 10.10.16.22.39380: Flags [.], cksum 0x1c93 (correct), ack 28, win 508, options [nop,nop,TS val 528477334 ecr 4108732038], length 0
+17:08:52.149738 00:00:5e:00:01:01 > aa:c1:ab:b6:ae:64, ethertype 802.1Q (0x8100), length 89: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0xc0, ttl 1, id 49501, offset 0, flags [DF], proto TCP (6), length 71)
+   10.10.16.1.179 > 10.10.16.22.39380: Flags [P.], cksum 0x144d (correct), seq 1:20, ack 28, win 508, options [nop,nop,TS val 528478382 ecr 4108732038], length 19: BGP
+	Keepalive Message (4), length: 19
+17:08:52.150177 aa:c1:ab:b6:ae:64 > 00:00:5e:00:01:01, ethertype 802.1Q (0x8100), length 89: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0xc0, ttl 1, id 34193, offset 0, flags [DF], proto TCP (6), length 71)
+   10.10.16.22.39380 > 10.10.16.1.179: Flags [P.], cksum 0x1028 (correct), seq 28:47, ack 20, win 501, options [nop,nop,TS val 4108733087 ecr 528478382], length 19: BGP
+	Keepalive Message (4), length: 19
+17:08:52.150223 00:00:5e:00:01:01 > aa:c1:ab:b6:ae:64, ethertype 802.1Q (0x8100), length 70: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0xc0, ttl 1, id 49502, offset 0, flags [DF], proto TCP (6), length 52)
+   10.10.16.1.179 > 10.10.16.22.39380: Flags [.], cksum 0x143b (correct), ack 47, win 508, options [nop,nop,TS val 528478383 ecr 4108733087], length 0
+17:08:54.263763 aa:c1:ab:b6:ae:64 > 00:00:5e:00:01:01, ethertype 802.1Q (0x8100), length 126: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0xc0, ttl 1, id 34194, offset 0, flags [DF], proto TCP (6), length 108)
+   10.10.16.22.39380 > 10.10.16.1.179: Flags [P.], cksum 0x665a (correct), seq 47:103, ack 20, win 501, options [nop,nop,TS val 4108735200 ecr 528478383], length 56: BGP
+	Update Message (2), length: 56
+	  Origin (1), length: 1, Flags [T]: IGP
+	  AS Path (2), length: 6, Flags [TE]: 65200 
+	  Next Hop (3), length: 4, Flags [T]: 10.10.16.22
+	  Multi Exit Discriminator (4), length: 4, Flags [O]: 0
+	  Updated routes:
+	    10.10.32.10/32
+17:08:54.263840 00:00:5e:00:01:01 > aa:c1:ab:b6:ae:64, ethertype 802.1Q (0x8100), length 70: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0xc0, ttl 1, id 49503, offset 0, flags [DF], proto TCP (6), length 52)
+   10.10.16.1.179 > 10.10.16.22.39380: Flags [.], cksum 0x0381 (correct), ack 103, win 508, options [nop,nop,TS val 528480496 ecr 4108735200], length 0
+17:08:55.149843 00:00:5e:00:01:01 > aa:c1:ab:b6:ae:64, ethertype 802.1Q (0x8100), length 89: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0xc0, ttl 1, id 49504, offset 0, flags [DF], proto TCP (6), length 71)
+   10.10.16.1.179 > 10.10.16.22.39380: Flags [P.], cksum 0xfbdc (correct), seq 20:39, ack 103, win 508, options [nop,nop,TS val 528481382 ecr 4108735200], length 19: BGP
+	Keepalive Message (4), length: 19
+17:08:55.150281 aa:c1:ab:b6:ae:64 > 00:00:5e:00:01:01, ethertype 802.1Q (0x8100), length 89: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0xc0, ttl 1, id 34195, offset 0, flags [DF], proto TCP (6), length 71)
+   10.10.16.22.39380 > 10.10.16.1.179: Flags [P.], cksum 0xf859 (correct), seq 103:122, ack 39, win 501, options [nop,nop,TS val 4108736087 ecr 528481382], length 19: BGP
+	Keepalive Message (4), length: 19
+17:08:55.150331 00:00:5e:00:01:01 > aa:c1:ab:b6:ae:64, ethertype 802.1Q (0x8100), length 70: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0xc0, ttl 1, id 49505, offset 0, flags [DF], proto TCP (6), length 52)
+   10.10.16.1.179 > 10.10.16.22.39380: Flags [.], cksum 0xfc6c (correct), ack 122, win 508, options [nop,nop,TS val 528481383 ecr 4108736087], length 0
+17:08:58.149857 00:00:5e:00:01:01 > aa:c1:ab:b6:ae:64, ethertype 802.1Q (0x8100), length 89: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0xc0, ttl 1, id 49506, offset 0, flags [DF], proto TCP (6), length 71)
+   10.10.16.1.179 > 10.10.16.22.39380: Flags [P.], cksum 0xec87 (correct), seq 39:58, ack 122, win 508, options [nop,nop,TS val 528484382 ecr 4108736087], length 19: BGP
+	Keepalive Message (4), length: 19
+17:08:58.150326 aa:c1:ab:b6:ae:64 > 00:00:5e:00:01:01, ethertype 802.1Q (0x8100), length 89: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0xc0, ttl 1, id 34196, offset 0, flags [DF], proto TCP (6), length 71)
+   10.10.16.22.39380 > 10.10.16.1.179: Flags [P.], cksum 0xe0c3 (correct), seq 122:141, ack 58, win 501, options [nop,nop,TS val 4108739087 ecr 528484382], length 19: BGP
+	Keepalive Message (4), length: 19
+17:08:58.150356 00:00:5e:00:01:01 > aa:c1:ab:b6:ae:64, ethertype 802.1Q (0x8100), length 70: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0xc0, ttl 1, id 49507, offset 0, flags [DF], proto TCP (6), length 52)
+   10.10.16.1.179 > 10.10.16.22.39380: Flags [.], cksum 0xe4d6 (correct), ack 141, win 508, options [nop,nop,TS val 528484383 ecr 4108739087], length 0
+

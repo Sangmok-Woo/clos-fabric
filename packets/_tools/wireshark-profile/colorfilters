@@ -1,0 +1,3 @@
+@PROD@vxlan.vni == 10110 || vxlan.vni == 50010 || vlan.id == 110@[46000,56000,65535][0,0,0]
+@STORAGE@vxlan.vni == 10120 || vxlan.vni == 50020 || vlan.id == 120@[46000,62000,46000][0,0,0]
+@REPL@vxlan.vni == 10130 || vxlan.vni == 50030 || vlan.id == 130@[58000,48000,65000][0,0,0]

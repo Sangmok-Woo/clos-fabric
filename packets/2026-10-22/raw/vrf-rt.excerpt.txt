@@ -1,0 +1,100 @@
+# vrf-rt.pcap 1번 프레임 안의 UPDATE 하나 (leaf4 → spine1, PROD 대역의 Type-5)
+# tshark -r vrf-rt.pcap -Y frame.number==1 -V -O bgp 에서 잘라냄
+Type: UPDATE Message (2)
+Withdrawn Routes Length: 0
+Total Path Attribute Length: 97
+Path attributes
+    Path Attribute - MP_REACH_NLRI
+        Flags: 0x90, Optional, Extended-Length, Non-transitive, Complete
+            1... .... = Optional: Set
+            .0.. .... = Transitive: Not set
+            ..0. .... = Partial: Not set
+            ...1 .... = Extended-Length: Set
+            .... 0000 = Unused: 0x0
+        Type Code: MP_REACH_NLRI (14)
+        Length: 45
+        Address family identifier (AFI): Layer-2 VPN (25)
+        Subsequent address family identifier (SAFI): EVPN (70)
+        Next hop: 10.255.1.4
+            IPv4 Address: 10.255.1.4
+        Number of Subnetwork points of attachment (SNPA): 0
+        Network Layer Reachability Information (NLRI)
+            EVPN NLRI: IP Prefix route
+                Route Type: IP Prefix route (5)
+                Length: 34
+                Route Distinguisher: 00010aff01040008 (10.255.1.4:8)
+                ESI: 00:00:00:00:00:00:00:00:00:00
+                    ESI Type: ESI 9 bytes value (0)
+                    ESI Value: 00 00 00 00 00 00 00 00 00
+                    ESI 9 bytes value: 00 00 00 00 00 00 00 00 00
+                Ethernet Tag ID: 0
+                IP prefix length: 24
+                IPv4 address: 10.10.16.0
+                IPv4 Gateway address: 0.0.0.0
+                VNI: 50010
+    Path Attribute - ORIGIN: INCOMPLETE
+        Flags: 0x40, Transitive, Well-known, Complete
+            0... .... = Optional: Not set
+            .1.. .... = Transitive: Set
+            ..0. .... = Partial: Not set
+            ...0 .... = Extended-Length: Not set
+            .... 0000 = Unused: 0x0
+        Type Code: ORIGIN (1)
+        Length: 1
+        Origin: INCOMPLETE (2)
+    Path Attribute - AS_PATH: 65014 
+        Flags: 0x50, Transitive, Extended-Length, Well-known, Complete
+            0... .... = Optional: Not set
+            .1.. .... = Transitive: Set
+            ..0. .... = Partial: Not set
+            ...1 .... = Extended-Length: Set
+            .... 0000 = Unused: 0x0
+        Type Code: AS_PATH (2)
+        Length: 6
+        AS Path segment: 65014
+            Segment type: AS_SEQUENCE (2)
+            Segment length (number of ASN): 1
+            AS4: 65014
+    Path Attribute - MULTI_EXIT_DISC: 0
+        Flags: 0x80, Optional, Non-transitive, Complete
+            1... .... = Optional: Set
+            .0.. .... = Transitive: Not set
+            ..0. .... = Partial: Not set
+            ...0 .... = Extended-Length: Not set
+            .... 0000 = Unused: 0x0
+        Type Code: MULTI_EXIT_DISC (4)
+        Length: 4
+        Multiple exit discriminator: 0
+    Path Attribute - EXTENDED_COMMUNITIES
+        Flags: 0xc0, Optional, Transitive, Complete
+            1... .... = Optional: Set
+            .1.. .... = Transitive: Set
+            ..0. .... = Partial: Not set
+            ...0 .... = Extended-Length: Not set
+            .... 0000 = Unused: 0x0
+        Type Code: EXTENDED_COMMUNITIES (16)
+        Length: 24
+        Carried extended communities: (3 communities)
+            Encapsulation: VXLAN Encapsulation [Transitive Opaque]
+                Type: Transitive Opaque (0x03)
+                    0... .... = IANA Authority: Allocated on First Come First Serve Basis
+                    .0.. .... = Transitive across ASes: Transitive
+                Subtype (Opaque): Encapsulation (0x0c)
+                Tunnel type: VXLAN Encapsulation (8)
+            Route Target: 65000:50010 [Transitive 2-Octet AS-Specific]
+                Type: Transitive 2-Octet AS-Specific (0x00)
+                    0... .... = IANA Authority: Allocated on First Come First Serve Basis
+                    .0.. .... = Transitive across ASes: Transitive
+                Subtype (AS2): Route Target (0x02)
+                2-Octet AS: 65000
+                Local Administrator: 0x00, Type: VID (802.1Q VLAN ID)
+                    0... .... = A-Bit: auto-derived
+                    .000 .... = Type: VID (802.1Q VLAN ID) (0)
+                    .... 0000 = Domain Id: 0
+                Service Id: 50010
+            EVPN Router's MAC: Router's MAC: 0e:06:6c:21:8c:d4 [Transitive EVPN]
+                Type: Transitive EVPN (0x06)
+                    0... .... = IANA Authority: Allocated on First Come First Serve Basis
+                    .0.. .... = Transitive across ASes: Transitive
+                Subtype (EVPN): EVPN Router's MAC (0x03)
+                Router's MAC: 0e:06:6c:21:8c:d4 (0e:06:6c:21:8c:d4)

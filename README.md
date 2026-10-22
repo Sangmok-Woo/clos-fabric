@@ -88,6 +88,7 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 | [monitoring/](monitoring/README.md) | **추가 시나리오** — 베이스 + Prometheus·Grafana·자작 수집기 | `monitoring/up.sh` |
 | [k8s-ceph/](k8s-ceph/README.md) | **추가 시나리오** — 베이스 + K8s 워커 3 · Ceph 3, VRF 3개로 스토리지망 분리 | `k8s-ceph/up.sh` |
 | [experiments/](experiments/README.md) | **장애 시나리오** — 번호 붙인 실험 13개. 완료 `_completed/`, 진행 중 `_wip/`, 보관 `_archive/` | 실험마다 `run.sh` |
+| [packets/](packets/CLAUDE.md) | **패킷 구경** — 장애 없이 가볍게 캡처해서 보는 곳. 하루에 폴더 하나 | `packets/_tools/peek.sh` |
 
 추가 시나리오는 토폴로지 이름을 `clos`로 두고 `../configs`를 그대로 쓴다. 그래서 컨테이너 이름이 같아 기존 스크립트가 그대로 돌고, 대신 베이스·monitoring·k8s-ceph 중 **하나만** 떠 있다.
 새 시나리오를 더할 때는 디렉터리 하나에 `up.sh` · `down.sh` · README를 두고, 베이스 설정은 고치지 않고 배포 뒤에 덧붙인다.
@@ -168,6 +169,7 @@ cd k8s-ceph && ./up.sh      # 베이스 대신 18대 기동 + EVPN 오버레이
 | [ansible/README.md](ansible/README.md) | **Ansible** — 상태를 만드는 셸 스크립트를 옮긴 playbook, 셸로 남긴 것과 이유 |
 | [monitoring/README.md](monitoring/README.md) | **관측 시나리오** — Prometheus+Grafana 구성, 자작 수집기, 감지 시간 실측 |
 | [k8s-ceph/README.md](k8s-ceph/README.md) | **K8s + Ceph 스토리지망** — VRF 3개 분리, 워커 BGP 피어링, elice-infra와 다른 점, 점검 항목 |
+| [packets/CLAUDE.md](packets/CLAUDE.md) | **패킷 구경** — 가볍게 캡처해서 보는 곳의 규칙과 도구. 날짜별 노트: [2026-10-22](packets/2026-10-22/README.md) (VRF 세 개, k8s-ceph 경로별 패킷) |
 | [CHANGELOG.md](CHANGELOG.md) | 무엇이 언제 바뀌었나 — 검증·결정·변경의 시간 순 기록 |
 
 ---

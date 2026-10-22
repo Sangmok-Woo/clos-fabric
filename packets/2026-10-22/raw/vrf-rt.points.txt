@@ -1,0 +1,2 @@
+  interface_id 0 = leaf4:eth1
+  interface_id 1 = leaf4:eth2

@@ -1,0 +1,10 @@
+### leaf1-eth1   (0 패킷)
+
+### leaf1-eth11   (2 패킷)
+17:08:45.608748 aa:c1:ab:69:41:b3 > 00:00:5e:00:01:01, ethertype 802.1Q (0x8100), length 102: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0x0, ttl 64, id 46939, offset 0, flags [DF], proto ICMP (1), length 84)
+   10.10.16.21 > 10.10.20.31: ICMP echo request, id 38, seq 1, length 64
+17:08:46.633894 aa:c1:ab:69:41:b3 > 00:00:5e:00:01:01, ethertype 802.1Q (0x8100), length 102: vlan 110, p 0, ethertype IPv4 (0x0800), (tos 0x0, ttl 64, id 47044, offset 0, flags [DF], proto ICMP (1), length 84)
+   10.10.16.21 > 10.10.20.31: ICMP echo request, id 38, seq 2, length 64
+
+### leaf1-eth2   (0 패킷)
+

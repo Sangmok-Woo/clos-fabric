@@ -50,8 +50,11 @@ loss() {  # $1 장비 $2 목적지 $3 장애 장비 $4 장애 명령 $5 복구 �
   docker exec $N-$3 sh -c "$5"
   docker exec $N-$1 sh -c "grep -o '[0-9]* received' /tmp/p.txt | cut -d' ' -f1"
 }
-r=$(loss ceph3 10.10.24.31 spine1 "ip link set eth2 down; ip link set eth4 down" "ip link set eth2 up; ip link set eth4 up")
-echo "      복제 중 spine1의 leaf2·leaf4 링크 끊김 (ceph3 → ceph1 cluster): 200개 중 ${r}개 수신"
+# 리눅스 VXLAN은 원격 VTEP마다 경로를 하나 잡아 두므로(dst_cache) 흐름은 스파인 하나로만 간다.
+# 엉뚱한 스파인을 끊으면 아무 일도 없으니, 지금 복제 트래픽이 실제로 지나는 스파인을 골라 끊는다
+SP=$(docker exec $N-leaf4 ip route get 10.255.1.2 from 10.255.1.4 | grep -o 'dev eth[12]' | tr -dc 0-9)
+r=$(loss ceph3 10.10.24.31 spine$SP "ip link set eth2 down; ip link set eth4 down" "ip link set eth2 up; ip link set eth4 up")
+echo "      복제 중 지나는 스파인(spine$SP)의 leaf2·leaf4 링크 끊김 (ceph3 → ceph1 cluster): 200개 중 ${r}개 수신"
 [ "$r" -ge 180 ] && { echo "PASS  스파인 경로 장애에도 Ceph 복제 유지"; PASS=$((PASS+1)); } || { echo "FAIL  스파인 경로 장애"; FAIL=$((FAIL+1)); }
 sleep 10
 docker exec $N-wrk2 vtysh -c "conf t" -c "router bgp 65200" -c "address-family ipv4 unicast" -c "no network 10.10.32.10/32" >/dev/null
