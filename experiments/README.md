@@ -15,9 +15,13 @@
 | 06 | [링크 다운 수렴](_completed/06-link-down-convergence/README.md) | 지금 쓰는 스파인 링크를 내림, 인터페이스 다운 감지 | 완료 |
 | 07 | [스파인 무응답과 BFD](_completed/07-spine-freeze-bfd/README.md) | 스파인 freeze, BGP 타이머 vs BFD 300ms×3 | 완료 |
 | 08 | [마이크로버스트](_completed/08-microburst/README.md) | 평균 90Mbit/s를 고르게 / 300개씩 몰아서 100Mbit·버퍼 64KB 포트로 | 완료 |
+| 09 | [EVPN-VXLAN 패킷 추적](_completed/09-packet-life-evpn/README.md) | 주소록(Type-2/3) → 캡슐화 → 스파인 통과 → 도착을 따라가고, L2 확장·이사·멀티테넌시·ARP 억제와 그 비용을 순수 L3와 비교 | 완료 |
+| 10 | [세션 테이블 고갈 (NAT 포트 고갈)](_completed/10-session-table-exhaustion/README.md) | 별도 소형 랩(natlab)에서 SNAT 포트를 10개로 좁히고 연결·DNS 질의 폭주. TIME_WAIT, FIN 없이 사라진 연결, UDP 타임아웃이 포트를 붙잡는 시간, 범위·주소 확장 | 완료 |
+| 11 | [RoCEv2 성능 튜닝](_completed/11-roce/README.md) | Soft-RoCE 를 커널에 올려 패브릭 위로. 손실 1%, 3:1 인캐스트(버퍼·속도 제한·송신 창), QP 수와 ECMP 해시. R8 ECN·DCQCN·PFC | 완료 |
+| 12 | [ACL과 방화벽 이중화](_completed/12-acl-vs-firewall/README.md) | 1부: 같은 정책을 stateless/stateful에. 위조 ACK·UDP 왕복·비대칭 라우팅·conntrack 고갈. 2부: 갈 때·올 때 다른 FW로 갈리는 ECMP, 대칭 해시 vs conntrackd | 완료 |
 
 01~04와 08은 장애를 넣고 패킷으로 읽는 장, 05~07은 패브릭의 기본 동작(분산·수렴·BFD)을 패킷으로 다시 잰 장이다.
-예정(디렉터리 없음): 16 비대칭 라우팅 + 상태 기반 방화벽.
+09는 EVPN-VXLAN을 패킷 하나로 따라간 장, 10~12는 별도 소형 랩(natlab·fwacl·fwecmp)이나 RoCE 서버를 붙여 상태 장비와 RDMA를 다룬 장이다.
 
 05~07은 원래 [docs/EXPERIMENTS.md](../docs/EXPERIMENTS.md) §1·§2에 있던 측정을 캡처와 함께 다시 한 것이다.
 
@@ -31,13 +35,7 @@ BGP 의 연결·능력협상·AS_PATH·정책·하이재킹/경로유출·RPKI �
 
 | # | 실험 | 주입하는 장애 | 상태 |
 |---|---|---|---|
-| 09 | [EVPN-VXLAN 패킷 추적](_wip/09-packet-life-evpn/README.md) | 주소록(Type-2/3) → 캡슐화 → 스파인 통과 → 도착을 따라가고, L2 확장·이사·멀티테넌시·ARP 억제와 그 비용을 순수 L3와 비교 | 정리 중 |
-| 10 | [세션 테이블 고갈 (NAT 포트 고갈)](_wip/10-session-table-exhaustion/README.md) | 별도 소형 랩(natlab)에서 SNAT 포트를 10개로 좁히고 연결·DNS 질의 폭주. TIME_WAIT, FIN 없이 사라진 연결, UDP 타임아웃이 포트를 붙잡는 시간, 범위·주소 확장 | 완료(정리 중) |
-| 11 | [RoCEv2 성능 튜닝](_wip/11-roce/README.md) | Soft-RoCE 를 커널에 올려 패브릭 위로. 손실 1%, 3:1 인캐스트(버퍼·속도 제한·송신 창), QP 수와 ECMP 해시. R8 ECN·DCQCN·PFC | R1~R7 완료, R8 진행 중 |
-| 12 | [ACL과 방화벽 이중화](_wip/12-acl-vs-firewall/README.md) | 1부: 같은 정책을 stateless/stateful에. 위조 ACK·UDP 왕복·비대칭 라우팅·conntrack 고갈. 2부: 갈 때·올 때 다른 FW로 갈리는 ECMP, 대칭 해시 vs conntrackd | 완료 |
-| 13 | [EVPN 패브릭 위의 5G 코어](_wip/13-5g-core-evpn/README.md) | Open5GS CP/UP 분리, GTP-U in VXLAN의 MTU 두 겹, 구간별 VRF, N2·N4 차단·UPF 정지, AMF 파드 삭제 | 기획 |
-| 14 | [RoCE over VXLAN: ECN 전달 누락](_wip/14-roce-vxlan-ecn/README.md) | 스파인 RED/ECN 병목 + VTEP에서 바깥 CE를 안쪽으로 안 옮김(tc pedit 재현), 캡슐화 때 ECT 지움. 대조군은 병목을 디캡 뒤로 | 1회차 30초×2회, 2회차 60초×3회(TCP·흉내 DCQCN) 완료. rxe 그대로 트랙·정지 구간 원인 남음 |
-| 15 | [EVPN ESI-LAG: 리프 한 대가 죽을 때 서버 이중화](_wip/15-evpn-esi-lag/README.md) | 서버(bond, LACP)를 leaf1·leaf2에 한 줄씩, 같은 ES. leaf1 서버 포트 down / leaf1 전체 down / leaf1 업링크만 down(uplink 추적 없음·있음), 대조군은 ES 없이 leaf1에만 | 완료 — leaf1 전체 down 0.12초(흐름 절반), 대조군 15초 내내. 복구 때 LACP 대기로 1.4~2.4초, 업링크만 죽으면 장애 내내 블랙홀 |
+| 13 | [RoCE over VXLAN: ECN 전달 누락](_wip/13-roce-vxlan-ecn/README.md) | 스파인 RED/ECN 병목 + VTEP에서 바깥 CE를 안쪽으로 안 옮김(tc pedit 재현), 캡슐화 때 ECT 지움. 대조군은 병목을 디캡 뒤로 | 1회차 30초×2회, 2회차 60초×3회(TCP·흉내 DCQCN) 완료. rxe 그대로 트랙·정지 구간 원인 남음 |
 
 ## 실행 준비
 

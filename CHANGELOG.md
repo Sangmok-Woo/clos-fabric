@@ -13,6 +13,7 @@
 
 | 버전 | 기간 | 한 줄 |
 |---|---|---|
+| [v0.20](#v020--실험-정리-1315-삭제-0912-완료-2026-10-22) | 2026-10-22 | 13·15 삭제, 09~12 완료로 이동, 진행 중은 13 하나 |
 | [v0.19](#v019--저장소-정리-실험-번호-다시-매김-2026-10-22) | 2026-10-22 | `captures/` 삭제, 완료 01~08 · 진행 중 09~15로 번호를 다시 매김 |
 | [v0.18](#v018--k8s--ceph-스토리지망-2026-10-22) | 2026-10-22 | `k8s-ceph/` 하위 프로젝트: elice-infra의 스토리지망 분리를 이 패브릭에 이식 |
 | [v0.17](#v017--실험-1821-삭제-실험-18-evpn-esi-lag-2026-10-20) | 2026-10-20 | 실험 18·19·20·21 삭제, 새 실험 18 EVPN ESI-LAG |
@@ -34,6 +35,21 @@
 | [v0.1](#v01--랩-초기-구성-2026-08-10) | 2026-08-10 | 스파인 2 + 리프 4 패브릭 |
 
 ---
+
+## v0.20 — 실험 정리: 13·15 삭제, 09~12 완료 (2026-10-22)
+
+### 삭제
+- 13 EVPN 패브릭 위의 5G 코어(기획만 있던 장), 15 EVPN ESI-LAG 폴더와 README 세 곳의 목록 줄
+- 예정 16 비대칭 라우팅 + 상태 기반 방화벽. 12장 Phase 5와 2부(ECMP 뒤의 FW 두 대)에서 이미 다뤘다
+
+### 변경
+- 09 EVPN-VXLAN 패킷 추적, 10 NAT 포트 고갈, 11 RoCEv2, 12 ACL과 방화벽 이중화를 `_wip/`에서 `_completed/`로. 폴더 번호는 그대로
+- 14 RoCE over VXLAN → **13** (`_wip/13-roce-vxlan-ecn/`). 진행 중은 이것 하나
+- 메인 README·experiments README의 완료 표에 09~12 행, 위쪽 요약 목록에도 09~12. 실험 사이 상대 링크를 새 위치로 고침
+
+### 추가
+- 11장 R8 마무리: C 시나리오 캡처로 Wireshark 화면 2장(leaf3:eth5의 CE 81%, g3 → g1 CNP 약 2ms 간격), 패킷 흐름 절, R8을 넣은 결론. 남은 것 절은 풀지 못하고 닫은 한계로
+- 09장 실행 기록 `capture/run-output.txt` (README가 가리키던 파일이 저장소에 빠져 있었다. WSL 실행 사본에서 가져옴)
 
 ## v0.19 — 저장소 정리, 실험 번호 다시 매김 (2026-10-22)
 
@@ -89,7 +105,7 @@
 ## v0.16 — RoCE over VXLAN 2회차, DSCP·ECMP·MAC 이동, NAT 포트 고갈, BGP GR (2026-10-14 ~ 10-16)
 
 ### 추가
-- 실험 16 2회차 `experiments/_wip/14-roce-vxlan-ecn/run2/`: 데스크톱에서 다른 구성(rxe 붙는 VRF g1~g4, 병목 300Mbit)으로 60초 × 3회. 트랙 A′(rxe + 실험 13 의 흉내 DCQCN) 추가, Step 1 에 4×4 디캡 ECN 표, 진단 스크립트 `diag-stall.sh`(미실행)
+- 실험 16 2회차 `experiments/_wip/13-roce-vxlan-ecn/run2/`: 데스크톱에서 다른 구성(rxe 붙는 VRF g1~g4, 병목 300Mbit)으로 60초 × 3회. 트랙 A′(rxe + 실험 13 의 흉내 DCQCN) 추가, Step 1 에 4×4 디캡 ECN 표, 진단 스크립트 `diag-stall.sh`(미실행)
 - 실험 18 `_wip/18-vxlan-dscp-qos/`, 19 `_wip/19-vxlan-ecmp-entropy/`, 20 `_wip/20-evpn-mac-mobility/`: 스크립트와 실행 전 예측 (16 run2 의 setup.sh 를 같이 쓴다)
 
 - 실험 18 VXLAN 바깥 DSCP 소실: 기본 `tos 0` 에서 RoCE 가 스파인의 RoCE 클래스를 못 타고 TCP 8흐름과 BE 줄에 섬 → 150 → 12Mbit/s, NAK 0 → 581, 지연 99% 42µs → 3.4ms. `tos inherit` 이면 그대로(150Mbit, NAK 0, 45µs), `tos 0x68` 고정이면 TCP 까지 RoCE 클래스로 몰려 다시 무너짐
@@ -103,7 +119,7 @@
 
 ### 변경
 - `run2/scripts/setup.sh`: spine2:eth3 을 내렸는지 state 파일이 아니라 실제 링크 상태로 판단 (재배포 뒤 파일만 남아 경로 고정이 풀렸던 일)
-- 처음 18번으로 만든 RoCE over VXLAN 데스크톱 회차를 노트북 1회차(16번)와 합쳐 `14-roce-vxlan-ecn/run2/` 로 옮김. 이어 만든 19·20·21 → 18·19·20 (17은 다른 작업이 쓰는 중)
+- 처음 18번으로 만든 RoCE over VXLAN 데스크톱 회차를 노트북 1회차(16번)와 합쳐 `13-roce-vxlan-ecn/run2/` 로 옮김. 이어 만든 19·20·21 → 18·19·20 (17은 다른 작업이 쓰는 중)
 
 ### 검증
 - 바깥 CE + 안쪽 Not-ECT 는 리눅스 vxlan 이 버린다 (`vxlan: non-ECT from … TOS=0x3`). 바깥 ECT(1) + 안쪽 ECT(0) → 안쪽 ECT(1). 안쪽 CE 는 바깥에 ECT(0)으로 (RFC 6040)
@@ -115,7 +131,7 @@
 ## v0.15 — RoCE over VXLAN ECN (2026-10-15)
 
 ### 추가
-- 실험 16 `experiments/_wip/14-roce-vxlan-ecn/`: 스파인 RED/ECN 병목에서 VTEP 디캡 때 CE 누락(장애 1), 캡슐화 때 ECT 누락(장애 2), 디캡 뒤 병목 대조군. 스크립트 setup·inject-decap·inject-encap·control·measure·teardown, Q1 캡처, rxe 점검, 그래프
+- 실험 16 `experiments/_wip/13-roce-vxlan-ecn/`: 스파인 RED/ECN 병목에서 VTEP 디캡 때 CE 누락(장애 1), 캡슐화 때 ECT 누락(장애 2), 디캡 뒤 병목 대조군. 스크립트 setup·inject-decap·inject-encap·control·measure·teardown, Q1 캡처, rxe 점검, 그래프
 
 ### 검증
 - 리눅스 vxlan은 기본값에서 CE를 안쪽으로, ECT를 바깥으로 옮긴다. tos 옵션은 DSCP만 바꾼다

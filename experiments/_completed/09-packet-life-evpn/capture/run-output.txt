@@ -1,0 +1,171 @@
+v1 aa:c1:ab:d6:fb:98 / v3 aa:c1:ab:43:9c:93
+
+[1m=== A-1 아무도 말하기 전 — v1·v3 의 MAC 을 지우고 본 주소록 ===[0m
+10.10.10.33 lladdr aa:c1:ab:43:9c:93 used 0/0/0 probes 1 STALE
+
+*** Round 1, deleting 1 entries ***
+*** Flush is complete after 1 round(s) ***
+10.10.10.203 lladdr aa:c1:ab:3a:83:6b used 0/0/0 probes 1 STALE
+10.10.10.11 lladdr aa:c1:ab:d6:fb:98 used 0/0/0 probes 1 STALE
+
+*** Round 1, deleting 2 entries ***
+*** Flush is complete after 1 round(s) ***
+VNI: 10010
+ Local VTEP IP: 10.255.1.1
+ Remote VTEPs for this VNI:
+  10.255.1.3 flood: HER
+ Number of MACs (local and remote) known for this VNI: 0
+ Number of ARPs (IPv4 and IPv6, local and remote) known for this VNI: 0
+  -- Type-3 (이 VNI 의 BUM 을 받겠다는 VTEP 목록) --
+EVPN type-3 prefix: [3]:[EthTag]:[IPlen]:[OrigIP]
+ *>  [3]:[0]:[32]:[10.255.1.1]
+ *>  [3]:[0]:[32]:[10.255.1.3]
+ *=  [3]:[0]:[32]:[10.255.1.3]
+  -- Type-2 (MAC 명부) --
+  (비어 있음)
+
+[1m=== A-2 v3 가 한 번 말하는 순간 — leaf1 에 도착하는 Type-2 UPDATE 캡처 ===[0m
+EVPN type-2 prefix: [2]:[EthTag]:[MAClen]:[MAC]:[IPlen]:[IP]
+ *>  [2]:[0]:[48]:[aa:c1:ab:d6:fb:98]
+ *>  [2]:[0]:[48]:[aa:c1:ab:43:9c:93]
+ *=  [2]:[0]:[48]:[aa:c1:ab:43:9c:93]
+
+[1m=== A-3 명부가 커널 배달 표로 내려온 것 ===[0m
+  leaf1 bridge fdb (vni10010): aa:c1:ab:43:9c:93 vlan 1 extern_learn master br10010 
+aa:c1:ab:43:9c:93 extern_learn master br10010 
+aa:c1:ab:43:9c:93 dst 10.255.1.3 self extern_learn 
+
+[1m=== B 패킷의 일생 — v1 → v3 ping 5개, 여섯 지점 동시 캡처 ===[0m
+10.10.10.33 lladdr aa:c1:ab:43:9c:93 ref 1 used 0/0/0 probes 0 DELAY
+
+*** Round 1, deleting 1 entries ***
+*** Flush is complete after 1 round(s) ***
+5 packets transmitted, 5 packets received, 0% packet loss
+round-trip min/avg/max = 0.176/0.269/0.388 ms
+  a2-leaf1-bgp.pcap                26 패킷
+  b-leaf1-eth1.pcap                 0 패킷
+  b-leaf1-eth2.pcap                26 패킷
+  b-leaf3-eth1.pcap                 0 패킷
+  b-leaf3-eth2.pcap                26 패킷
+  b-v1-eth1.pcap                   12 패킷
+  b-v3-eth1.pcap                   12 패킷
+  -- leaf1 머릿속 --
+  bridge fdb (v3 MAC): aa:c1:ab:43:9c:93 dev vni10010 vlan 1 extern_learn master br10010  aa:c1:ab:43:9c:93 dev vni10010 extern_learn master br10010  aa:c1:ab:43:9c:93 dev vni10010 dst 10.255.1.3 self extern_learn  
+  ip route get 10.255.1.3: 10.255.1.3 via 10.1.2.0 dev eth2 src 10.1.2.1 uid 0 
+      Known via "bgp", distance 20, metric 0, best
+      * 10.1.1.0, via eth1, weight 1
+      * 10.1.2.0, via eth2, weight 1
+
+[1m=== C-1 L2 확장 — 같은 서브넷을 두 랙에 ===[0m
+  EVPN   : v1(leaf1) → v3(leaf3), 둘 다 10.10.10.0/24 : 0% packet loss
+  순수 L3 : h3(leaf3)에 h1 과 같은 서브넷 주소 172.16.11.50 → h1 : 100% packet loss
+    h3 가 본 h1 이웃: 172.16.11.10 dev eth1  used 0/0/0 probes 6 FAILED
+
+[1m=== C-2 이사 — v3 를 leaf3 에서 leaf1 로 (MAC·IP 그대로) ===[0m
+  v1 의 ping (0.05초 간격 160개): 160 packets transmitted, 154 packets received
+     Intf: mobl(319) VLAN: 0
+     Local Seq: 0 Remote Seq: 0
+  원래 자리로 돌아온 뒤:
+     Remote VTEP: 10.255.1.3
+     Local Seq: 0 Remote Seq: 0
+
+[1m=== C-3 멀티테넌시 — VNI 10020(B사)에 같은 10.10.10.0/24, 같은 IP ===[0m
+  B사 tb1 → tb3 (10.10.10.11 → 10.10.10.33, VNI 10020): 0% packet loss
+  A사 v1  → v3  (10.10.10.11 → 10.10.10.33, VNI 10010): 0% packet loss
+  같은 10.10.10.33 의 MAC — A사 v1 이 본 것: aa:c1:ab:43:9c:93 / B사 tb1 이 본 것: e2:1b:d0:f0:24:88
+    10010 L2 vni10010 2 0 1 default 
+    10020 L2 vni10020 2 0 1 default 
+
+[1m=== C-4 외침 줄이기 — v1 이 v3 를 ARP 로 물을 때 패브릭으로 나가는 ARP 수 ===[0m
+10.10.10.33 lladdr aa:c1:ab:43:9c:93 ref 1 used 0/0/0 probes 1 REACHABLE
+
+*** Round 1, deleting 1 entries ***
+*** Flush is complete after 1 round(s) ***
+10.10.10.33 lladdr aa:c1:ab:43:9c:93 ref 1 used 0/0/0 probes 4 REACHABLE
+
+*** Round 1, deleting 1 entries ***
+*** Flush is complete after 1 round(s) ***
+10.10.10.33 lladdr aa:c1:ab:43:9c:93 ref 1 used 0/0/0 probes 4 REACHABLE
+
+*** Round 1, deleting 1 entries ***
+*** Flush is complete after 1 round(s) ***
+  off: 패브릭으로 나간 ARP 요청 4개 (v1 이 ARP 를 3번 일으킴)
+10.10.10.33 lladdr aa:c1:ab:43:9c:93 ref 1 used 0/0/0 probes 4 REACHABLE
+
+*** Round 1, deleting 1 entries ***
+*** Flush is complete after 1 round(s) ***
+10.10.10.33 lladdr aa:c1:ab:43:9c:93 ref 1 used 0/0/0 probes 4 REACHABLE
+
+*** Round 1, deleting 1 entries ***
+*** Flush is complete after 1 round(s) ***
+10.10.10.33 lladdr aa:c1:ab:43:9c:93 ref 1 used 0/0/0 probes 4 REACHABLE
+
+*** Round 1, deleting 1 entries ***
+*** Flush is complete after 1 round(s) ***
+  on-noip: 패브릭으로 나간 ARP 요청 3개 (v1 이 ARP 를 3번 일으킴)
+    이때 leaf1 이 아는 ARP(IP↔MAC) 수: 0
+    리프 브리지에 IP 를 준 뒤 leaf1 이 아는 ARP 수: 2
+     *>  [2]:[0]:[48]:[aa:c1:ab:d6:fb:98]:[32]:[10.10.10.11]
+     *>  [2]:[0]:[48]:[aa:c1:ab:43:9c:93]:[32]:[10.10.10.33]
+     *=  [2]:[0]:[48]:[aa:c1:ab:43:9c:93]:[32]:[10.10.10.33]
+10.10.10.33 lladdr aa:c1:ab:43:9c:93 ref 1 used 0/0/0 probes 4 REACHABLE
+10.10.10.201 lladdr 2a:13:5c:9b:bc:40 ref 1 used 0/0/0 probes 1 REACHABLE
+
+*** Round 1, deleting 2 entries ***
+*** Flush is complete after 1 round(s) ***
+10.10.10.33 lladdr aa:c1:ab:43:9c:93 ref 1 used 0/0/0 probes 4 REACHABLE
+
+*** Round 1, deleting 1 entries ***
+*** Flush is complete after 1 round(s) ***
+10.10.10.33 lladdr aa:c1:ab:43:9c:93 ref 1 used 0/0/0 probes 4 REACHABLE
+
+*** Round 1, deleting 1 entries ***
+*** Flush is complete after 1 round(s) ***
+  on-withip: 패브릭으로 나간 ARP 요청 0개 (v1 이 ARP 를 3번 일으킴)
+172.16.11.1 lladdr aa:c1:ab:2c:30:14 used 0/0/0 probes 4 STALE
+
+*** Round 1, deleting 1 entries ***
+*** Flush is complete after 1 round(s) ***
+172.16.11.1 lladdr aa:c1:ab:2c:30:14 ref 1 used 0/0/0 probes 4 REACHABLE
+
+*** Round 1, deleting 1 entries ***
+*** Flush is complete after 1 round(s) ***
+172.16.11.1 lladdr aa:c1:ab:2c:30:14 ref 1 used 0/0/0 probes 4 REACHABLE
+
+*** Round 1, deleting 1 entries ***
+*** Flush is complete after 1 round(s) ***
+  순수 L3: h1 이 ARP 를 3번 일으키는 동안 leaf1 업링크의 ARP: 0개 (h1 은 게이트웨이만 묻는다)
+
+[1m=== C-5 상자 무게 — 같은 1472B ping 의 프레임 크기, 그리고 처리량 ===[0m
+  v1 이 낸 프레임: length 1514
+  스파인 쪽 링크의 프레임: length 1564
+  기본 MTU (v1·v3 9500, leaf1 vni10010 1500): EVPN-VXLAN TCP 0.00 Mbit/s
+  TCP 처리량 1회: EVPN-VXLAN 1120 Mbit/s · 순수 L3 1425 Mbit/s
+  TCP 처리량 2회: EVPN-VXLAN 1165 Mbit/s · 순수 L3 1025 Mbit/s
+  TCP 처리량 3회: EVPN-VXLAN 910 Mbit/s · 순수 L3 1207 Mbit/s
+
+[1m=== C-6 고장 지점 증가 — 언더레이는 살려 두고 leaf3 의 EVPN 광고만 끈다 ===[0m
+  BGP IPv4 세션 (leaf1): 2 / 2
+  순수 L3 h1 → h3: 0% packet loss
+  EVPN   v1 → v3: 100% packet loss
+  leaf1 의 VNI 10010: 10010 L2 vni10010 1 0 0 default 
+  다시 켠 뒤 v1 → v3: 0% packet loss
+
+[1m=== C-7 기억해야 할 양 — leaf1 기준 ===[0m
+  순수 L3: BGP IPv4 경로 19개, 커널 경로 13줄
+    EVPN 경로       2 10.255.1.3(spine2)
+    EVPN 경로       1 [2]:[0]:[48]:[aa:c1:ab:43:9c:93]
+    EVPN 경로       1 [2]:[0]:[48]:[aa:c1:ab:d6:fb:98]
+    EVPN 경로       1 [3]:[0]:[32]:[10.255.1.1]
+    EVPN 경로       1 [3]:[0]:[32]:[10.255.1.3]
+  EVPN: MAC 명부 2, vni10010 fdb 6줄
+
+[1m=== 원복 확인 ===[0m
+br10010 UP fe80::ace8:b3ff:fe9e:d0a0/64 
+br10010 UP fe80::2882:58ff:fe9d:831e/64 
+neigh_suppress on
+  v1 mtu 9500
+  v3 mtu 9500
+  h1 mtu 9500
+  h3 mtu 9500
+round-trip min/avg/max = 0.145/0.208/0.271 ms

@@ -45,7 +45,11 @@ BFD tuning, and a VXLAN/EVPN overlay — fully reproducible with scripts.*
 - [06 링크 다운](experiments/_completed/06-link-down-convergence/README.md) — 0.20초, 스파인의 valley path
 - [07 스파인 먹통 + BFD](experiments/_completed/07-spine-freeze-bfd/README.md) — **7.61초 → 1.15초**
 - [08 마이크로버스트](experiments/_completed/08-microburst/README.md) — 70% 손실인데 **드랍 0, 알람 0**
-- 진행 중 09~15 — [목록](#진행-중)
+- [09 EVPN-VXLAN 패킷 추적](experiments/_completed/09-packet-life-evpn/README.md) — 주소록 한 줄이 50바이트 상자가 되기까지
+- [10 NAT 포트 고갈](experiments/_completed/10-session-table-exhaustion/README.md) — **새 연결만** 죽고 기존 연결은 멀쩡
+- [11 RoCEv2](experiments/_completed/11-roce/README.md) — 손실 1%에 TCP는 그대로, RoCE는 **-75%**
+- [12 ACL vs 방화벽](experiments/_completed/12-acl-vs-firewall/README.md) — 위조 ACK는 ACL을 **3/3 통과**
+- 진행 중 13 — [목록](#진행-중)
 
 </td>
 </tr>
@@ -76,7 +80,7 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 
 패브릭의 골조는 고정해 두고, 그 위에서 장애를 하나씩 재현해 번호를 붙여 쌓는다.
 실험 하나가 디렉터리 하나이고, 끝나면 베이스를 원래 값으로 되돌린다 — 규칙과 추가 방법은 [experiments/](experiments/README.md).
-완료한 01~08번은 모두 장애 지점 앞뒤를 동시에 캡처해 **Wireshark 화면으로 패킷 흐름을 읽는** 장이다. 원본 pcap도 함께 있다.
+완료한 01~12번은 모두 장애 지점 앞뒤를 동시에 캡처해 **Wireshark 화면으로 패킷 흐름을 읽는** 장이다. 원본 pcap도 함께 있다.
 
 | # | 실험 | 주입하는 장애 | 본 것 |
 |---|---|---|---|
@@ -88,22 +92,16 @@ A 12-container Clos (spine-leaf) datacenter fabric built with FRRouting and cont
 | 06 | [링크 다운 수렴](experiments/_completed/06-link-down-convergence/README.md) | 지금 쓰는 스파인 링크를 leaf1에서 내림 | 끊김 **0.20초**. leaf1은 0.011초에 남은 링크로 돌렸고, 끊김은 반대편 leaf4가 BGP로 듣기까지의 시간. spine1은 철회 대신 **valley path**(AS 4개)를 광고 |
 | 07 | [스파인 무응답과 BFD](experiments/_completed/07-spine-freeze-bfd/README.md) | 링크는 up인 채 spine1을 얼림, BFD 전후 | **7.61초 → 1.15초**. 마지막 KEEPALIVE에서 정확히 9.003초 뒤 Hold Timer Expired, 마지막 BFD에서 0.900초 뒤 BFD Down. 얼린 스파인의 커널은 TCP ACK를 계속 보냈다 |
 | 08 | [마이크로버스트](experiments/_completed/08-microburst/README.md) | 평균 90Mbit/s를 고르게 / 300개씩 몰아서 100Mbit·버퍼 64KB 포트로 | 고르게 보내면 손실 0, 몰아서 보내면 **70% 넘게 손실**. 버퍼 드랍은 큐 통계에만 쌓여 모니터링은 드랍 0·알람 0, 5초 평균 송신 속도는 오히려 90 → 25Mbit/s로 낮아 보였다. 1ms로 세면 순간 2,330Mbit/s |
+| 09 | [EVPN-VXLAN 패킷 추적](experiments/_completed/09-packet-life-evpn/README.md) | v1 → v3(EVPN-VXLAN)와 h1 → h3(순수 L3)를 같은 리프·스파인 위에서 | Type-2 하나가 leaf1의 fdb에 `dst 10.255.1.3`으로 내려앉고, 98바이트 프레임이 148바이트 상자로 스파인을 지난다(바깥 TTL만 −1). 같은 서브넷 확장·0.35초 이사·같은 IP의 두 테넌트를 얻는 대신 50바이트, MTU 함정(기본값에서 TCP 0 Mbit/s), 언더레이가 멀쩡해도 죽는 오버레이를 낸다 |
+| 10 | [세션 테이블 고갈 (NAT 포트 고갈)](experiments/_completed/10-session-table-exhaustion/README.md) | 별도 소형 랩(natlab)에서 SNAT 포트를 10개로 좁히고 연결·DNS 질의 폭주 | 10개가 차는 순간부터 **새 연결만** 실패, 기존 연결은 하나도 안 끊김. SYN은 NAT 앞에서만 보이고 뒤에는 0개. 모자란 단위는 장비 전체가 아니라 (바깥 주소, 목적지, 포트) 조합이라 같은 서버 :8080은 바로 붙었다. 주소 3개로 늘려도 안쪽 주소 하나는 여전히 10개 |
+| 11 | [RoCEv2 성능 튜닝](experiments/_completed/11-roce/README.md) | Soft-RoCE를 커널에 올려 g1~g4(VRF)를 leaf에 붙임. 손실 주입, 3:1 인캐스트, QP 수, R8 ECN·DCQCN·PFC | 손실 1%에 RoCE **−75%**(TCP는 거의 그대로) — NAK 뒤 빠진 PSN부터 전부 다시 보내는 go-back-N. 얕은 큐 인캐스트는 포트의 6~9%로 붕괴(송신자가 65ms 타이머만 기다림). 타이머를 줄이면 드랍만 4배, 버퍼를 키우면 지연 100배, **송신 창 4**로 드랍 0·포트의 76~92%·ping 0.2ms. R8: ECN만 켜면 도장만 찍히고 큐 41ms, DCQCN이 CNP로 깎자 **5ms**. PFC는 드랍 0 대신 멈춤이 스파인을 거쳐 퍼져 상관없는 흐름이 15% 손실 |
+| 12 | [ACL과 방화벽 이중화](experiments/_completed/12-acl-vs-firewall/README.md) | 같은 정책을 stateless ACL과 stateful FW에. 위조 ACK·UDP 왕복·비대칭 라우팅·conntrack 고갈, 2부는 ECMP 뒤의 FW 두 대 | 평소엔 구별이 안 되고 네 곳에서 갈렸다: 위조 ACK는 **ACL 통과 3/3**, 비대칭 라우팅은 **FW만 ping OK·curl 실패**, 테이블 40에서 FW만 새 연결 실패. ECMP 뒤 FW 두 대는 비대칭 흐름 **49%가 전부 실패**, 대칭 해시로 0%, conntrackd로 2% |
 
 ### 진행 중
 
-정리가 끝나면 위 표로 올린다. 목록과 상태는 [experiments/_wip/](experiments/_wip/README.md).
-
 | # | 실험 | 상태 |
 |---|---|---|
-| 09 | [EVPN-VXLAN 패킷 추적](experiments/_wip/09-packet-life-evpn/README.md) | 정리 중 |
-| 10 | [세션 테이블 고갈 (NAT 포트 고갈)](experiments/_wip/10-session-table-exhaustion/README.md) | 정리 중 |
-| 11 | [RoCEv2 성능 튜닝](experiments/_wip/11-roce/README.md) | R1~R7 완료, R8 진행 중 |
-| 12 | [ACL과 방화벽 이중화](experiments/_wip/12-acl-vs-firewall/README.md) | 정리 중 |
-| 13 | [EVPN 패브릭 위의 5G 코어](experiments/_wip/13-5g-core-evpn/README.md) | 기획 |
-| 14 | [RoCE over VXLAN: ECN 전달 누락](experiments/_wip/14-roce-vxlan-ecn/README.md) | 2회차까지 측정, 원인 분석 남음 |
-| 15 | [EVPN ESI-LAG: 리프 한 대가 죽을 때 서버 이중화](experiments/_wip/15-evpn-esi-lag/README.md) | 정리 중 |
-
-예정: 16 비대칭 라우팅 + 상태 기반 방화벽.
+| 13 | [RoCE over VXLAN: ECN 전달 누락](experiments/_wip/13-roce-vxlan-ecn/README.md) | 2회차까지 측정, 원인 분석 남음 |
 
 ## 빠른 시작
 
