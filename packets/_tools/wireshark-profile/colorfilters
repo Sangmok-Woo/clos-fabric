@@ -1,3 +1,7 @@
+@EVPN withdraw@bgp.update.path_attribute.type_code == 15@[65535,46000,46000][0,0,0]
+@EVPN MAC+IP@bgp.evpn.nlri.ip.addr@[65535,52000,30000][0,0,0]
+@EVPN MAC@bgp.update.path_attribute.type_code == 14@[65535,60000,40000][0,0,0]
+@ARP@arp@[62000,62000,45000][0,0,0]
 @PROD@vxlan.vni == 10110 || vxlan.vni == 50010 || vlan.id == 110@[46000,56000,65535][0,0,0]
 @STORAGE@vxlan.vni == 10120 || vxlan.vni == 50020 || vlan.id == 120@[46000,62000,46000][0,0,0]
 @REPL@vxlan.vni == 10130 || vxlan.vni == 50030 || vlan.id == 130@[58000,48000,65000][0,0,0]
