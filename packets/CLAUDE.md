@@ -42,7 +42,14 @@ experiments/는 아카이브라 건드리지 않는다.
 - 노드 이름은 `clab-clos-` 뒤 부분 (spine1, leaf1, h1 ...). 인터페이스 배선은 `../clos.clab.yml`의 links
 
 ## 공부 노트 (요청할 때만)
-내가 README로 만들어 달라고 하면 캡처 + Wireshark 화면(`_tools/ws-shot.ps1`, VNI 색칠) + 설명 README까지 만든다. README는 그날 폴더에 하나. 예: `2026-10-22/`
+내가 README로 만들어 달라고 하면 캡처 + Wireshark 화면(`_tools/ws-shot.ps1`, VNI 색칠) + 설명 README까지 만든다. README는 그날 폴더에 하나.
+
+**10~20분 안에 다 볼 수 있는 양으로.** 길면 안 본다. 2026-10-22·10-23 README는 너무 길었다(예외로 그대로 둠).
+- 화면이 주인공, 글은 거들기만. 장면마다 핵심 화면 1장 + 짧은 줄 2~3개
+- 화면에 핵심 값이 바로 보이게 찍는다. 상세 트리 대신 열을 붙인다(`-Col`: VNI, AS path, EVPN IP 등). 색으로 구분되게
+- 장면은 3~4개까지. 전체 120줄 안쪽
+- 빼는 것: 긴 상세 트리 인용, tshark 명령 모음, 필터 표, 재현 명령. 필요하면 맨 아래 `<details>` 하나에 접어 둔다
+- 꼭 넣는 것: 한 줄 요약, 무대 그림(5줄 이내), 장면별 화면, "쉽게 말하면" 2~3줄, 파일 표(짧게)
 
 ## 무대
 - `_tools/stage-vrf.sh up | down | ping`: k8s-ceph 랩 위에 VRF별 호스트 6대 (prod1/stor1/repl1 ← leaf1, prod4/stor4/repl4 ← leaf4, 리프 eth15~17). 번호표는 스크립트 머리말

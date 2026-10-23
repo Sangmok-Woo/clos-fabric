@@ -1,5 +1,7 @@
 # 2026-10-23 — 소문이 퍼지는 순간 (EVPN Type-2)
 
+> 1부: EVPN Type-2 소문. [2부: 보이지 않는 스파인](#2부--보이지-않는-스파인-traceroute) (짧음)
+
 호스트 하나가 사라졌다 돌아올 때, 리프가 그 사실을 BGP로 퍼뜨리는 순서를 패킷으로 따라간다.
 무대는 어제와 같다(k8s-ceph 랩 + `_tools/stage-vrf.sh`). 주인공은 PROD VRF의 prod4다.
 
@@ -175,3 +177,42 @@ Wireshark 표시 필터 몇 개:
 | img/rumor.bgp.png | Type-2 UPDATE만 |
 | img/rumor.linkup.png | 링크 up 직후 (프레임 13~24) |
 | img/rumor.data.png | 데이터와 ARP 복사 (프레임 56~65) |
+
+---
+
+## 2부 — 보이지 않는 스파인 (traceroute)
+
+> 같은 traceroute인데, 언더레이에서는 스파인이 보이고 VRF 안에서는 안 보인다.
+
+```
+h1 ── leaf1 ── spine1 ── leaf4 ── h4          언더레이 (172.16.x)
+prod1 ── leaf1 ══ VXLAN ══ leaf2 ── VIP       VRF PROD 안 (10.10.x)
+```
+
+### 언더레이: 네 홉이 다 보인다
+
+![h1 포트: TTL 1~4 탐침과 각 홉의 Time-to-live exceeded](img/trace-underlay.png)
+
+- TTL을 1, 2, 3, 4로 올려 보내면 leaf1 → **spine1(10.1.1.0)** → leaf4 → h4 순서로 답이 온다
+- 답의 TTL이 64 → 63 → 62 → 61. 멀리서 올수록 하나씩 깎여 있다
+
+### VRF 안: 스파인이 사라진다
+
+![prod1 포트와 업링크: VNI 50010, 바깥 TTL과 안쪽 TTL이 따로 논다](img/trace-overlay.png)
+
+- 탐침 2(TTL 2)는 leaf1에서 라우팅되며 1이 되고, VXLAN에 실린다(4번 줄: 바깥 64, **안쪽 1**)
+- 스파인은 바깥 TTL만 깎는다(5번 줄: 바깥 63). 안쪽은 건드리지 않으니 스파인에서는 끝나지 않는다
+- 안쪽 TTL은 leaf2가 라우팅할 때 0이 되고, leaf2가 답한다. 그래서 traceroute에 스파인은 없다
+- IF 1(prod1 포트) 줄은 VXLAN이 아니라서, Outer TTL 칸이 그냥 그 패킷의 TTL이다
+
+덤: 결과는 `1 10.10.16.1 / 2 * / 3 10.10.32.10`이었다. 2번 답(5번 줄)은 leaf2가 애니캐스트 게이트웨이 주소 10.10.16.1로 보냈다. 업링크에는 도착했는데 prod1 포트에는 없다. leaf1 자기 주소에서 온 패킷이라 버린 것으로 보인다(leaf1의 `accept_local=0`). 같은 대역끼리(prod1 → prod4)는 라우팅이 없어서 1홉으로 끝난다.
+
+### 쉽게 말하면
+
+TTL은 택배 상자에 적힌 "남은 환승 횟수"다. 언더레이에서는 스파인도 환승역이라 횟수를 깎고 이름을 남긴다. VRF 안의 패킷은 큰 컨테이너(VXLAN)에 실려 가서, 스파인은 컨테이너 바깥 숫자만 깎는다. 안쪽 상자 입장에서는 leaf1에서 leaf2로 한 번에 건너뛴 것이다.
+
+| 파일 | 내용 |
+|---|---|
+| raw/trace-underlay.pcap | h1 → h4, leaf1 eth3·eth1·eth2 |
+| raw/trace-overlay.pcap | prod1 → 10.10.32.10, leaf1 eth15·eth1·eth2 |
+| img/trace-*.png | 위 두 화면 |
