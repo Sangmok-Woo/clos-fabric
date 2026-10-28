@@ -1,0 +1,4 @@
+  interface_id 0 = leaf2:eth1
+  interface_id 1 = leaf2:eth2
+  interface_id 2 = spine2:eth2
+  interface_id 3 = wrk1:eth1
