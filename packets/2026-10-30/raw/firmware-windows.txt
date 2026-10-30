@@ -1,0 +1,9 @@
+LENOVO / 82XR / LENOVO LNVNB161216
+AMD Ryzen 5 7530U with Radeon Graphics          VirtFW=True SLAT=False
+BIOS: KYCN23WW
+--- DeviceGuard
+AvailableSecurityProperties=1 2 3 5 6 7 (3=DMA protection)
+VBSstatus=2
+Required=0
+--- ACPI tables
+APIC BATB BGRT CDIT CRAT FACP FPDT HPET IVRS MCFG POAT SSDT TPM2 UEFI VFCT WSMT

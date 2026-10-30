@@ -1,0 +1,15 @@
+6.6.87.2-microsoft-standard-WSL2
+--- 1 dmesg
+[    0.382622] iommu: Default domain type: Translated
+[    0.382622] iommu: DMA domain TLB invalidation policy: lazy mode
+[    0.457315] AMD-Vi: AMD IOMMUv2 functionality not available on this system - This is not a bug.
+--- 2 groups
+0
+total 0
+drwxr-xr-x  2 root root 0 Oct 30 19:31 .
+drwxr-xr-x 16 root root 0 Oct 30 19:31 ..
+scripts/collect-wsl.sh: line 4: lspci: command not found
+--- 3 ats
+0
+--- cpu
+model name	: AMD Ryzen 5 7530U with Radeon Graphics
